@@ -1,0 +1,39 @@
+{
+  "card_key": "hdfc_infinia",
+  "version": 1,
+  "effective_date": "2026-07-01",
+  "reward_currency": "hdfc_reward_points",
+  "base_earn": {
+    "rate": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "per_amount": 100,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "smartbuy",
+      "category": "flights",
+      "multiplier": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "monthly_cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": "smartbuy_total",
+      "notes": "[NEED: verify from issuer docs] SmartBuy flights multiplier and monthly cap"
+    },
+    {
+      "channel": "smartbuy",
+      "category": "hotels",
+      "multiplier": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "monthly_cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": "smartbuy_total",
+      "notes": "[NEED: verify from issuer docs] SmartBuy hotels multiplier and monthly cap"
+    }
+  ],
+  "caps": [
+    {
+      "scope": "smartbuy_total",
+      "period": "month",
+      "cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+    }
+  ],
+  "exclusions": ["fuel", "rent", "wallet_loads"],
+  "milestones": [],
+  "point_value_reference_inr": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+}

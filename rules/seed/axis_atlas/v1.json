@@ -1,0 +1,38 @@
+{
+  "card_key": "axis_atlas",
+  "version": 1,
+  "effective_date": "2026-07-01",
+  "reward_currency": "edge_miles",
+  "base_earn": {
+    "rate": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "per_amount": 100,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "direct",
+      "category": "travel",
+      "multiplier": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "monthly_cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": "travel_accelerated",
+      "notes": "[NEED: verify from issuer docs] accelerated travel earn rate and monthly cap"
+    }
+  ],
+  "caps": [
+    {
+      "scope": "travel_accelerated",
+      "period": "month",
+      "cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+    }
+  ],
+  "exclusions": [],
+  "milestones": [
+    {
+      "spend_threshold": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "bonus_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "period": "year",
+      "notes": "[NEED: verify from issuer docs] annual milestone tiers"
+    }
+  ],
+  "point_value_reference_inr": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+}
