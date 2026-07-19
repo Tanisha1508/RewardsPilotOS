@@ -1,0 +1,254 @@
+{
+  "card_key": "axis_atlas",
+  "version": 2,
+  "effective_date": "2026-07-19",
+  "reward_currency": "edge_miles",
+  "base_earn": {
+    "rate": {
+      "value": 2,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (2 EDGE Miles per INR 100 on eligible categories; 1/100 applied before 2022-12-20, historical only)",
+      "confidence": 0.95
+    },
+    "per_amount": 100,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "travel_edge",
+      "category": "all",
+      "multiplier": {
+        "value": 2.5,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (5 EDGE Miles per INR 100 = 2.5x base on Travel EDGE portal bookings)",
+        "confidence": 0.95
+      },
+      "monthly_cap_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (derived: INR 2,00,000/month accelerated spend cap x 5 EDGE Miles per INR 100 = 10,000 EDGE Miles/month ceiling)",
+        "confidence": 0.95
+      },
+      "cap_scope": "travel_accelerated",
+      "notes": "Travel EDGE portal bookings; above the INR 2L/month spend cap earning drops to base 2/100 (base fallback on excess not modeled \u2014 entry cap clips); crediting within 12 days"
+    },
+    {
+      "channel": "direct",
+      "category": "travel",
+      "multiplier": {
+        "value": 2.5,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (5 EDGE Miles per INR 100 = 2.5x base on direct airline and direct hotel bookings, identified via MCC codes)",
+        "confidence": 0.95
+      },
+      "monthly_cap_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (derived: INR 2,00,000/month cumulative accelerated spend cap x 5 EDGE Miles per INR 100 = 10,000 EDGE Miles/month ceiling, shared with Travel EDGE)",
+        "confidence": 0.95
+      },
+      "cap_scope": "travel_accelerated",
+      "notes": "Direct airline/hotel only (MCC-identified); third-party travel agents/OTAs earn base 2/100, never accelerated; crediting within 12 days"
+    }
+  ],
+  "caps": [
+    {
+      "scope": "travel_accelerated",
+      "period": "month",
+      "cap_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (derived from the INR 2,00,000/month cumulative accelerated spend cap)",
+        "confidence": 0.95
+      },
+      "notes": "Cumulative across Travel EDGE portal + direct airline + direct hotel; above cap, spend earns base rate"
+    }
+  ],
+  "exclusions": [
+    "gold_jewellery",
+    "rent",
+    "wallet_loads",
+    "government_payments",
+    "insurance",
+    "fuel",
+    "utilities",
+    "telecom"
+  ],
+  "milestones": [
+    {
+      "spend_threshold": {
+        "value": 300000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 2500,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Anniversary-year cumulative spend, excluding the same categories as earn exclusions; primary + add-on spends count; credited within 30 days of milestone"
+    },
+    {
+      "spend_threshold": {
+        "value": 750000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 2500,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (additional; cumulative 5,000 EDGE Miles at INR 7.5L)",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Additional 2,500 EDGE Miles at INR 7,50,000 cumulative spend"
+    },
+    {
+      "spend_threshold": {
+        "value": 1500000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (additional; cumulative 10,000 EDGE Miles at INR 15L)",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 5000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Additional 5,000 EDGE Miles at INR 15,00,000 cumulative spend; total milestone earn 10,000"
+    }
+  ],
+  "point_value_reference_inr": {
+    "cashback": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (single official redemption value: 1 EDGE Mile = INR 1; Atlas does not use a multi-channel structure \u2014 value applies to Travel EDGE redemptions for flights/hotels/experiences)",
+      "confidence": 0.95
+    },
+    "voucher": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (single official redemption value: 1 EDGE Mile = INR 1; Atlas does not use a multi-channel structure \u2014 value applies to Travel EDGE redemptions for flights/hotels/experiences)",
+      "confidence": 0.95
+    },
+    "travel": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (1 EDGE Mile = INR 1, redeemable via Travel EDGE portal for flights/hotels/experiences)",
+      "confidence": 0.95
+    }
+  },
+  "fees": {
+    "annual_fee_inr": {
+      "value": 5000,
+      "status": "verified",
+      "source": "Axis Bank official source (annual fee INR 5,000 + GST), retrieved 2026-07-19",
+      "confidence": 0.9
+    },
+    "renewal_fee_waiver_spend_inr": null,
+    "forex_markup_pct": {
+      "value": 3.5,
+      "status": "verified",
+      "source": "2 independent third-party sources (3.5% + GST, approx 4.13% effective)",
+      "confidence": 0.75
+    },
+    "notes": "Annual fee INR 5,000 + GST. NO spend-based renewal fee waiver exists (confidence 0.8: 3 independent third-party sources + a customer complaint thread confirming denial under current policy; official T&C is silent \u2014 absence is consistent with, not independent confirmation of, this finding). The tiered renewal bonus partially offsets the fee instead."
+  },
+  "welcome_bonus": [
+    {
+      "issued_from": "2024-04-20",
+      "issued_to": null,
+      "bonus_points": {
+        "value": 2500,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "qualifying_transactions": 1,
+      "window_days": 37,
+      "notes": "Cards issued 2024-04-20 onwards; credited within 7 days of qualifying transaction; paid cards only"
+    },
+    {
+      "issued_from": "2022-12-20",
+      "issued_to": "2024-04-20",
+      "bonus_points": {
+        "value": 5000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "qualifying_transactions": 1,
+      "window_days": 30,
+      "notes": "Credited within 7 days of qualifying transaction; paid cards only"
+    },
+    {
+      "issued_from": null,
+      "issued_to": "2022-12-20",
+      "bonus_points": {
+        "value": 5000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "qualifying_transactions": 3,
+      "window_days": 60,
+      "notes": "Credited within 7 days of qualifying transaction; paid cards only"
+    }
+  ],
+  "tiers": [
+    {
+      "name": "silver",
+      "annual_spend_threshold_inr": {
+        "value": 0,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (default/entry tier)",
+        "confidence": 0.95
+      },
+      "renewal_bonus_points": {
+        "value": 0,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "notes": "Default tier"
+    },
+    {
+      "name": "gold",
+      "annual_spend_threshold_inr": {
+        "value": 750000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "renewal_bonus_points": {
+        "value": 2500,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (credited within 30 days of annual fee payment)",
+        "confidence": 0.95
+      },
+      "notes": "Downgrades to Silver if anniversary-year spend < INR 7.5L; tier spend excludes the same categories as earn exclusions; evaluated annually on prior-year spend"
+    },
+    {
+      "name": "platinum",
+      "annual_spend_threshold_inr": {
+        "value": 1500000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "renewal_bonus_points": {
+        "value": 5000,
+        "status": "verified",
+        "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (credited within 30 days of annual fee payment)",
+        "confidence": 0.95
+      },
+      "notes": "Downgrades to Gold if spend >= INR 7.5L and < INR 15L, to Silver if spend < INR 7.5L"
+    }
+  ]
+}

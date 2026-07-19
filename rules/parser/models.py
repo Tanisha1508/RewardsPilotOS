@@ -37,12 +37,13 @@ class Milestone(BaseModel):
 
 class Fees(BaseModel):
     """Card fee facts (spec update 2026-07-19). annual_fee and the renewal
-    waiver are distinct facts — never conflated."""
+    waiver are distinct facts — never conflated. A waiver field left as None
+    means 'confirmed not applicable' (finding recorded in notes), which is
+    different from an unverified value."""
 
     annual_fee_inr: VerifiedValue
-    renewal_fee_waiver_spend_inr: VerifiedValue = Field(
-        default_factory=VerifiedValue.unknown
-    )
+    renewal_fee_waiver_spend_inr: VerifiedValue | None = None
+    forex_markup_pct: VerifiedValue | None = None
     notes: str | None = None
 
 
@@ -54,6 +55,28 @@ class ContinuationEligibility(BaseModel):
     relationship_value_inr: VerifiedValue
     requirement: str = "any_of"
     effective_from: str | None = None
+    notes: str | None = None
+
+
+class WelcomeBonusCohort(BaseModel):
+    """Welcome bonus terms vary by issuance cohort (spec update 2026-07-19,
+    Axis Atlas verification): one entry per issuance window."""
+
+    issued_from: str | None = None  # ISO date; None = beginning of program
+    issued_to: str | None = None  # ISO date; None = open-ended
+    bonus_points: VerifiedValue
+    qualifying_transactions: int = 1
+    window_days: int | None = None
+    notes: str | None = None
+
+
+class TierBenefit(BaseModel):
+    """Spend-tier structure (spec update 2026-07-19, Axis Atlas
+    verification): tier entry threshold and annual renewal bonus."""
+
+    name: str
+    annual_spend_threshold_inr: VerifiedValue
+    renewal_bonus_points: VerifiedValue
     notes: str | None = None
 
 
@@ -74,3 +97,5 @@ class RuleFile(BaseModel):
     )
     fees: Fees | None = None
     continuation_eligibility: ContinuationEligibility | None = None
+    welcome_bonus: list[WelcomeBonusCohort] = Field(default_factory=list)
+    tiers: list[TierBenefit] = Field(default_factory=list)

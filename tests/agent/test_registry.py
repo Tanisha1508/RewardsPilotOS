@@ -73,22 +73,29 @@ def test_execute_success_envelope():
     assert result.result["cards"]
 
 
-def test_rule_tool_computes_verified_hdfc_and_refuses_unverified_axis():
+def test_rule_tool_computes_verified_cards_and_refuses_unverified_amex():
     hdfc = execute(
         "CalculateEarn",
         {"card_key": "hdfc_infinia", "amount": 70000, "category": "electronics",
          "month": "2026-07"},
     )
     assert hdfc.status == "success"
-    assert hdfc.result["status"] == "computed"  # v2 verified base earn
+    assert hdfc.result["status"] == "computed"
     assert hdfc.result["points"] == 2330.0  # floor(70000/150)=466 blocks * 5
     axis = execute(
         "CalculateEarn",
         {"card_key": "axis_atlas", "amount": 70000, "category": "electronics",
          "month": "2026-07"},
     )
-    assert axis.result["status"] == "unknown"
-    assert axis.result["points"] is None
+    assert axis.result["status"] == "computed"  # verified 2026-07-19
+    assert axis.result["points"] == 1400.0  # floor(70000/100)=700 blocks * 2
+    amex = execute(
+        "CalculateEarn",
+        {"card_key": "amex_plat_travel", "amount": 70000, "category": "electronics",
+         "month": "2026-07"},
+    )
+    assert amex.result["status"] == "unknown"
+    assert amex.result["points"] is None
 
 
 def test_transfer_ratio_tool_exposes_verified_and_unverified():
@@ -102,8 +109,11 @@ def test_transfer_ratio_tool_exposes_verified_and_unverified():
     }
     assert hdfc.result["unverified_partners"] == []  # card fully verified
     axis = execute("GetTransferRatios", {"currency": "edge_miles"})
-    assert axis.result["ratios"] == []
-    assert axis.result["unverified_partners"]
+    assert len(axis.result["ratios"]) == 17  # Group A (14) + Group B (3)
+    assert axis.result["unverified_partners"] == []  # Atlas verified 2026-07-19
+    amex = execute("GetTransferRatios", {"currency": "membership_rewards"})
+    assert amex.result["ratios"] == []
+    assert amex.result["unverified_partners"]
 
 
 def test_get_tool_and_spec_lookup():

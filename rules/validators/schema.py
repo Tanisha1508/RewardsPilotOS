@@ -103,8 +103,19 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
             problems.extend(_check_verified_value(entry.get(field), f"milestones[{i}].{field}"))
     fees = raw.get("fees")
     if fees is not None:
-        for field in ("annual_fee_inr", "renewal_fee_waiver_spend_inr"):
-            problems.extend(_check_verified_value(fees.get(field), f"fees.{field}"))
+        problems.extend(_check_verified_value(fees.get("annual_fee_inr"), "fees.annual_fee_inr"))
+        # Optional fee facts: absent/None means "confirmed not applicable",
+        # recorded in fees.notes — only validate when present.
+        for field in ("renewal_fee_waiver_spend_inr", "forex_markup_pct"):
+            if fees.get(field) is not None:
+                problems.extend(_check_verified_value(fees[field], f"fees.{field}"))
+    for i, cohort in enumerate(raw.get("welcome_bonus") or []):
+        problems.extend(
+            _check_verified_value(cohort.get("bonus_points"), f"welcome_bonus[{i}].bonus_points")
+        )
+    for i, tier in enumerate(raw.get("tiers") or []):
+        for field in ("annual_spend_threshold_inr", "renewal_bonus_points"):
+            problems.extend(_check_verified_value(tier.get(field), f"tiers[{i}].{field}"))
     continuation = raw.get("continuation_eligibility")
     if continuation is not None:
         for field in ("annual_spend_inr", "relationship_value_inr"):

@@ -49,6 +49,7 @@ def build_graph(
             edge_type=edge.edge_type,
             ratio=edge.ratio,
             min_transfer=edge.min_transfer,
+            transfer_group=edge.transfer_group,
             notes=edge.notes,
             source_doc_id=edge.source_doc_id,
             last_verified=edge.last_verified,

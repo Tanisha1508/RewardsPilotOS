@@ -23,6 +23,9 @@ class GraphEdgeRecord(BaseModel):
     edge_type: Literal["earn", "transfer"]
     ratio: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
     min_transfer: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
+    # Issuer-defined transfer group (e.g. Axis Atlas Group A/B annual caps,
+    # tracked per customer at the application layer; caps noted on edges).
+    transfer_group: str | None = None
     notes: str | None = None
     source_doc_id: str | None = None
     last_verified: str | None = None

@@ -28,7 +28,7 @@ NEW_SCOPE_CARDS = [
     "axis_magnus",
 ]
 ALL_CARDS = ["hdfc_infinia", "axis_atlas", "amex_plat_travel"] + NEW_SCOPE_CARDS
-UNVERIFIED_CARDS = ["axis_atlas", "amex_plat_travel"] + NEW_SCOPE_CARDS
+UNVERIFIED_CARDS = ["amex_plat_travel"] + NEW_SCOPE_CARDS
 
 
 @pytest.fixture()
@@ -37,8 +37,6 @@ def engine() -> RuleEngine:
 
 
 REFUSAL_TABLE = [
-    ("axis_atlas", "grocery", None, "unknown", "base earn rate is unverified"),
-    ("axis_atlas", "travel", "direct", "unknown", "base earn rate is unverified"),
     ("amex_plat_travel", "dining", None, "unknown", "base earn rate is unverified"),
     ("amex_plat_travel", "travel", "direct", "unknown", "base earn rate is unverified"),
 ] + [
@@ -83,6 +81,52 @@ def test_hdfc_infinia_v2_computes(engine, category, channel, status, points, app
     if status == "computed":
         assert result.sources, "computed results must carry sources"
         assert result.rule_version == 3
+
+
+AXIS_TABLE = [
+    # 2 EDGE Miles per ₹100: 10_000 -> 100 blocks -> 200 base
+    ("electronics", None, "computed", 200.0, "base", False),
+    # Travel EDGE / direct travel 2.5x: 200 * 2.5 = 500, under 10,000 cap
+    ("travel", "direct", "computed", 500.0, "accelerated", False),
+    ("anything", "travel_edge", "computed", 500.0, "accelerated", False),
+    ("fuel", None, "excluded", 0.0, None, False),
+    ("rent", None, "excluded", 0.0, None, False),
+    ("gold_jewellery", None, "excluded", 0.0, None, False),
+    ("insurance", None, "excluded", 0.0, None, False),
+    ("utilities", None, "excluded", 0.0, None, False),
+]
+
+
+@pytest.mark.parametrize("category,channel,status,points,applied,cap_applied", AXIS_TABLE)
+def test_axis_atlas_v2_computes(engine, category, channel, status, points, applied, cap_applied):
+    result = engine.calculate_earn("axis_atlas", 10_000, category, channel, "2026-07")
+    assert result.status == status
+    assert result.points == points
+    assert result.applied == applied
+    assert result.cap_applied is cap_applied
+    if status == "computed":
+        assert result.rule_version == 2
+
+
+def test_axis_travel_cap_clips(engine):
+    # ₹5,00,000 direct travel: 5000 blocks * 2 * 2.5 = 25000 > 10000 ceiling
+    result = engine.calculate_earn("axis_atlas", 500_000, "travel", "direct", "2026-07")
+    assert result.points == 10000.0
+    assert result.cap_applied is True
+    assert result.cap_scope == "travel_accelerated"
+
+
+def test_axis_welcome_bonus_and_tiers_parsed(engine):
+    rule = load_rule("axis_atlas")
+    assert len(rule.welcome_bonus) == 3
+    assert rule.welcome_bonus[0].bonus_points.value == 2500
+    assert rule.welcome_bonus[0].window_days == 37
+    assert [t.name for t in rule.tiers] == ["silver", "gold", "platinum"]
+    assert rule.tiers[2].renewal_bonus_points.value == 5000
+    assert rule.fees.renewal_fee_waiver_spend_inr is None  # confirmed: no waiver
+    assert rule.fees.forex_markup_pct.value == 3.5
+    for channel in ("cashback", "voucher", "travel"):
+        assert rule.point_value_reference_inr.for_channel(channel).value == 1.0
 
 
 def test_hdfc_voucher_cap_clips(engine):
@@ -186,17 +230,19 @@ def test_hdfc_cap_check_now_verified(engine):
     assert status.remaining_points == 15000.0
 
 
-def test_axis_cap_check_still_unknown(engine):
+def test_axis_cap_check_now_verified(engine):
     status = engine.check_cap("axis_atlas", "travel_accelerated", "2026-07")
-    assert status.status == "unknown"
-    assert status.remaining_points is None
+    assert status.status == "ok"
+    assert status.remaining_points == 10000.0
 
 
-def test_compare_seed_cards_hdfc_computes_others_unknown(engine):
+def test_compare_seed_cards_two_compute_amex_unknown(engine):
     results = engine.compare_cards(
         ["hdfc_infinia", "axis_atlas", "amex_plat_travel"], 70_000, "electronics", None, "2026-07"
     )
-    assert [r.status for r in results] == ["computed", "unknown", "unknown"]
+    assert [r.status for r in results] == ["computed", "computed", "unknown"]
     assert results[0].card_key == "hdfc_infinia"
     assert results[0].points == 2330.0  # floor(70000/150)=466 blocks * 5
-    assert all(r.points is None for r in results[1:])
+    assert results[1].card_key == "axis_atlas"
+    assert results[1].points == 1400.0  # floor(70000/100)=700 blocks * 2
+    assert results[2].points is None

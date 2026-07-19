@@ -18,7 +18,7 @@ Status values: `not_started` | `in_progress` | `verified` | `blocked`.
 
 ## P1 (MVP issuers — target during D3, Jul 21)
 
-**Next card: Axis Atlas** (one issuer completed fully before the next).
+**Next card: Amex Platinum Travel** (one issuer completed fully before the next).
 
 ### HDFC Infinia — status: FULLY VERIFIED, no open items (closed 2026-07-19, rules/seed/hdfc_infinia/v3.json)
 
@@ -46,17 +46,43 @@ confidence semantics per the ADR-001 amendment. Fee facts live in the new
 | Transfer ratio: Air India Flying Returns 2:1 (promos can boost, not modeled) | database/seed/graph_edges.json | verified 2026-07-19 (product owner + 2 independent trackers, confidence 0.75) |
 | Point values: cashback ₹0.30 / voucher ₹0.50 / travel ₹1.00 (Apple/Tanishq vouchers redeem at the ₹1.00 travel rate) | rules/seed/hdfc_infinia/v3.json | all three verified 2026-07-19 (2–4 independent agreeing sources each, confidence 0.8) |
 
-### Axis Atlas — status: not_started, NEXT UP (as of 2026-07-19)
+### Axis Atlas — status: VERIFIED with 2 noted items (closed 2026-07-19, rules/seed/axis_atlas/v2.json)
+
+**Noted items (recorded, not silently resolved):**
+1. **Radisson Rewards ratio conflict (unresolved):** 1:2 recorded as primary
+   (single detailed third-party guide citing specific mechanics, ~1 working
+   day processing; confidence 0.65). An earlier community-forum source stated
+   1:1 for the same partner — kept visible here, not discarded. Re-check on
+   official/portal confirmation.
+2. **Group B annual cap discrepancy:** official Axis T&C PDF states 120,000
+   EDGE Miles/year (confidence 0.95, used everywhere); one source claimed
+   1,200,000/year — recorded as a noted discrepancy (likely a typo in that
+   source), official document treated as authoritative.
+
+Also noted (low priority, does not affect reward/redemption math): interest
+rate conflict — 3.75%/month vs 3.60%/month across two third-party sources, no
+official source found; both candidates recorded here, neither picked, not
+entered in the rule file or corpus.
 
 | Item | Where | Status |
 |---|---|---|
-| Base EDGE Miles earn rate | rules/seed/axis_atlas/v1.json | not_started |
-| Accelerated travel rate + monthly cap | rules/seed/axis_atlas/v1.json | not_started |
-| Milestone tiers (thresholds + bonuses) | rules/seed/axis_atlas/v1.json | not_started |
-| Exclusion list | rules/seed + knowledge/sources | not_started |
-| Point value reference (INR) | rules/seed/axis_atlas/v1.json | not_started |
-| Transfer partners + ratios + minimums | database/seed/need_register.json (air_india, krisflyer candidates) | not_started |
-| Annual fee + waiver | tools/portfolio fixture → cards table | not_started |
+| Base earn 2 EDGE Miles / ₹100 (1/₹100 pre-2022-12-20 historical) | rules/seed/axis_atlas/v2.json | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Accelerated travel 5/₹100 (Travel EDGE + direct airline/hotel via MCC; OTAs base-only), ₹2L/mo spend cap (10,000-mile ceiling, derived), 12-day crediting | rules/seed/axis_atlas/v2.json | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Exclusions: gold/jewellery, rent, wallet, government, insurance, fuel, utilities, telecom (eff. 2024-04-20; rent/wallet milestone-only from 2023-03-05) | rules/seed + knowledge | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Point value: 1 EDGE Mile = ₹1, single official value (recorded across all three schema channels with an explanatory source; Atlas has no multi-channel structure) | rules/seed/axis_atlas/v2.json | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Welcome bonus by issuance cohort (2,500/1 txn/37d from 2024-04-20; 5,000/1 txn/30d 2022-12-20–2024-04-20; 5,000/3 txn/60d before; 7-day crediting, paid cards only) | rules/seed/axis_atlas/v2.json (welcome_bonus) | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Milestones: 2,500 @ ₹3L, +2,500 @ ₹7.5L, +5,000 @ ₹15L (30-day crediting) | rules/seed/axis_atlas/v2.json | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Tiers: Silver default / Gold ₹7.5L / Platinum ₹15L, downgrade rules, renewal bonus 0/2,500/5,000 (30 days from fee payment) | rules/seed/axis_atlas/v2.json (tiers) | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Annual fee ₹5,000 + GST | rules/seed/axis_atlas/v2.json (fees) | verified 2026-07-19 (official source, 0.9) |
+| Renewal fee waiver: NONE exists (tiered renewal bonus offsets instead) | rules/seed/axis_atlas/v2.json (fees.notes; waiver field confirmed not applicable) | verified 2026-07-19 (0.8: 3 third-party sources + complaint thread; official T&C silent) |
+| Forex markup 3.5% + GST (≈4.13% effective) | rules/seed/axis_atlas/v2.json (fees) | verified 2026-07-19 (2 third-party sources, 0.75) |
+| Transfer caps: Group A 30,000/yr, Group B 120,000/yr, combined 150,000/yr per customer ID; min transfer 500 | database/seed/graph_edges.json (per-edge) | verified 2026-07-19 (official T&Cs PDF, 0.95) |
+| Group A partners at 1:2 (11): KrisFlyer, Flying Returns, Aeroplan, JAL, Flying Blue, Club ITC, IHG, Etihad, United, Turkish, Thai | database/seed/graph_edges.json | verified 2026-07-19 (third-party convergent, 0.85; ratios live on the dynamic Travel EDGE page, not the static T&C — structural, not a research gap) |
+| Group A newer additions at 2:1 (3): BA Avios, Finnair Plus, Vietnam Lotusmiles | database/seed/graph_edges.json | verified 2026-07-19 (4 independent sources, 0.8) |
+| Group B: IndiGo BluChip 1:2 (promo window 2026-06-18–2026-08-17 noted) | database/seed/graph_edges.json | verified 2026-07-19 (IndiGo official site, 0.85) |
+| Group B: Radisson Rewards 1:2 | database/seed/graph_edges.json | verified 2026-07-19 (0.65 — see noted item 1) |
+| Group B: Orchid Rewards 1:1 | database/seed/graph_edges.json | verified 2026-07-19 (2 sources agreeing, 0.7) |
+| Removed partners: Marriott Bonvoy, Accor, Qatar Privilege Club (2026-04-02; no edges; Qatar-via-Avios workaround not modeled) | knowledge doc | verified 2026-07-19 (4 sources agreeing on date, 0.8) |
 
 ### Amex Platinum Travel — status: not_started (as of 2026-07-19)
 

@@ -34,7 +34,7 @@ CARDS = [
         card_name="Axis Bank Atlas",
         network="visa",
         reward_currency="edge_miles",
-        annual_fee=None,  # [NEED: verify from issuer docs]
+        annual_fee=5000.0,  # + GST; verified 2026-07-19 (official source)
         renewal_date="2027-03-20",
     ),
 ]

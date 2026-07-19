@@ -206,5 +206,109 @@
     "meta": {
       "synthetic": false
     }
+  },
+  {
+    "node_id": "aeroplan",
+    "node_type": "airline",
+    "name": "Air Canada Aeroplan",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "jal_mileage_bank",
+    "node_type": "airline",
+    "name": "JAL Mileage Bank",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "flying_blue",
+    "node_type": "airline",
+    "name": "Air France-KLM Flying Blue",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "ihg_one_rewards",
+    "node_type": "hotel",
+    "name": "IHG One Rewards",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "etihad_guest",
+    "node_type": "airline",
+    "name": "Etihad Guest",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "united_mileageplus",
+    "node_type": "airline",
+    "name": "United MileagePlus",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "thai_royal_orchid_plus",
+    "node_type": "airline",
+    "name": "Thai Royal Orchid Plus",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "british_airways_avios",
+    "node_type": "airline",
+    "name": "British Airways Avios",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "finnair_plus",
+    "node_type": "airline",
+    "name": "Finnair Plus",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "vietnam_airlines_lotusmiles",
+    "node_type": "airline",
+    "name": "Vietnam Airlines Lotusmiles",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "indigo_bluchip",
+    "node_type": "airline",
+    "name": "IndiGo BluChip",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "radisson_rewards",
+    "node_type": "hotel",
+    "name": "Radisson Rewards",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "orchid_rewards",
+    "node_type": "hotel",
+    "name": "Orchid Rewards",
+    "meta": {
+      "synthetic": false
+    }
   }
 ]

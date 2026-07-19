@@ -334,5 +334,379 @@
     "notes": "2:1; special promotions can sometimes boost this ratio, not modeled",
     "source_doc_id": "hdfc_infinia_reward_rules",
     "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_singapore_krisflyer",
+    "from_node": "edge_miles",
+    "to_node": "singapore_krisflyer",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_air_india_flying_returns",
+    "from_node": "edge_miles",
+    "to_node": "air_india_flying_returns",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_aeroplan",
+    "from_node": "edge_miles",
+    "to_node": "aeroplan",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_jal_mileage_bank",
+    "from_node": "edge_miles",
+    "to_node": "jal_mileage_bank",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_flying_blue",
+    "from_node": "edge_miles",
+    "to_node": "flying_blue",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_club_itc_green_points",
+    "from_node": "edge_miles",
+    "to_node": "club_itc_green_points",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_ihg_one_rewards",
+    "from_node": "edge_miles",
+    "to_node": "ihg_one_rewards",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_etihad_guest",
+    "from_node": "edge_miles",
+    "to_node": "etihad_guest",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_united_mileageplus",
+    "from_node": "edge_miles",
+    "to_node": "united_mileageplus",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_turkish_miles",
+    "from_node": "edge_miles",
+    "to_node": "turkish_miles",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_thai_royal_orchid_plus",
+    "from_node": "edge_miles",
+    "to_node": "thai_royal_orchid_plus",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Third-party convergent sources; consistent with the official Axis T&C cap structure (partner-specific ratios live on the dynamically-rendered Travel EDGE portal page, not the static T&C), retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "1:2 (1 EDGE Mile = 2 partner miles/points). Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_british_airways_avios",
+    "from_node": "edge_miles",
+    "to_node": "british_airways_avios",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "4 independent sources agreeing, including a community-forum cross-check, retrieved 2026-07-19",
+      "confidence": 0.8
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "2:1 inverted (worse) ratio for newer additions. Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_finnair_plus",
+    "from_node": "edge_miles",
+    "to_node": "finnair_plus",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "4 independent sources agreeing, including a community-forum cross-check, retrieved 2026-07-19",
+      "confidence": 0.8
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "2:1 inverted (worse) ratio for newer additions. Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_vietnam_airlines_lotusmiles",
+    "from_node": "edge_miles",
+    "to_node": "vietnam_airlines_lotusmiles",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "4 independent sources agreeing, including a community-forum cross-check, retrieved 2026-07-19",
+      "confidence": 0.8
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "A",
+    "notes": "2:1 inverted (worse) ratio for newer additions. Group A annual transfer cap 30,000 EDGE Miles per customer ID (not per card); combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_indigo_bluchip",
+    "from_node": "edge_miles",
+    "to_node": "indigo_bluchip",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "IndiGo's own official site confirming the conversion ratio directly, retrieved 2026-07-19",
+      "confidence": 0.85
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "B",
+    "notes": "1:2 standard rate. Introductory promotional rate may apply 2026-06-18 to 2026-08-17 per Axis T&C; this figure is the standard/post-promotional rate. Group B annual transfer cap 120,000 EDGE Miles per customer ID; combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_radisson_rewards",
+    "from_node": "edge_miles",
+    "to_node": "radisson_rewards",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 2.0,
+      "status": "verified",
+      "source": "Single detailed third-party guide (processing time ~1 working day noted). CONFLICT: an earlier community-forum source stated 1:1; 1:2 recorded as primary (more detailed, specific mechanics cited) \u2014 see VERIFICATION_QUEUE",
+      "confidence": 0.65
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "B",
+    "notes": "1:2 per primary source; prior 1:1 community claim noted, not discarded. Group B annual transfer cap 120,000 EDGE Miles per customer ID; combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_axis_orchid_rewards",
+    "from_node": "edge_miles",
+    "to_node": "orchid_rewards",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Two independent sources now agreeing (community forum + detailed guide), consistent value both times, no conflict",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "Axis Bank official 'Atlas Credit Card Features T&Cs' PDF, retrieved 2026-07-19 (minimum transfer 500 EDGE Miles)",
+      "confidence": 0.95
+    },
+    "transfer_group": "B",
+    "notes": "1:1. Group B annual transfer cap 120,000 EDGE Miles per customer ID; combined A+B cap 150,000/year (official T&C, 0.95)",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": "2026-07-19"
   }
 ]

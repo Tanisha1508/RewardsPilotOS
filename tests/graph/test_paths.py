@@ -107,12 +107,39 @@ def test_seed_graph_loads_with_verified_synthetic_paths():
     assert result.paths[0].min_transfer == 2000
 
 
-def test_seed_graph_axis_register_edges_still_unverified():
+def test_seed_graph_amex_register_edges_still_unverified():
     graph = load_seed_graph()
-    result = best_transfer_paths(graph, "edge_miles", "singapore_krisflyer")
+    result = best_transfer_paths(graph, "membership_rewards", "singapore_krisflyer")
     assert result.paths == []
     assert result.unverified_paths_exist is True
     assert any("[NEED" in note for note in result.unverified_notes)
+
+
+def test_seed_graph_axis_partners_verified():
+    graph = load_seed_graph()
+    expected_ratios = {
+        "singapore_krisflyer": 2.0,  # 1:2 standard Group A
+        "turkish_miles": 2.0,
+        "ihg_one_rewards": 2.0,
+        "british_airways_avios": 0.5,  # inverted 2:1
+        "indigo_bluchip": 2.0,
+        "radisson_rewards": 2.0,
+        "orchid_rewards": 1.0,
+    }
+    for program, ratio in expected_ratios.items():
+        result = best_transfer_paths(graph, "edge_miles", program)
+        direct = [p for p in result.paths if len(p.nodes) == 2]
+        assert direct, program
+        assert direct[0].cumulative_ratio == ratio, program
+        assert direct[0].min_transfer == 500, program
+
+
+def test_seed_graph_no_edges_to_removed_axis_partners():
+    graph = load_seed_graph()
+    # Marriott/Accor removed as Atlas partners 2026-04-02: no DIRECT edge may
+    # exist (multi-hop routes via other currencies are a different question).
+    for program in ("marriott_bonvoy", "accor"):
+        assert not graph.has_edge("edge_miles", program), program
 
 
 def test_seed_graph_hdfc_all_seven_partners_verified():
