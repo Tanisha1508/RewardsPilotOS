@@ -1,0 +1,40 @@
+{
+  "card_key": "amex_membership_rewards",
+  "version": 1,
+  "effective_date": "2026-07-19",
+  "reward_currency": "membership_rewards",
+  "base_earn": {
+    "rate": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "per_amount": 100,
+    "currency": "INR"
+  },
+  "accelerated": [],
+  "caps": [],
+  "exclusions": [],
+  "milestones": [],
+  "point_value_reference_inr": {
+    "cashback": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "voucher": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "travel": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    }
+  }
+}

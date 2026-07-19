@@ -102,7 +102,8 @@ def evaluate_earn(
 
     if not rate.is_usable:
         base.unknown_reasons.append(
-            f"base earn rate is {rate.status} (value={rate.value}); cannot compute"
+            f"reward rules for {rule.card_key} are not yet verified: base earn "
+            f"rate is {rate.status} (value={rate.value}); cannot compute"
         )
         return base
 

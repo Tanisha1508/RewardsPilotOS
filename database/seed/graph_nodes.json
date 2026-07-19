@@ -150,5 +150,61 @@
     "meta": {
       "synthetic": false
     }
+  },
+  {
+    "node_id": "hdfc_diners_black",
+    "node_type": "card",
+    "name": "HDFC Diners Club Black",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "hdfc_regalia",
+    "node_type": "card",
+    "name": "HDFC Regalia",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "amex_plat_reserve",
+    "node_type": "card",
+    "name": "American Express Platinum Reserve",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "amex_membership_rewards",
+    "node_type": "card",
+    "name": "American Express Membership Rewards Credit Card",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "amex_smartearn",
+    "node_type": "card",
+    "name": "American Express SmartEarn",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "axis_ace",
+    "node_type": "card",
+    "name": "Axis Bank Ace",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "axis_magnus",
+    "node_type": "card",
+    "name": "Axis Bank Magnus",
+    "meta": {
+      "synthetic": false
+    }
   }
 ]

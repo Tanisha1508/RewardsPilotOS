@@ -17,8 +17,18 @@ from rules.parser.loader import load_rule
 from rules.validators.schema import validate_rule_dict
 
 SEED_DIR = Path(__file__).resolve().parents[2] / "rules" / "seed"
-ALL_CARDS = ["hdfc_infinia", "axis_atlas", "amex_plat_travel"]
-UNVERIFIED_CARDS = ["axis_atlas", "amex_plat_travel"]
+# MVP portfolio scope: 7 additional trackable-but-unverified cards (2026-07-19)
+NEW_SCOPE_CARDS = [
+    "hdfc_diners_black",
+    "hdfc_regalia",
+    "amex_plat_reserve",
+    "amex_membership_rewards",
+    "amex_smartearn",
+    "axis_ace",
+    "axis_magnus",
+]
+ALL_CARDS = ["hdfc_infinia", "axis_atlas", "amex_plat_travel"] + NEW_SCOPE_CARDS
+UNVERIFIED_CARDS = ["axis_atlas", "amex_plat_travel"] + NEW_SCOPE_CARDS
 
 
 @pytest.fixture()
@@ -31,6 +41,9 @@ REFUSAL_TABLE = [
     ("axis_atlas", "travel", "direct", "unknown", "base earn rate is unverified"),
     ("amex_plat_travel", "dining", None, "unknown", "base earn rate is unverified"),
     ("amex_plat_travel", "travel", "direct", "unknown", "base earn rate is unverified"),
+] + [
+    (card, "electronics", None, "unknown", f"reward rules for {card} are not yet verified")
+    for card in NEW_SCOPE_CARDS
 ]
 
 

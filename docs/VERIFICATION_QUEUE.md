@@ -70,18 +70,36 @@ confidence semantics per the ADR-001 amendment. Fee facts live in the new
 | Transfer partners + ratios + minimums | database/seed/need_register.json (air_india, krisflyer, marriott candidates) | not_started |
 | Annual fee | tools/portfolio fixture → cards table | not_started |
 
-## P2 (post-MVP fast follow)
+## P2 — MVP portfolio scope (added 2026-07-19)
 
-| Card | Status |
-|---|---|
-| HDFC Diners Black | not_started (as of 2026-07-19) |
-| SBI Cashback | not_started (as of 2026-07-19) |
-| HSBC Live+ | not_started (as of 2026-07-19) |
+Seven additional cards are portfolio-trackable but unverified: rule seeds
+(`rules/seed/<card_key>/v1.json`, all null/unverified per-channel schema),
+knowledge skeletons, and card nodes exist; the engines refuse to compute for
+them ("reward rules for <card> are not yet verified") until verification
+lands. Verification order post-launch (after P1 completes, one issuer fully
+before the next):
+
+| # | Card | card_key | Status |
+|---|---|---|---|
+| 1 | HDFC Diners Club Black | hdfc_diners_black | not_started (as of 2026-07-19) |
+| 2 | HDFC Regalia | hdfc_regalia | not_started (as of 2026-07-19) |
+| 3 | Amex Platinum Reserve | amex_plat_reserve | not_started (as of 2026-07-19) |
+| 4 | Amex Membership Rewards Credit Card | amex_membership_rewards | not_started (as of 2026-07-19) |
+| 5 | Amex SmartEarn | amex_smartearn | not_started (as of 2026-07-19) |
+| 6 | Axis Ace | axis_ace | not_started (as of 2026-07-19) |
+| 7 | Axis Magnus | axis_magnus | not_started (as of 2026-07-19) |
+
+Per-card open items (all `[NEED: verify from issuer docs]`): reward program
+identity, base earn rate + block, accelerated categories/multipliers/caps,
+milestones, exclusions, transfer partners + ratios, per-channel point
+values, annual fee + waiver.
 
 ## P3 (roadmap)
 
-| Issuer | Status |
+| Card / issuer | Status |
 |---|---|
+| SBI Cashback | not_started (as of 2026-07-19, moved from old P2) |
+| HSBC Live+ | not_started (as of 2026-07-19, moved from old P2) |
 | ICICI (card set TBD) | not_started (as of 2026-07-19) |
 | AU Small Finance (card set TBD) | not_started (as of 2026-07-19) |
 | Yes Bank (card set TBD) | not_started (as of 2026-07-19) |
