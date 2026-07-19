@@ -41,3 +41,7 @@ out/
 
 # Notebooks
 .ipynb_checkpoints/
+
+# Internal harness files — never commit
+CLAUDE.md
+CLAUDE_CODE_PROMPTS.md
