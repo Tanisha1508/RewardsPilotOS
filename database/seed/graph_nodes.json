@@ -1,0 +1,17 @@
+[
+  { "node_id": "demo_voyager_card", "node_type": "card", "name": "Demo Bank Voyager (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "sample_trailblazer_card", "node_type": "card", "name": "Sample Bank Trailblazer (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "voyager_points", "node_type": "currency", "name": "Voyager Points (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "trailblazer_miles", "node_type": "currency", "name": "Trailblazer Miles (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "skyhigh_airways", "node_type": "airline", "name": "Skyhigh Airways Miles (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "grandstay_hotels", "node_type": "hotel", "name": "Grandstay Rewards (SYNTHETIC FIXTURE)", "meta": { "synthetic": true } },
+  { "node_id": "hdfc_infinia", "node_type": "card", "name": "HDFC Infinia", "meta": { "synthetic": false } },
+  { "node_id": "axis_atlas", "node_type": "card", "name": "Axis Bank Atlas", "meta": { "synthetic": false } },
+  { "node_id": "amex_plat_travel", "node_type": "card", "name": "American Express Platinum Travel", "meta": { "synthetic": false } },
+  { "node_id": "hdfc_reward_points", "node_type": "currency", "name": "HDFC Reward Points", "meta": { "synthetic": false } },
+  { "node_id": "edge_miles", "node_type": "currency", "name": "Axis EDGE Miles", "meta": { "synthetic": false } },
+  { "node_id": "membership_rewards", "node_type": "currency", "name": "Amex Membership Rewards", "meta": { "synthetic": false } },
+  { "node_id": "air_india_flying_returns", "node_type": "airline", "name": "Air India Flying Returns", "meta": { "synthetic": false } },
+  { "node_id": "singapore_krisflyer", "node_type": "airline", "name": "Singapore Airlines KrisFlyer", "meta": { "synthetic": false } },
+  { "node_id": "marriott_bonvoy", "node_type": "hotel", "name": "Marriott Bonvoy", "meta": { "synthetic": false } }
+]

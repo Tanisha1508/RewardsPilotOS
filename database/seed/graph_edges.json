@@ -1,0 +1,101 @@
+[
+  {
+    "edge_id": "earn_demo_voyager",
+    "from_node": "demo_voyager_card",
+    "to_node": "voyager_points",
+    "edge_type": "earn",
+    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
+    "source_doc_id": "demo_bank_voyager_reward_rules",
+    "last_verified": null
+  },
+  {
+    "edge_id": "earn_sample_trailblazer",
+    "from_node": "sample_trailblazer_card",
+    "to_node": "trailblazer_miles",
+    "edge_type": "earn",
+    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
+    "source_doc_id": "sample_bank_trailblazer_reward_rules",
+    "last_verified": null
+  },
+  {
+    "edge_id": "earn_hdfc_infinia",
+    "from_node": "hdfc_infinia",
+    "to_node": "hdfc_reward_points",
+    "edge_type": "earn",
+    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": null
+  },
+  {
+    "edge_id": "earn_axis_atlas",
+    "from_node": "axis_atlas",
+    "to_node": "edge_miles",
+    "edge_type": "earn",
+    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
+    "source_doc_id": "axis_atlas_reward_rules",
+    "last_verified": null
+  },
+  {
+    "edge_id": "earn_amex_plat_travel",
+    "from_node": "amex_plat_travel",
+    "to_node": "membership_rewards",
+    "edge_type": "earn",
+    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": null
+  },
+  {
+    "edge_id": "transfer_voyager_skyhigh",
+    "from_node": "voyager_points",
+    "to_node": "skyhigh_airways",
+    "edge_type": "transfer",
+    "ratio": { "value": 1.0, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "min_transfer": { "value": 2000, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "notes": "SYNTHETIC FIXTURE edge; verified against the synthetic corpus, replaced in D3",
+    "source_doc_id": "demo_bank_voyager_transfer_rules",
+    "last_verified": "2026-05-20"
+  },
+  {
+    "edge_id": "transfer_voyager_grandstay",
+    "from_node": "voyager_points",
+    "to_node": "grandstay_hotels",
+    "edge_type": "transfer",
+    "ratio": { "value": 0.5, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "min_transfer": { "value": 5000, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "notes": "SYNTHETIC FIXTURE edge; 2:1 means 0.5 target points per source point",
+    "source_doc_id": "demo_bank_voyager_transfer_rules",
+    "last_verified": "2026-05-20"
+  },
+  {
+    "edge_id": "transfer_trailblazer_skyhigh",
+    "from_node": "trailblazer_miles",
+    "to_node": "skyhigh_airways",
+    "edge_type": "transfer",
+    "ratio": { "value": 0.5, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "min_transfer": { "value": 1000, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "notes": "SYNTHETIC FIXTURE edge; 2:1 means 0.5 target points per source point",
+    "source_doc_id": "sample_bank_trailblazer_transfer_rules",
+    "last_verified": "2026-02-14"
+  },
+  {
+    "edge_id": "transfer_trailblazer_grandstay",
+    "from_node": "trailblazer_miles",
+    "to_node": "grandstay_hotels",
+    "edge_type": "transfer",
+    "ratio": { "value": 1.0, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "min_transfer": { "value": 3000, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "notes": "SYNTHETIC FIXTURE edge",
+    "source_doc_id": "sample_bank_trailblazer_transfer_rules",
+    "last_verified": "2026-02-14"
+  }
+]
