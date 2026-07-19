@@ -38,7 +38,9 @@ class RedemptionGoal(BaseModel):
 
 
 class RedemptionOptionsInput(BaseModel):
-    portfolio: dict[str, float]  # reward currency -> current balance
+    # reward currency -> current balance; when omitted the tool loads the
+    # user's current balances itself (deterministic data access)
+    portfolio: dict[str, float] | None = None
     goal: RedemptionGoal
 
 
