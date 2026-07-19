@@ -51,15 +51,21 @@ class VerifiedValue(BaseModel):
 
 class PointValueReference(BaseModel):
     """Per-channel point value reference (spec update 2026-07-19): a reward
-    point is worth different amounts depending on how it is redeemed."""
+    point is worth different amounts depending on how it is redeemed.
 
-    cashback: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
-    voucher: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
-    travel: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
+    A channel set to None means "confirmed: no single value exists for this
+    channel" (e.g. brand-tiered catalogue rates, partner-dependent transfer
+    values) — different from the default unknown/unverified state. Channel
+    mapping for programs using other names: statement credit -> cashback,
+    catalogue -> voucher, partner transfer -> travel."""
+
+    cashback: VerifiedValue | None = Field(default_factory=VerifiedValue.unknown)
+    voucher: VerifiedValue | None = Field(default_factory=VerifiedValue.unknown)
+    travel: VerifiedValue | None = Field(default_factory=VerifiedValue.unknown)
 
     CHANNELS: ClassVar[tuple[str, ...]] = ("cashback", "voucher", "travel")
 
-    def for_channel(self, channel: str) -> VerifiedValue:
+    def for_channel(self, channel: str) -> "VerifiedValue | None":
         if channel not in self.CHANNELS:
             raise ValueError(f"unknown redemption channel '{channel}'")
         return getattr(self, channel)

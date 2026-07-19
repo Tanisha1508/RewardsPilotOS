@@ -107,12 +107,32 @@ def test_seed_graph_loads_with_verified_synthetic_paths():
     assert result.paths[0].min_transfer == 2000
 
 
-def test_seed_graph_amex_register_edges_still_unverified():
+def test_seed_graph_amex_partners_verified():
     graph = load_seed_graph()
-    result = best_transfer_paths(graph, "membership_rewards", "singapore_krisflyer")
-    assert result.paths == []
-    assert result.unverified_paths_exist is True
-    assert any("[NEED" in note for note in result.unverified_notes)
+    expected = {
+        "singapore_krisflyer": (0.5, 800),
+        "emirates_skywards": (0.5, 800),
+        "british_airways_avios": (0.5, 1200),
+        "qatar_airways_avios": (0.5, 500),
+        "marriott_bonvoy": (1.0, 100),
+        "hilton_honors": (0.9, 1000),
+    }
+    for program, (ratio, minimum) in expected.items():
+        result = best_transfer_paths(graph, "membership_rewards", program)
+        direct = [p for p in result.paths if len(p.nodes) == 2]
+        assert direct, program
+        assert direct[0].cumulative_ratio == ratio, program
+        assert direct[0].min_transfer == minimum, program
+
+
+def test_seed_graph_no_air_india_edge_for_amex():
+    # Club Vistara removed post-merger, no replacement: no direct edge and no
+    # register candidate may exist.
+    graph = load_seed_graph()
+    assert not graph.has_edge("membership_rewards", "air_india_flying_returns")
+    result = best_transfer_paths(graph, "membership_rewards", "air_india_flying_returns")
+    direct = [p for p in result.paths if len(p.nodes) == 2]
+    assert direct == []
 
 
 def test_seed_graph_axis_partners_verified():

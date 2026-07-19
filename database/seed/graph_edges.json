@@ -708,5 +708,181 @@
     "notes": "1:1. Group B annual transfer cap 120,000 EDGE Miles per customer ID; combined A+B cap 150,000/year (official T&C, 0.95)",
     "source_doc_id": "axis_atlas_reward_rules",
     "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_amex_singapore_krisflyer",
+    "from_node": "membership_rewards",
+    "to_node": "singapore_krisflyer",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 800,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_emirates_skywards",
+    "from_node": "membership_rewards",
+    "to_node": "emirates_skywards",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 800,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_cathay_pacific_asia_miles",
+    "from_node": "membership_rewards",
+    "to_node": "cathay_pacific_asia_miles",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 800,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_british_airways_avios",
+    "from_node": "membership_rewards",
+    "to_node": "british_airways_avios",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 1200,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_qatar_airways_avios",
+    "from_node": "membership_rewards",
+    "to_node": "qatar_airways_avios",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 500,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_virgin_atlantic",
+    "from_node": "membership_rewards",
+    "to_node": "virgin_atlantic",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 800,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "2:1 (2 MR = 1 partner mile). Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_marriott_bonvoy",
+    "from_node": "membership_rewards",
+    "to_node": "marriott_bonvoy",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 100,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "1:1. Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
+  },
+  {
+    "edge_id": "transfer_amex_hilton_honors",
+    "from_node": "membership_rewards",
+    "to_node": "hilton_honors",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.9,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 1000,
+      "status": "verified",
+      "source": "India-specific convergence: CardTrail, Rivo, CardInsider (detailed table with exact minimums), retrieved 2026-07-20. Official India transfer portal is login-gated; global.americanexpress.com/rewards/transfer (US login wall) and the UK/EU International Currency Card pages were checked and explicitly excluded as a different product/market",
+      "confidence": 0.7
+    },
+    "transfer_group": null,
+    "notes": "1:0.90. Transfer cap: maximum 900,000 MR points per redemption transaction or per calendar year",
+    "source_doc_id": "amex_plat_travel_reward_rules",
+    "last_verified": "2026-07-20"
   }
 ]

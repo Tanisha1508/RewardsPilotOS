@@ -67,6 +67,10 @@ def _check_point_value_reference(node: Any, path: str) -> list[str]:
     for channel in _POINT_VALUE_CHANNELS:
         if channel not in node:
             problems.append(f"{path}.{channel}: required channel missing")
+        elif node[channel] is None:
+            # Explicit null = confirmed "no single value exists for this
+            # channel" (tier- or partner-dependent) — valid, never computable.
+            continue
         else:
             problems.extend(_check_verified_value(node[channel], f"{path}.{channel}"))
     return problems
@@ -112,6 +116,18 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
     for i, cohort in enumerate(raw.get("welcome_bonus") or []):
         problems.extend(
             _check_verified_value(cohort.get("bonus_points"), f"welcome_bonus[{i}].bonus_points")
+        )
+        if cohort.get("qualifying_spend_inr") is not None:
+            problems.extend(
+                _check_verified_value(
+                    cohort["qualifying_spend_inr"], f"welcome_bonus[{i}].qualifying_spend_inr"
+                )
+            )
+    for i, entry in enumerate(raw.get("redemption_catalogue") or []):
+        problems.extend(
+            _check_verified_value(
+                entry.get("rate_per_point_inr"), f"redemption_catalogue[{i}].rate_per_point_inr"
+            )
         )
     for i, tier in enumerate(raw.get("tiers") or []):
         for field in ("annual_spend_threshold_inr", "renewal_bonus_points"):

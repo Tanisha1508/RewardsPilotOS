@@ -94,8 +94,15 @@ def test_rule_tool_computes_verified_cards_and_refuses_unverified_amex():
         {"card_key": "amex_plat_travel", "amount": 70000, "category": "electronics",
          "month": "2026-07"},
     )
-    assert amex.result["status"] == "unknown"
-    assert amex.result["points"] is None
+    assert amex.result["status"] == "computed"  # verified 2026-07-20
+    assert amex.result["points"] == 1400.0  # floor(70000/50)=1400 blocks * 1
+    regalia = execute(
+        "CalculateEarn",
+        {"card_key": "hdfc_regalia", "amount": 70000, "category": "electronics",
+         "month": "2026-07"},
+    )
+    assert regalia.result["status"] == "unknown"  # P2 scope, unverified
+    assert regalia.result["points"] is None
 
 
 def test_transfer_ratio_tool_exposes_verified_and_unverified():
@@ -112,8 +119,8 @@ def test_transfer_ratio_tool_exposes_verified_and_unverified():
     assert len(axis.result["ratios"]) == 17  # Group A (14) + Group B (3)
     assert axis.result["unverified_partners"] == []  # Atlas verified 2026-07-19
     amex = execute("GetTransferRatios", {"currency": "membership_rewards"})
-    assert amex.result["ratios"] == []
-    assert amex.result["unverified_partners"]
+    assert len(amex.result["ratios"]) == 8  # 6 airlines + Marriott + Hilton
+    assert amex.result["unverified_partners"] == []  # P1 fully verified
 
 
 def test_get_tool_and_spec_lookup():

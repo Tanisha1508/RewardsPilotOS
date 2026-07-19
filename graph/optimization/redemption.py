@@ -9,7 +9,7 @@ estimated."""
 
 import networkx as nx
 
-from contracts.api.verified_value import PointValueReference
+from contracts.api.verified_value import PointValueReference, VerifiedValue
 from contracts.tools.graph_engine import (
     RedemptionGoal,
     RedemptionOption,
@@ -37,13 +37,15 @@ def redemption_options(
             continue
         best = search.paths[0]
         reference = point_values.get(currency, PointValueReference.unknown())
+        channel_value = reference.for_channel(goal.redemption_type)
+        no_single_value = channel_value is None  # confirmed: no single figure
         option = RedemptionOption(
             currency=currency,
             target_program=goal.target_program,
             path=best,
             balance=balance,
             value_channel=goal.redemption_type,
-            point_value_reference_inr=reference.for_channel(goal.redemption_type),
+            point_value_reference_inr=channel_value or VerifiedValue.unknown(),
         )
         if goal.required_points is not None:
             option.points_required = points_required_for(
@@ -56,10 +58,17 @@ def redemption_options(
             option.value_status = "computed"
         else:
             option.value_status = "unknown"
-            option.notes.append(
-                f"{goal.redemption_type} point value for {currency} is {value.status}; "
-                "ranked by transfer ratio only, value unknown"
-            )
+            if no_single_value:
+                option.notes.append(
+                    f"no single {goal.redemption_type} point value exists for "
+                    f"{currency} (value is tier- or partner-dependent); ranked by "
+                    "transfer ratio only"
+                )
+            else:
+                option.notes.append(
+                    f"{goal.redemption_type} point value for {currency} is "
+                    f"{value.status}; ranked by transfer ratio only, value unknown"
+                )
         output.options.append(option)
     output.options.sort(key=lambda o: -o.path.cumulative_ratio)
     return output

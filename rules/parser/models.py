@@ -66,6 +66,7 @@ class WelcomeBonusCohort(BaseModel):
     issued_to: str | None = None  # ISO date; None = open-ended
     bonus_points: VerifiedValue
     qualifying_transactions: int = 1
+    qualifying_spend_inr: VerifiedValue | None = None  # spend-based qualification
     window_days: int | None = None
     notes: str | None = None
 
@@ -77,6 +78,26 @@ class TierBenefit(BaseModel):
     name: str
     annual_spend_threshold_inr: VerifiedValue
     renewal_bonus_points: VerifiedValue
+    notes: str | None = None
+
+
+class CatalogueRedemption(BaseModel):
+    """Card-specific catalogue redemption tier (spec update 2026-07-20, Amex
+    Platinum Travel): per-brand rate when no single voucher-channel value
+    exists."""
+
+    brand: str
+    rate_per_point_inr: VerifiedValue
+    notes: str | None = None
+
+
+class PointsExpiry(BaseModel):
+    """Points expiry policy (spec update 2026-07-20): some programs never
+    expire points rather than using a duration."""
+
+    never_expires: bool
+    forfeit_on_cancellation_days: int | None = None
+    effective_from: str | None = None
     notes: str | None = None
 
 
@@ -99,3 +120,5 @@ class RuleFile(BaseModel):
     continuation_eligibility: ContinuationEligibility | None = None
     welcome_bonus: list[WelcomeBonusCohort] = Field(default_factory=list)
     tiers: list[TierBenefit] = Field(default_factory=list)
+    redemption_catalogue: list[CatalogueRedemption] = Field(default_factory=list)
+    points_expiry: PointsExpiry | None = None

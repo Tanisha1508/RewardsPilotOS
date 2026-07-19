@@ -73,3 +73,18 @@ def test_point_value_reference_unknown_factory():
         not reference.for_channel(channel).is_usable
         for channel in PointValueReference.CHANNELS
     )
+
+
+def test_point_value_channel_confirmed_no_single_value():
+    """None on a channel = confirmed no single figure exists (tier- or
+    partner-dependent) — distinct from the default unknown state."""
+    reference = PointValueReference(
+        cashback=VerifiedValue(
+            value=0.25, status="verified", source="https://example.test", confidence=0.75
+        ),
+        voucher=None,
+        travel=None,
+    )
+    assert reference.for_channel("cashback").is_usable is True
+    assert reference.for_channel("voucher") is None
+    assert reference.for_channel("travel") is None

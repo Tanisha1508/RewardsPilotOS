@@ -28,7 +28,7 @@ NEW_SCOPE_CARDS = [
     "axis_magnus",
 ]
 ALL_CARDS = ["hdfc_infinia", "axis_atlas", "amex_plat_travel"] + NEW_SCOPE_CARDS
-UNVERIFIED_CARDS = ["amex_plat_travel"] + NEW_SCOPE_CARDS
+UNVERIFIED_CARDS = list(NEW_SCOPE_CARDS)  # all three P1 cards verified 2026-07-20
 
 
 @pytest.fixture()
@@ -37,9 +37,6 @@ def engine() -> RuleEngine:
 
 
 REFUSAL_TABLE = [
-    ("amex_plat_travel", "dining", None, "unknown", "base earn rate is unverified"),
-    ("amex_plat_travel", "travel", "direct", "unknown", "base earn rate is unverified"),
-] + [
     (card, "electronics", None, "unknown", f"reward rules for {card} are not yet verified")
     for card in NEW_SCOPE_CARDS
 ]
@@ -127,6 +124,50 @@ def test_axis_welcome_bonus_and_tiers_parsed(engine):
     assert rule.fees.forex_markup_pct.value == 3.5
     for channel in ("cashback", "voucher", "travel"):
         assert rule.point_value_reference_inr.for_channel(channel).value == 1.0
+
+
+AMEX_TABLE = [
+    # 1 MR per ₹50: 10_000 -> 200 blocks -> 200 base
+    ("electronics", None, "computed", 200.0, "base", False),
+    ("dining", None, "computed", 200.0, "base", False),
+    # Reward Multiplier portal 3X: 200 * 3 = 600, under the 25,000 bonus cap
+    ("anything", "reward_multiplier", "computed", 600.0, "accelerated", False),
+    ("fuel", None, "excluded", 0.0, None, False),
+    ("insurance", None, "excluded", 0.0, None, False),
+    ("utilities", None, "excluded", 0.0, None, False),
+    ("cash_transactions", None, "excluded", 0.0, None, False),
+    ("emi_point_of_sale", None, "excluded", 0.0, None, False),
+]
+
+
+@pytest.mark.parametrize("category,channel,status,points,applied,cap_applied", AMEX_TABLE)
+def test_amex_plat_travel_v2_computes(engine, category, channel, status, points, applied, cap_applied):
+    result = engine.calculate_earn("amex_plat_travel", 10_000, category, channel, "2026-07")
+    assert result.status == status
+    assert result.points == points
+    assert result.applied == applied
+    assert result.cap_applied is cap_applied
+    if status == "computed":
+        assert result.rule_version == 2
+
+
+def test_amex_structures_parsed(engine):
+    rule = load_rule("amex_plat_travel")
+    assert rule.welcome_bonus[0].bonus_points.value == 10000
+    assert rule.welcome_bonus[0].qualifying_spend_inr.value == 15000
+    assert rule.welcome_bonus[0].window_days == 90
+    assert [m.bonus_points.value for m in rule.milestones] == [7500, 10000, 22500]
+    assert rule.points_expiry.never_expires is True
+    assert rule.points_expiry.forfeit_on_cancellation_days == 30
+    assert [c.rate_per_point_inr.value for c in rule.redemption_catalogue] == [0.3, 0.4, 0.5]
+    # channel mapping: statement credit -> cashback; catalogue and transfer
+    # channels confirmed to have no single value
+    assert rule.point_value_reference_inr.for_channel("cashback").value == 0.25
+    assert rule.point_value_reference_inr.for_channel("voucher") is None
+    assert rule.point_value_reference_inr.for_channel("travel") is None
+    # renewal waiver: the single residual open item — unverified, NOT assumed N/A
+    assert rule.fees.renewal_fee_waiver_spend_inr is not None
+    assert rule.fees.renewal_fee_waiver_spend_inr.is_usable is False
 
 
 def test_hdfc_voucher_cap_clips(engine):
@@ -236,13 +277,14 @@ def test_axis_cap_check_now_verified(engine):
     assert status.remaining_points == 10000.0
 
 
-def test_compare_seed_cards_two_compute_amex_unknown(engine):
+def test_compare_seed_cards_all_three_compute(engine):
     results = engine.compare_cards(
         ["hdfc_infinia", "axis_atlas", "amex_plat_travel"], 70_000, "electronics", None, "2026-07"
     )
-    assert [r.status for r in results] == ["computed", "computed", "unknown"]
+    assert [r.status for r in results] == ["computed", "computed", "computed"]
     assert results[0].card_key == "hdfc_infinia"
     assert results[0].points == 2330.0  # floor(70000/150)=466 blocks * 5
-    assert results[1].card_key == "axis_atlas"
-    assert results[1].points == 1400.0  # floor(70000/100)=700 blocks * 2
-    assert results[2].points is None
+    # axis 700 blocks * 2 = 1400 ties amex 1400 blocks * 1; stable sort keeps
+    # input order on the tie
+    assert [r.card_key for r in results[1:]] == ["axis_atlas", "amex_plat_travel"]
+    assert [r.points for r in results[1:]] == [1400.0, 1400.0]

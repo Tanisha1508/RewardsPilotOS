@@ -18,7 +18,10 @@ Status values: `not_started` | `in_progress` | `verified` | `blocked`.
 
 ## P1 (MVP issuers — target during D3, Jul 21)
 
-**Next card: Amex Platinum Travel** (one issuer completed fully before the next).
+**P1 COMPLETE (2026-07-20): all three MVP cards verified** — HDFC Infinia
+(closed 2026-07-19), Axis Atlas (closed 2026-07-19, 2 noted items), Amex
+Platinum Travel (closed 2026-07-20, 1 residual open item). Next up: P2 in
+listed order, starting with HDFC Diners Club Black.
 
 ### HDFC Infinia — status: FULLY VERIFIED, no open items (closed 2026-07-19, rules/seed/hdfc_infinia/v3.json)
 
@@ -84,17 +87,43 @@ entered in the rule file or corpus.
 | Group B: Orchid Rewards 1:1 | database/seed/graph_edges.json | verified 2026-07-19 (2 sources agreeing, 0.7) |
 | Removed partners: Marriott Bonvoy, Accor, Qatar Privilege Club (2026-04-02; no edges; Qatar-via-Avios workaround not modeled) | knowledge doc | verified 2026-07-19 (4 sources agreeing on date, 0.8) |
 
-### Amex Platinum Travel — status: not_started (as of 2026-07-19)
+### Amex Platinum Travel — status: VERIFIED, 1 residual open item (closed 2026-07-20, rules/seed/amex_plat_travel/v2.json)
+
+**Residual open item:** renewal fee waiver policy — not covered by research
+to date; field left `[NEED: verify from issuer docs]` rather than assumed
+absent (unlike Axis, where "no waiver exists" was positively confirmed).
+
+**Review flags:** (1) Reward Multiplier program validity ends 2026-07-31 —
+renewal unconfirmed, re-verify as the date passes. (2) Transfer-partner and
+statement-credit confidences carry a 0.7–0.75 ceiling reflecting the genuine
+absence of an accessible India-specific official transfer portal (login-
+gated) — same pattern as the toughest HDFC Infinia and Axis Atlas fields,
+not a research gap. UK/EU International Currency Card pages were checked and
+explicitly excluded as a different product/market.
+
+Channel mapping note: statement credit → cashback channel; catalogue →
+voucher channel (confirmed no single value — tiered rates live in
+`redemption_catalogue`); partner transfer → travel channel (confirmed no
+single value — partner-dependent).
 
 | Item | Where | Status |
 |---|---|---|
-| Base Membership Rewards earn rate | rules/seed/amex_plat_travel/v1.json | not_started |
-| Milestone 1 threshold + bonus | rules/seed/amex_plat_travel/v1.json | not_started |
-| Milestone 2 threshold + bonus + voucher | rules/seed/amex_plat_travel/v1.json | not_started |
-| Exclusion list | rules/seed + knowledge/sources | not_started |
-| Point value reference (INR) | rules/seed/amex_plat_travel/v1.json | not_started |
-| Transfer partners + ratios + minimums | database/seed/need_register.json (air_india, krisflyer, marriott candidates) | not_started |
-| Annual fee | tools/portfolio fixture → cards table | not_started |
+| Base earn 1 MR / ₹50 (India Platinum Travel; never merge with other Amex products) | rules/seed/amex_plat_travel/v2.json | verified 2026-07-20 (official pages, 0.9) |
+| Exclusions: fuel, insurance, utilities, cash, EMI-at-POS (eff. 2020-03-15; SafeKey + post-purchase EMI still earn) | rules/seed + knowledge | verified 2026-07-20 (official, 0.95) |
+| Welcome gift 10,000 MR (first year; ₹15,000 spend in 90 days AND fee payment) | rules/seed/amex_plat_travel/v2.json (welcome_bonus) | verified 2026-07-20 (official, 0.95) |
+| Milestones: 7,500 @ ₹1.9L, 10,000 + ₹10,000 Taj E-Gift @ ₹4L, +22,500 @ ₹7L (recurring; Platinum Travel Collection; bonus auto-issue only post-2026-03-09, manual claim before — operational flag in notes) | rules/seed/amex_plat_travel/v2.json | verified 2026-07-20 (official, 0.95) |
+| Reward Multiplier 3X (1X base + 2X bonus) via portal only; 25,000 bonus pts/mo cap; 120-business-day crediting; validity 2021-01-01→2026-07-31 | rules/seed/amex_plat_travel/v2.json | verified 2026-07-20 (official T&C, 0.95; per-merchant exclusions documented limitation) |
+| Annual fee ₹5,000 + GST (same all years) | rules/seed/amex_plat_travel/v2.json (fees) | verified 2026-07-20 (official, 0.95) |
+| Forex markup 3.5% + GST (≈4.4–4.5% effective, uniform across Amex India) | rules/seed/amex_plat_travel/v2.json (fees) | verified 2026-07-20 (3 trackers + cardholder-reported rate, 0.85) |
+| Points expiry: never expires while active (eff. 2022-05-03); forfeit within 30 days on cancellation | rules/seed/amex_plat_travel/v2.json (points_expiry) | verified 2026-07-20 (official, 0.95) |
+| Lounge: 8 domestic/yr (2/quarter); Priority Pass with US$99 fee waived | knowledge/sources/amex_plat_travel_benefit_guides.md | verified 2026-07-20 (official, 0.95) |
+| Fuel convenience fee: 0% < ₹5,000 / 1% ≥ ₹5,000 at HPCL | knowledge/sources/amex_plat_travel_benefit_guides.md | verified 2026-07-20 (official, 0.95) |
+| Eligibility: ₹6L income; 19 named issuance cities | knowledge/sources/amex_plat_travel_benefit_guides.md | verified 2026-07-20 (official, 0.95; informational, outside rule schema) |
+| Point value — statement credit ₹0.25/pt (cashback channel) | rules/seed/amex_plat_travel/v2.json | verified 2026-07-20 (2 India-specific sources, 0.75) |
+| Point value — catalogue tiers: Air India ₹0.30 / Taj ₹0.40 / Postcard ₹0.50 per pt | rules/seed/amex_plat_travel/v2.json (redemption_catalogue) | verified 2026-07-20 (official catalogue page, exact figures, 0.9) |
+| Point value — transfer channel: no fixed value (partner-dependent, est. ₹1.50–3+) | rules/seed/amex_plat_travel/v2.json (travel channel = confirmed no single figure) | recorded 2026-07-20 |
+| Transfer partners: KrisFlyer/Emirates/Cathay/Virgin 2:1 min 800; BA Avios 2:1 min 1,200; Qatar Avios 2:1 min 500; Marriott 1:1 min 100; Hilton 1:0.90 min 1,000; 900,000 MR/txn-or-year cap | database/seed/graph_edges.json | verified 2026-07-20 (CardTrail + Rivo + CardInsider convergence, 0.7) |
+| Air India: NO transfer partner (Club Vistara removed post-merger, no replacement; no edge, no workaround) | knowledge doc; no edge/register entry | verified 2026-07-20 |
 
 ## P2 — MVP portfolio scope (added 2026-07-19)
 

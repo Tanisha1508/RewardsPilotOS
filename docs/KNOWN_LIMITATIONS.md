@@ -39,7 +39,18 @@ roadmap — none is silently papered over.
    production interfaces; restarting the process resets them until D2 wires
    Postgres.
 
-8. **Freshness is metadata-driven.** Retrieval freshness decay trusts
+8. **Per-merchant accelerated-earn exclusions are not modeled.** The Amex
+   Reward Multiplier applies broad per-merchant exclusions (mobile phones,
+   jewellery/precious metals, large appliances, gift cards, flight/utility/
+   insurance payments, gaming consoles — varying by merchant). The Rule
+   Engine models only the top-level 3X rate and monthly bonus cap; a portal
+   purchase in an excluded sub-category may be over-estimated. Documented
+   limitation by design (product owner, 2026-07-20), not a data gap. The
+   engine also clips total accelerated points at bonus-portion caps
+   (conservative above the cap; base-rate fallback on excess is not modeled
+   for any issuer).
+
+9. **Freshness is metadata-driven.** Retrieval freshness decay trusts
    `last_changed` from the corpus; a source that changes without the crawler
    noticing (hash collision, blocked crawl per robots.txt) keeps its old
    timestamp. Sources disallowing crawling are skipped and logged, not

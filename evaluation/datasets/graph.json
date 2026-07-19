@@ -121,8 +121,17 @@
       "currency": "membership_rewards",
       "target_program": "marriott_bonvoy",
       "expected": {
-        "paths": [],
-        "unverified_paths_exist": true
+        "paths": [
+          {
+            "nodes": [
+              "membership_rewards",
+              "marriott_bonvoy"
+            ],
+            "cumulative_ratio": 1.0,
+            "min_transfer": 100
+          }
+        ],
+        "unverified_paths_exist": false
       }
     },
     {

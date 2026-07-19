@@ -1,5 +1,5 @@
 {
-  "description": "25 earn/cap scenarios with hand-computed expected values. Metric: exact match, target 100%. seed 'eval' uses the synthetic verified eval_voyager fixture; seed 'shipped' uses the real seed files (hdfc_infinia and axis_atlas are verified and compute; amex remains unverified -> refusal expected). 'accrued' pre-seeds the cap store.",
+  "description": "25 earn/cap scenarios with hand-computed expected values. Metric: exact match, target 100%. seed 'eval' uses the synthetic verified eval_voyager fixture; seed 'shipped' uses the real seed files (all three P1 cards are verified and compute as of 2026-07-20). 'accrued' pre-seeds the cap store.",
   "scenarios": [
     {
       "id": "s01",
@@ -376,9 +376,9 @@
       "channel": null,
       "month": "2026-07",
       "expected": {
-        "status": "unknown",
-        "points": null,
-        "applied": null,
+        "status": "computed",
+        "points": 300.0,
+        "applied": "base",
         "cap_applied": false
       }
     },
@@ -399,12 +399,12 @@
         "statuses": [
           "computed",
           "computed",
-          "unknown"
+          "computed"
         ],
         "points": [
           2330.0,
           1400.0,
-          null
+          1400.0
         ]
       }
     },

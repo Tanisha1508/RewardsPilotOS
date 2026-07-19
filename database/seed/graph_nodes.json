@@ -310,5 +310,45 @@
     "meta": {
       "synthetic": false
     }
+  },
+  {
+    "node_id": "emirates_skywards",
+    "node_type": "airline",
+    "name": "Emirates Skywards",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "cathay_pacific_asia_miles",
+    "node_type": "airline",
+    "name": "Cathay Pacific Asia Miles",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "qatar_airways_avios",
+    "node_type": "airline",
+    "name": "Qatar Airways Avios (Privilege Club)",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "virgin_atlantic",
+    "node_type": "airline",
+    "name": "Virgin Atlantic Flying Club",
+    "meta": {
+      "synthetic": false
+    }
+  },
+  {
+    "node_id": "hilton_honors",
+    "node_type": "hotel",
+    "name": "Hilton Honors",
+    "meta": {
+      "synthetic": false
+    }
   }
 ]
