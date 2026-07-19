@@ -1,0 +1,105 @@
+{
+  "description": "10 end-to-end queries run through the LangGraph workflow (deterministic eval LLM executes the golden plan; every plan includes a knowledge search so citations are always expected). Checks: recommendation produced, citations present, numbers traceable to tool results (string match), calculations verbatim (no invented values), confidence reported.",
+  "queries": [
+    {
+      "id": "e01",
+      "query": "Should I transfer my Voyager Points to Skyhigh Airways for an award flight?",
+      "intent": "transfer",
+      "plan": [
+        { "tool": "GetRewardBalances", "args": { "user_id": "fixture_user" } },
+        { "tool": "BestTransferPaths", "args": { "currency": "voyager_points", "target_program": "skyhigh_airways" } },
+        { "tool": "SearchKnowledge", "args": { "query": "transfer Voyager Points Skyhigh ratio minimum" } }
+      ]
+    },
+    {
+      "id": "e02",
+      "query": "Which card should I use for a 70000 INR laptop?",
+      "intent": "spend",
+      "plan": [
+        { "tool": "GetCards", "args": { "user_id": "fixture_user" } },
+        { "tool": "CompareCards", "args": { "cards": ["hdfc_infinia", "axis_atlas", "amex_plat_travel"], "amount": 70000, "category": "electronics", "month": "2026-07" } },
+        { "tool": "SearchKnowledge", "args": { "query": "credit card reward earning electronics purchases" } }
+      ]
+    },
+    {
+      "id": "e03",
+      "query": "What ratio do Trailblazer Miles transfer to Grandstay at?",
+      "intent": "transfer",
+      "plan": [
+        { "tool": "BestTransferPaths", "args": { "currency": "trailblazer_miles", "target_program": "grandstay_hotels" } },
+        { "tool": "SearchKnowledge", "args": { "query": "Trailblazer Grandstay transfer ratio minimum", "doc_type": "transfer_rules" } }
+      ]
+    },
+    {
+      "id": "e04",
+      "query": "How should I redeem points for my Skyhigh award flight goal?",
+      "intent": "redeem",
+      "plan": [
+        { "tool": "GetTravelGoals", "args": { "user_id": "fixture_user" } },
+        { "tool": "RedemptionOptions", "args": { "goal": { "target_program": "skyhigh_airways", "required_points": 10000 } } },
+        { "tool": "SearchKnowledge", "args": { "query": "Skyhigh award redemption transfer options" } }
+      ]
+    },
+    {
+      "id": "e05",
+      "query": "Are there any transfer bonuses or promotions right now?",
+      "intent": "general",
+      "plan": [
+        { "tool": "GetPromotions", "args": {} },
+        { "tool": "GetOpportunities", "args": { "user_id": "fixture_user" } },
+        { "tool": "SearchKnowledge", "args": { "query": "current transfer bonus promotion", "doc_type": "promotions" } }
+      ]
+    },
+    {
+      "id": "e06",
+      "query": "Give me an overview of my portfolio and goals.",
+      "intent": "portfolio",
+      "plan": [
+        { "tool": "GetPortfolio", "args": { "user_id": "fixture_user" } },
+        { "tool": "GetRewardBalances", "args": { "user_id": "fixture_user" } },
+        { "tool": "GetTravelGoals", "args": { "user_id": "fixture_user" } },
+        { "tool": "SearchKnowledge", "args": { "query": "card benefits overview lounge access" } }
+      ]
+    },
+    {
+      "id": "e07",
+      "query": "Can I move my HDFC points to KrisFlyer?",
+      "intent": "transfer",
+      "plan": [
+        { "tool": "BestTransferPaths", "args": { "currency": "hdfc_reward_points", "target_program": "singapore_krisflyer" } },
+        { "tool": "GetTransferRatios", "args": { "currency": "hdfc_reward_points" } },
+        { "tool": "SearchKnowledge", "args": { "query": "HDFC reward points transfer partners", "issuer": "hdfc" } }
+      ],
+      "expect_unknown": true
+    },
+    {
+      "id": "e08",
+      "query": "When do my points expire?",
+      "intent": "portfolio",
+      "plan": [
+        { "tool": "GetRewardBalances", "args": { "user_id": "fixture_user" } },
+        { "tool": "SearchKnowledge", "args": { "query": "points expiry policy", "doc_type": "issuer_policies" } }
+      ]
+    },
+    {
+      "id": "e09",
+      "query": "How much SmartBuy cap do I have left on Infinia this month?",
+      "intent": "spend",
+      "plan": [
+        { "tool": "CheckCap", "args": { "card_key": "hdfc_infinia", "cap_scope": "smartbuy_total", "month": "2026-07" } },
+        { "tool": "SearchKnowledge", "args": { "query": "HDFC Infinia SmartBuy monthly cap", "issuer": "hdfc" } }
+      ],
+      "expect_unknown": true
+    },
+    {
+      "id": "e10",
+      "query": "Remember that I prefer Skyhigh Airways for redemptions.",
+      "intent": "general",
+      "plan": [
+        { "tool": "StorePreference", "args": { "user_id": "fixture_user", "key": "preferred_airline_program", "value": "skyhigh_airways" } },
+        { "tool": "RecallMemory", "args": { "user_id": "fixture_user", "intent": "general", "query": "airline preference" } },
+        { "tool": "SearchKnowledge", "args": { "query": "Skyhigh Airways transfer partners" } }
+      ]
+    }
+  ]
+}

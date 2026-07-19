@@ -1,0 +1,68 @@
+{
+  "card_key": "eval_voyager",
+  "version": 1,
+  "effective_date": "2026-01-01",
+  "reward_currency": "voyager_points",
+  "base_earn": {
+    "rate": { "value": 2, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+    "per_amount": 100,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "smartbuy",
+      "category": "flights",
+      "multiplier": { "value": 5, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "monthly_cap_points": { "value": 4000, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "cap_scope": "smartbuy_total",
+      "notes": "SYNTHETIC eval fixture mirroring the Demo Bank Voyager corpus doc"
+    },
+    {
+      "channel": "smartbuy",
+      "category": "hotels",
+      "multiplier": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "monthly_cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": "smartbuy_total",
+      "notes": "unverified multiplier: exercises the refusal path"
+    },
+    {
+      "channel": "portal",
+      "category": "all",
+      "multiplier": { "value": 3, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "monthly_cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": null,
+      "notes": "no cap declared: uncapped accelerated earn"
+    },
+    {
+      "channel": "store",
+      "category": "grocery",
+      "multiplier": { "value": 2, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "monthly_cap_points": { "value": 1000, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "cap_scope": null,
+      "notes": "cap without explicit scope: falls back to store_grocery"
+    },
+    {
+      "channel": "rumor",
+      "category": "dining",
+      "multiplier": { "value": 4, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 },
+      "monthly_cap_points": { "value": 500, "status": "unverified", "source": null, "confidence": 0 },
+      "cap_scope": "rumor_scope",
+      "notes": "unverified non-null cap: exercises the refusal path"
+    }
+  ],
+  "caps": [
+    {
+      "scope": "smartbuy_total",
+      "period": "month",
+      "cap_points": { "value": 4000, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 }
+    },
+    {
+      "scope": "unverified_cap",
+      "period": "month",
+      "cap_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+    }
+  ],
+  "exclusions": ["fuel", "rent", "wallet_loads"],
+  "milestones": [],
+  "point_value_reference_inr": { "value": 0.5, "status": "verified", "source": "https://example.test/demo-bank/voyager/reward-rules", "confidence": 1.0 }
+}

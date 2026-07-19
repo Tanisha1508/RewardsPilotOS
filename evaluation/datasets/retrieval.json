@@ -1,0 +1,25 @@
+{
+  "description": "20 retrieval queries over the fixture corpus. expected_doc_ids are the relevant documents (doc level). Metrics: precision@3, recall@5, MRR.",
+  "queries": [
+    { "id": "r01", "query": "How many Voyager Points do I earn per 100 INR spent?", "expected_doc_ids": ["demo_bank_voyager_reward_rules"] },
+    { "id": "r02", "query": "Voyager portal flights 5x bonus monthly cap", "expected_doc_ids": ["demo_bank_voyager_reward_rules"] },
+    { "id": "r03", "query": "transfer Voyager Points to Skyhigh Airways ratio", "expected_doc_ids": ["demo_bank_voyager_transfer_rules", "demo_bank_voyager_promotions"] },
+    { "id": "r04", "query": "minimum transfer Voyager Points to Grandstay hotels", "expected_doc_ids": ["demo_bank_voyager_transfer_rules"] },
+    { "id": "r05", "query": "Voyager card international lounge visits per year", "expected_doc_ids": ["demo_bank_voyager_benefit_guides"] },
+    { "id": "r06", "query": "Voyager annual spend milestone travel voucher", "expected_doc_ids": ["demo_bank_voyager_benefit_guides"] },
+    { "id": "r07", "query": "when do Voyager Points expire", "expected_doc_ids": ["demo_bank_issuer_policies"] },
+    { "id": "r08", "query": "Demo Bank devaluation advance notice policy", "expected_doc_ids": ["demo_bank_issuer_policies"] },
+    { "id": "r09", "query": "Skyhigh transfer bonus 25 percent July 2026", "expected_doc_ids": ["demo_bank_voyager_promotions"] },
+    { "id": "r10", "query": "does fuel earn Voyager Points", "expected_doc_ids": ["demo_bank_voyager_reward_rules"] },
+    { "id": "r11", "query": "Trailblazer Miles earned per 100 INR base rate", "expected_doc_ids": ["sample_bank_trailblazer_reward_rules"] },
+    { "id": "r12", "query": "Trailblazer airline hotel spend 5 miles cap 200000", "expected_doc_ids": ["sample_bank_trailblazer_reward_rules"] },
+    { "id": "r13", "query": "Trailblazer Miles to Skyhigh 2 to 1 conversion", "expected_doc_ids": ["sample_bank_trailblazer_transfer_rules"] },
+    { "id": "r14", "query": "Trailblazer Grandstay transfer minimum 3000", "expected_doc_ids": ["sample_bank_trailblazer_transfer_rules"] },
+    { "id": "r15", "query": "Trailblazer complimentary golf rounds", "expected_doc_ids": ["sample_bank_trailblazer_benefit_guides"] },
+    { "id": "r16", "query": "do Trailblazer Miles ever expire", "expected_doc_ids": ["sample_bank_issuer_policies"] },
+    { "id": "r17", "query": "Trailblazer festive double miles online shopping offer", "expected_doc_ids": ["sample_bank_trailblazer_promotions"] },
+    { "id": "r18", "query": "HDFC Infinia SmartBuy accelerated earning", "expected_doc_ids": ["hdfc_infinia_reward_rules"] },
+    { "id": "r19", "query": "Axis Atlas EDGE Miles annual milestones", "expected_doc_ids": ["axis_atlas_reward_rules"] },
+    { "id": "r20", "query": "Amex Platinum Travel Membership Rewards milestone bonus", "expected_doc_ids": ["amex_plat_travel_reward_rules"] }
+  ]
+}
