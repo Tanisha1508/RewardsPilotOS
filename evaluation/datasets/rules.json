@@ -1,30 +1,428 @@
 {
-  "description": "25 earn/cap scenarios with hand-computed expected values. Metric: exact match, target 100%. seed 'eval' uses the synthetic verified eval_voyager fixture; seed 'shipped' uses the real seed files (all unverified -> refusal expected). 'accrued' pre-seeds the cap store.",
+  "description": "25 earn/cap scenarios with hand-computed expected values. Metric: exact match, target 100%. seed 'eval' uses the synthetic verified eval_voyager fixture; seed 'shipped' uses the real seed files (hdfc_infinia v2 is verified and computes; axis/amex remain unverified -> refusal expected). 'accrued' pre-seeds the cap store.",
   "scenarios": [
-    { "id": "s01", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "electronics", "channel": null, "month": "2026-07", "expected": { "status": "computed", "points": 200.0, "applied": "base", "cap_applied": false } },
-    { "id": "s02", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10050, "category": "electronics", "channel": null, "month": "2026-07", "expected": { "status": "computed", "points": 200.0, "applied": "base", "cap_applied": false } },
-    { "id": "s03", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 99, "category": "electronics", "channel": null, "month": "2026-07", "expected": { "status": "computed", "points": 0.0, "applied": "base", "cap_applied": false } },
-    { "id": "s04", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "fuel", "channel": null, "month": "2026-07", "expected": { "status": "excluded", "points": 0.0, "applied": null, "cap_applied": false } },
-    { "id": "s05", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "flights", "channel": "smartbuy", "month": "2026-07", "expected": { "status": "computed", "points": 1000.0, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s06", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "flights", "channel": "smartbuy", "month": "2026-07", "accrued": { "scope": "smartbuy_total", "amount": 3800 }, "expected": { "status": "computed", "points": 200.0, "applied": "accelerated", "cap_applied": true } },
-    { "id": "s07", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "flights", "channel": "smartbuy", "month": "2026-07", "accrued": { "scope": "smartbuy_total", "amount": 4000 }, "expected": { "status": "computed", "points": 0.0, "applied": "accelerated", "cap_applied": true } },
-    { "id": "s08", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "flights", "channel": "smartbuy", "month": "2026-08", "accrued": { "scope": "smartbuy_total", "amount": 4000, "month": "2026-07" }, "expected": { "status": "computed", "points": 1000.0, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s09", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "hotels", "channel": "smartbuy", "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s10", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "anything", "channel": "portal", "month": "2026-07", "expected": { "status": "computed", "points": 600.0, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s11", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "grocery", "channel": "store", "month": "2026-07", "expected": { "status": "computed", "points": 400.0, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s12", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "grocery", "channel": "store", "month": "2026-07", "accrued": { "scope": "store_grocery", "amount": 900 }, "expected": { "status": "computed", "points": 100.0, "applied": "accelerated", "cap_applied": true } },
-    { "id": "s13", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "dining", "channel": "rumor", "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": "accelerated", "cap_applied": false } },
-    { "id": "s14", "type": "calculate_earn", "seed": "eval", "card_key": "eval_voyager", "amount": 10000, "category": "electronics", "channel": "no_such_channel", "month": "2026-07", "expected": { "status": "computed", "points": 200.0, "applied": "base", "cap_applied": false } },
-    { "id": "s15", "type": "check_cap", "seed": "eval", "card_key": "eval_voyager", "cap_scope": "smartbuy_total", "month": "2026-07", "accrued": { "scope": "smartbuy_total", "amount": 1000 }, "expected": { "status": "ok", "accrued_points": 1000.0, "remaining_points": 3000.0 } },
-    { "id": "s16", "type": "check_cap", "seed": "eval", "card_key": "eval_voyager", "cap_scope": "smartbuy_total", "month": "2026-07", "accrued": { "scope": "smartbuy_total", "amount": 4200 }, "expected": { "status": "reached", "accrued_points": 4200.0, "remaining_points": 0.0 } },
-    { "id": "s17", "type": "check_cap", "seed": "eval", "card_key": "eval_voyager", "cap_scope": "unverified_cap", "month": "2026-07", "expected": { "status": "unknown", "accrued_points": 0.0, "remaining_points": null } },
-    { "id": "s18", "type": "check_cap", "seed": "eval", "card_key": "eval_voyager", "cap_scope": "no_such_scope", "month": "2026-07", "expected": { "status": "unknown", "accrued_points": 0.0, "remaining_points": null } },
-    { "id": "s19", "type": "calculate_earn", "seed": "shipped", "card_key": "hdfc_infinia", "amount": 70000, "category": "electronics", "channel": null, "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": null, "cap_applied": false } },
-    { "id": "s20", "type": "calculate_earn", "seed": "shipped", "card_key": "hdfc_infinia", "amount": 10000, "category": "fuel", "channel": null, "month": "2026-07", "expected": { "status": "excluded", "points": 0.0, "applied": null, "cap_applied": false } },
-    { "id": "s21", "type": "calculate_earn", "seed": "shipped", "card_key": "hdfc_infinia", "amount": 50000, "category": "flights", "channel": "smartbuy", "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": null, "cap_applied": false } },
-    { "id": "s22", "type": "calculate_earn", "seed": "shipped", "card_key": "axis_atlas", "amount": 30000, "category": "travel", "channel": "direct", "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": null, "cap_applied": false } },
-    { "id": "s23", "type": "calculate_earn", "seed": "shipped", "card_key": "amex_plat_travel", "amount": 15000, "category": "dining", "channel": null, "month": "2026-07", "expected": { "status": "unknown", "points": null, "applied": null, "cap_applied": false } },
-    { "id": "s24", "type": "compare_cards", "seed": "shipped", "cards": ["hdfc_infinia", "axis_atlas", "amex_plat_travel"], "amount": 70000, "category": "electronics", "channel": null, "month": "2026-07", "expected": { "statuses": ["unknown", "unknown", "unknown"], "points": [null, null, null] } },
-    { "id": "s25", "type": "calculate_earn", "seed": "shipped", "card_key": "hdfc_infinia", "amount": 20000, "category": "rent", "channel": null, "month": "2026-07", "expected": { "status": "excluded", "points": 0.0, "applied": null, "cap_applied": false } }
+    {
+      "id": "s01",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "electronics",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 200.0,
+        "applied": "base",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s02",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10050,
+      "category": "electronics",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 200.0,
+        "applied": "base",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s03",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 99,
+      "category": "electronics",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 0.0,
+        "applied": "base",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s04",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "fuel",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "excluded",
+        "points": 0.0,
+        "applied": null,
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s05",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "flights",
+      "channel": "smartbuy",
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 1000.0,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s06",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "flights",
+      "channel": "smartbuy",
+      "month": "2026-07",
+      "accrued": {
+        "scope": "smartbuy_total",
+        "amount": 3800
+      },
+      "expected": {
+        "status": "computed",
+        "points": 200.0,
+        "applied": "accelerated",
+        "cap_applied": true
+      }
+    },
+    {
+      "id": "s07",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "flights",
+      "channel": "smartbuy",
+      "month": "2026-07",
+      "accrued": {
+        "scope": "smartbuy_total",
+        "amount": 4000
+      },
+      "expected": {
+        "status": "computed",
+        "points": 0.0,
+        "applied": "accelerated",
+        "cap_applied": true
+      }
+    },
+    {
+      "id": "s08",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "flights",
+      "channel": "smartbuy",
+      "month": "2026-08",
+      "accrued": {
+        "scope": "smartbuy_total",
+        "amount": 4000,
+        "month": "2026-07"
+      },
+      "expected": {
+        "status": "computed",
+        "points": 1000.0,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s09",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "hotels",
+      "channel": "smartbuy",
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "points": null,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s10",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "anything",
+      "channel": "portal",
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 600.0,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s11",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "grocery",
+      "channel": "store",
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 400.0,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s12",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "grocery",
+      "channel": "store",
+      "month": "2026-07",
+      "accrued": {
+        "scope": "store_grocery",
+        "amount": 900
+      },
+      "expected": {
+        "status": "computed",
+        "points": 100.0,
+        "applied": "accelerated",
+        "cap_applied": true
+      }
+    },
+    {
+      "id": "s13",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "dining",
+      "channel": "rumor",
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "points": null,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s14",
+      "type": "calculate_earn",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "amount": 10000,
+      "category": "electronics",
+      "channel": "no_such_channel",
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 200.0,
+        "applied": "base",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s15",
+      "type": "check_cap",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "cap_scope": "smartbuy_total",
+      "month": "2026-07",
+      "accrued": {
+        "scope": "smartbuy_total",
+        "amount": 1000
+      },
+      "expected": {
+        "status": "ok",
+        "accrued_points": 1000.0,
+        "remaining_points": 3000.0
+      }
+    },
+    {
+      "id": "s16",
+      "type": "check_cap",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "cap_scope": "smartbuy_total",
+      "month": "2026-07",
+      "accrued": {
+        "scope": "smartbuy_total",
+        "amount": 4200
+      },
+      "expected": {
+        "status": "reached",
+        "accrued_points": 4200.0,
+        "remaining_points": 0.0
+      }
+    },
+    {
+      "id": "s17",
+      "type": "check_cap",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "cap_scope": "unverified_cap",
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "accrued_points": 0.0,
+        "remaining_points": null
+      }
+    },
+    {
+      "id": "s18",
+      "type": "check_cap",
+      "seed": "eval",
+      "card_key": "eval_voyager",
+      "cap_scope": "no_such_scope",
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "accrued_points": 0.0,
+        "remaining_points": null
+      }
+    },
+    {
+      "id": "s19",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "hdfc_infinia",
+      "amount": 70000,
+      "category": "electronics",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 2330.0,
+        "applied": "base",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s20",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "hdfc_infinia",
+      "amount": 10000,
+      "category": "fuel",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "excluded",
+        "points": 0.0,
+        "applied": null,
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s21",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "hdfc_infinia",
+      "amount": 50000,
+      "category": "flights",
+      "channel": "smartbuy",
+      "month": "2026-07",
+      "expected": {
+        "status": "computed",
+        "points": 8325.0,
+        "applied": "accelerated",
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s22",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "axis_atlas",
+      "amount": 30000,
+      "category": "travel",
+      "channel": "direct",
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "points": null,
+        "applied": null,
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s23",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "amex_plat_travel",
+      "amount": 15000,
+      "category": "dining",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "unknown",
+        "points": null,
+        "applied": null,
+        "cap_applied": false
+      }
+    },
+    {
+      "id": "s24",
+      "type": "compare_cards",
+      "seed": "shipped",
+      "cards": [
+        "hdfc_infinia",
+        "axis_atlas",
+        "amex_plat_travel"
+      ],
+      "amount": 70000,
+      "category": "electronics",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "statuses": [
+          "computed",
+          "unknown",
+          "unknown"
+        ],
+        "points": [
+          2330.0,
+          null,
+          null
+        ]
+      }
+    },
+    {
+      "id": "s25",
+      "type": "calculate_earn",
+      "seed": "shipped",
+      "card_key": "hdfc_infinia",
+      "amount": 20000,
+      "category": "rent",
+      "channel": null,
+      "month": "2026-07",
+      "expected": {
+        "status": "excluded",
+        "points": 0.0,
+        "applied": null,
+        "cap_applied": false
+      }
+    }
   ]
 }

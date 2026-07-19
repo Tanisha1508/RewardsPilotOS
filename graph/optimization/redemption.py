@@ -1,13 +1,15 @@
 """redemption_options (BUILD_SPEC §7): ranked options with points required.
 
 Point-value math is delegated to Rule Engine value tables
-(point_value_reference_inr per reward currency). When a currency's point value
-is null/unverified, its options are ranked by ratio only and value is labeled
-unknown — never estimated."""
+(point_value_reference_inr per reward currency, per redemption channel since
+the 2026-07-19 spec update). The channel is selected from the goal's
+redemption_type. When the selected channel's value is null/unverified, the
+option is ranked by ratio only and value is labeled unknown — never
+estimated."""
 
 import networkx as nx
 
-from contracts.api.verified_value import VerifiedValue
+from contracts.api.verified_value import PointValueReference
 from contracts.tools.graph_engine import (
     RedemptionGoal,
     RedemptionOption,
@@ -20,7 +22,7 @@ def redemption_options(
     graph: nx.DiGraph,
     portfolio: dict[str, float],
     goal: RedemptionGoal,
-    point_values: dict[str, VerifiedValue] | None = None,
+    point_values: dict[str, PointValueReference] | None = None,
 ) -> RedemptionOptionsOutput:
     point_values = point_values or {}
     output = RedemptionOptionsOutput(target_program=goal.target_program)
@@ -34,12 +36,14 @@ def redemption_options(
         if not search.paths:
             continue
         best = search.paths[0]
+        reference = point_values.get(currency, PointValueReference.unknown())
         option = RedemptionOption(
             currency=currency,
             target_program=goal.target_program,
             path=best,
             balance=balance,
-            point_value_reference_inr=point_values.get(currency, VerifiedValue.unknown()),
+            value_channel=goal.redemption_type,
+            point_value_reference_inr=reference.for_channel(goal.redemption_type),
         )
         if goal.required_points is not None:
             option.points_required = points_required_for(
@@ -53,7 +57,7 @@ def redemption_options(
         else:
             option.value_status = "unknown"
             option.notes.append(
-                f"point value for {currency} is {value.status}; "
+                f"{goal.redemption_type} point value for {currency} is {value.status}; "
                 "ranked by transfer ratio only, value unknown"
             )
         output.options.append(option)

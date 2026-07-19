@@ -73,24 +73,37 @@ def test_execute_success_envelope():
     assert result.result["cards"]
 
 
-def test_rule_tool_refuses_unverified_seed_values():
-    result = execute(
+def test_rule_tool_computes_verified_hdfc_and_refuses_unverified_axis():
+    hdfc = execute(
         "CalculateEarn",
         {"card_key": "hdfc_infinia", "amount": 70000, "category": "electronics",
          "month": "2026-07"},
     )
-    assert result.status == "success"
-    assert result.result["status"] == "unknown"
-    assert result.result["points"] is None
+    assert hdfc.status == "success"
+    assert hdfc.result["status"] == "computed"  # v2 verified base earn
+    assert hdfc.result["points"] == 2330.0  # floor(70000/150)=466 blocks * 5
+    axis = execute(
+        "CalculateEarn",
+        {"card_key": "axis_atlas", "amount": 70000, "category": "electronics",
+         "month": "2026-07"},
+    )
+    assert axis.result["status"] == "unknown"
+    assert axis.result["points"] is None
 
 
 def test_transfer_ratio_tool_exposes_verified_and_unverified():
-    verified = execute("GetTransferRatios", {"currency": "voyager_points"})
-    assert verified.result["ratios"]
-    real = execute("GetTransferRatios", {"currency": "hdfc_reward_points"})
-    assert real.result["ratios"] == []
-    assert real.result["unverified_partners"]
-    assert all("unverified" in p for p in real.result["unverified_partners"])
+    synthetic = execute("GetTransferRatios", {"currency": "voyager_points"})
+    assert synthetic.result["ratios"]
+    hdfc = execute("GetTransferRatios", {"currency": "hdfc_reward_points"})
+    verified_targets = {r["to_program"] for r in hdfc.result["ratios"]}
+    assert verified_targets == {
+        "turkish_miles", "accor", "avianca_lifemiles", "club_itc_green_points",
+    }
+    assert all("unverified" in p for p in hdfc.result["unverified_partners"])
+    assert len(hdfc.result["unverified_partners"]) == 3  # krisflyer, marriott, air india
+    axis = execute("GetTransferRatios", {"currency": "edge_miles"})
+    assert axis.result["ratios"] == []
+    assert axis.result["unverified_partners"]
 
 
 def test_get_tool_and_spec_lookup():

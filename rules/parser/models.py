@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 
-from contracts.api.verified_value import VerifiedValue
+from contracts.api.verified_value import PointValueReference, VerifiedValue
 
 
 class BaseEarn(BaseModel):
@@ -24,6 +24,8 @@ class Cap(BaseModel):
     scope: str
     period: str
     cap_points: VerifiedValue
+    effective_date: str | None = None
+    notes: str | None = None
 
 
 class Milestone(BaseModel):
@@ -43,4 +45,8 @@ class RuleFile(BaseModel):
     caps: list[Cap] = Field(default_factory=list)
     exclusions: list[str] = Field(default_factory=list)
     milestones: list[Milestone] = Field(default_factory=list)
-    point_value_reference_inr: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
+    # Per-channel since the 2026-07-19 spec update: a point's INR value
+    # depends on the redemption channel (cashback / voucher / travel).
+    point_value_reference_inr: PointValueReference = Field(
+        default_factory=PointValueReference.unknown
+    )

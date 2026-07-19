@@ -4,8 +4,18 @@
     "from_node": "demo_voyager_card",
     "to_node": "voyager_points",
     "edge_type": "earn",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
     "source_doc_id": "demo_bank_voyager_reward_rules",
     "last_verified": null
@@ -15,8 +25,18 @@
     "from_node": "sample_trailblazer_card",
     "to_node": "trailblazer_miles",
     "edge_type": "earn",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
     "source_doc_id": "sample_bank_trailblazer_reward_rules",
     "last_verified": null
@@ -26,8 +46,18 @@
     "from_node": "hdfc_infinia",
     "to_node": "hdfc_reward_points",
     "edge_type": "earn",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
     "source_doc_id": "hdfc_infinia_reward_rules",
     "last_verified": null
@@ -37,8 +67,18 @@
     "from_node": "axis_atlas",
     "to_node": "edge_miles",
     "edge_type": "earn",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
     "source_doc_id": "axis_atlas_reward_rules",
     "last_verified": null
@@ -48,8 +88,18 @@
     "from_node": "amex_plat_travel",
     "to_node": "membership_rewards",
     "edge_type": "earn",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "structural earn edge; earn rates live in the Rule Engine, not the graph",
     "source_doc_id": "amex_plat_travel_reward_rules",
     "last_verified": null
@@ -59,8 +109,18 @@
     "from_node": "voyager_points",
     "to_node": "skyhigh_airways",
     "edge_type": "transfer",
-    "ratio": { "value": 1.0, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
-    "min_transfer": { "value": 2000, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "ratio": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "https://example.test/demo-bank/voyager/transfer-partners",
+      "confidence": 1.0
+    },
+    "min_transfer": {
+      "value": 2000,
+      "status": "verified",
+      "source": "https://example.test/demo-bank/voyager/transfer-partners",
+      "confidence": 1.0
+    },
     "notes": "SYNTHETIC FIXTURE edge; verified against the synthetic corpus, replaced in D3",
     "source_doc_id": "demo_bank_voyager_transfer_rules",
     "last_verified": "2026-05-20"
@@ -70,8 +130,18 @@
     "from_node": "voyager_points",
     "to_node": "grandstay_hotels",
     "edge_type": "transfer",
-    "ratio": { "value": 0.5, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
-    "min_transfer": { "value": 5000, "status": "verified", "source": "https://example.test/demo-bank/voyager/transfer-partners", "confidence": 1.0 },
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "https://example.test/demo-bank/voyager/transfer-partners",
+      "confidence": 1.0
+    },
+    "min_transfer": {
+      "value": 5000,
+      "status": "verified",
+      "source": "https://example.test/demo-bank/voyager/transfer-partners",
+      "confidence": 1.0
+    },
     "notes": "SYNTHETIC FIXTURE edge; 2:1 means 0.5 target points per source point",
     "source_doc_id": "demo_bank_voyager_transfer_rules",
     "last_verified": "2026-05-20"
@@ -81,8 +151,18 @@
     "from_node": "trailblazer_miles",
     "to_node": "skyhigh_airways",
     "edge_type": "transfer",
-    "ratio": { "value": 0.5, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
-    "min_transfer": { "value": 1000, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "https://example.test/sample-bank/trailblazer/transfer-partners",
+      "confidence": 1.0
+    },
+    "min_transfer": {
+      "value": 1000,
+      "status": "verified",
+      "source": "https://example.test/sample-bank/trailblazer/transfer-partners",
+      "confidence": 1.0
+    },
     "notes": "SYNTHETIC FIXTURE edge; 2:1 means 0.5 target points per source point",
     "source_doc_id": "sample_bank_trailblazer_transfer_rules",
     "last_verified": "2026-02-14"
@@ -92,10 +172,104 @@
     "from_node": "trailblazer_miles",
     "to_node": "grandstay_hotels",
     "edge_type": "transfer",
-    "ratio": { "value": 1.0, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
-    "min_transfer": { "value": 3000, "status": "verified", "source": "https://example.test/sample-bank/trailblazer/transfer-partners", "confidence": 1.0 },
+    "ratio": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "https://example.test/sample-bank/trailblazer/transfer-partners",
+      "confidence": 1.0
+    },
+    "min_transfer": {
+      "value": 3000,
+      "status": "verified",
+      "source": "https://example.test/sample-bank/trailblazer/transfer-partners",
+      "confidence": 1.0
+    },
     "notes": "SYNTHETIC FIXTURE edge",
     "source_doc_id": "sample_bank_trailblazer_transfer_rules",
     "last_verified": "2026-02-14"
+  },
+  {
+    "edge_id": "transfer_hdfc_turkish",
+    "from_node": "hdfc_reward_points",
+    "to_node": "turkish_miles",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), clause 13, effective 2024-01-15, retrieved 2026-07-19",
+      "confidence": 0.95
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "2:1 per official T&C clause 13; minimum transfer not stated in source",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_accor",
+    "from_node": "hdfc_reward_points",
+    "to_node": "accor",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), clause 13, effective 2024-01-15, retrieved 2026-07-19",
+      "confidence": 0.95
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "2:1 per official T&C clause 13; minimum transfer not stated in source",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_avianca",
+    "from_node": "hdfc_reward_points",
+    "to_node": "avianca_lifemiles",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), clause 13, effective 2024-01-15, retrieved 2026-07-19",
+      "confidence": 0.95
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "2:1 per official T&C clause 13; minimum transfer not stated in source",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_club_itc",
+    "from_node": "hdfc_reward_points",
+    "to_node": "club_itc_green_points",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "Product owner direct confirmation 2026-07-19; not independently cross-checked against an official HDFC page",
+      "confidence": 0.7
+    },
+    "min_transfer": {
+      "value": 100,
+      "status": "verified",
+      "source": "Product owner direct confirmation 2026-07-19; not independently cross-checked against an official HDFC page",
+      "confidence": 0.7
+    },
+    "notes": "2:1; transfers in multiples of 100 points; credit time 2-4 working days; source is product-owner confirmation, not yet cross-checked against an official page",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
   }
 ]

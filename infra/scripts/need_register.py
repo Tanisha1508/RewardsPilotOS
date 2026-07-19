@@ -28,9 +28,21 @@ def _walk_rule(node, path, entries, card):
             _walk_rule(item, f"{path}[{index}]", entries, card)
 
 
+def _latest_rule_files() -> list[Path]:
+    """Only the active (highest) version per card counts toward the register;
+    superseded versions are history, not open work."""
+    latest: dict[Path, tuple[int, Path]] = {}
+    for rule_file in sorted(ROOT.glob("rules/seed/*/v*.json")):
+        version = int(rule_file.stem[1:])
+        current = latest.get(rule_file.parent)
+        if current is None or version > current[0]:
+            latest[rule_file.parent] = (version, rule_file)
+    return sorted(path for _, path in latest.values())
+
+
 def collect() -> dict[str, list]:
     register: dict[str, list] = {"rules": [], "knowledge": [], "graph": []}
-    for rule_file in sorted(ROOT.glob("rules/seed/*/v*.json")):
+    for rule_file in _latest_rule_files():
         raw = json.loads(rule_file.read_text())
         entries: list = []
         _walk_rule(raw, "", entries, raw.get("card_key", rule_file.parent.name))

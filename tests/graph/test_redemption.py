@@ -1,6 +1,6 @@
 """redemption_options: ranking, points required, null point-value handling."""
 
-from contracts.api.verified_value import VerifiedValue
+from contracts.api.verified_value import PointValueReference, VerifiedValue
 from contracts.tools.graph_engine import RedemptionGoal
 from graph.builder.builder import load_seed_graph
 from graph.optimization.redemption import redemption_options
@@ -37,7 +37,9 @@ def test_null_point_value_means_value_unknown(fixture_graph):
 
 def test_verified_point_value_computes_estimate(fixture_graph):
     values = {
-        "a_points": VerifiedValue(value=0.5, status="verified", source=SYNTH, confidence=1.0)
+        "a_points": PointValueReference(
+            travel=VerifiedValue(value=0.5, status="verified", source=SYNTH, confidence=1.0)
+        )
     }
     output = redemption_options(
         fixture_graph,
@@ -47,7 +49,29 @@ def test_verified_point_value_computes_estimate(fixture_graph):
     )
     option = output.options[0]
     assert option.value_status == "computed"
+    assert option.value_channel == "travel"
     assert option.value_estimate_inr == 5_000.0  # 10000 points * 0.5 INR
+
+
+def test_channel_selection_uses_goal_redemption_type(fixture_graph):
+    values = {
+        "a_points": PointValueReference(
+            travel=VerifiedValue(value=1.0, status="verified", source=SYNTH, confidence=1.0)
+        )
+    }
+    output = redemption_options(
+        fixture_graph,
+        {"a_points": 50_000},
+        RedemptionGoal(
+            target_program="target_air", required_points=10_000, redemption_type="cashback"
+        ),
+        point_values=values,
+    )
+    option = output.options[0]
+    # cashback channel is unknown even though travel is verified
+    assert option.value_channel == "cashback"
+    assert option.value_status == "unknown"
+    assert "cashback point value" in option.notes[0]
 
 
 def test_goal_without_required_points(fixture_graph):

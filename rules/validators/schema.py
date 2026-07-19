@@ -1,17 +1,21 @@
 """Extended field schema validation for rule files (BUILD_SPEC §5).
 
 Every numeric field must carry the verified-value structure
-{value, status, source, confidence}. Hard data-integrity rules:
-- unverified => confidence 0
-- verified   => value present AND source (official issuer URL) present
+{value, status, source, confidence}. Hard data-integrity rules
+(confidence semantics per the 2026-07-19 spec update, ADR-001 amendment):
+- unverified => confidence < 1 (evidence strength of the candidate value;
+  never computable regardless)
+- verified   => value present AND source present AND confidence > 0
 Never invent rates, caps, or transfer ratios: a plain number where a
 verified-value structure is required is a violation.
+
+point_value_reference_inr is per-channel (cashback / voucher / travel), each
+channel a verified-value structure.
 """
 
 from typing import Any
 
-# Paths (relative to the rule root) that must be verified-value structures.
-_NUMERIC_FIELDS_TOP = ["point_value_reference_inr"]
+_POINT_VALUE_CHANNELS = ("cashback", "voucher", "travel")
 _NUMERIC_FIELDS_BASE_EARN = ["rate"]
 _NUMERIC_FIELDS_ACCELERATED = ["multiplier", "monthly_cap_points"]
 _NUMERIC_FIELDS_CAP = ["cap_points"]
@@ -39,13 +43,32 @@ def _check_verified_value(node: Any, path: str) -> list[str]:
         return problems
     if not isinstance(confidence, (int, float)) or not 0 <= confidence <= 1:
         problems.append(f"{path}.confidence: must be a number between 0 and 1")
-    elif status == "unverified" and confidence != 0:
-        problems.append(f"{path}.confidence: must be 0 when unverified")
+    elif status == "unverified" and confidence >= 1:
+        problems.append(f"{path}.confidence: unverified values cannot claim full confidence")
+    elif status == "verified" and confidence <= 0:
+        problems.append(f"{path}.confidence: verified values require confidence > 0")
     if status == "verified":
         if value is None:
             problems.append(f"{path}.value: verified value must not be null")
         if not source:
             problems.append(f"{path}.source: verified value requires an official source URL")
+    return problems
+
+
+def _check_point_value_reference(node: Any, path: str) -> list[str]:
+    if not isinstance(node, dict):
+        return [f"{path}: must be a per-channel object with {_POINT_VALUE_CHANNELS}"]
+    if "status" in node and "confidence" in node:
+        return [
+            f"{path}: flat verified-value structure is obsolete; use per-channel "
+            f"{_POINT_VALUE_CHANNELS} (spec update 2026-07-19)"
+        ]
+    problems: list[str] = []
+    for channel in _POINT_VALUE_CHANNELS:
+        if channel not in node:
+            problems.append(f"{path}.{channel}: required channel missing")
+        else:
+            problems.extend(_check_verified_value(node[channel], f"{path}.{channel}"))
     return problems
 
 
@@ -55,9 +78,12 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
     for key in _REQUIRED_TOP_KEYS:
         if key not in raw:
             problems.append(f"{key}: required field missing")
-    for field in _NUMERIC_FIELDS_TOP:
-        if field in raw:
-            problems.extend(_check_verified_value(raw[field], field))
+    if "point_value_reference_inr" in raw:
+        problems.extend(
+            _check_point_value_reference(
+                raw["point_value_reference_inr"], "point_value_reference_inr"
+            )
+        )
     base = raw.get("base_earn")
     if isinstance(base, dict):
         for field in _NUMERIC_FIELDS_BASE_EARN:

@@ -22,6 +22,12 @@ def verified(value, source=SYNTH, confidence=0.9):
     return vv(value, "verified", source, confidence)
 
 
+def nested_point_value(**channels):
+    reference = {"cashback": vv(), "voucher": vv(), "travel": vv()}
+    reference.update(channels)
+    return reference
+
+
 def make_rule(**overrides):
     rule = {
         "card_key": "test_voyager",
@@ -33,7 +39,7 @@ def make_rule(**overrides):
         "caps": [],
         "exclusions": [],
         "milestones": [],
-        "point_value_reference_inr": vv(),
+        "point_value_reference_inr": nested_point_value(),
     }
     rule.update(overrides)
     return rule
@@ -87,7 +93,9 @@ VOYAGER_V1 = make_rule(
         {"scope": "unverified_cap", "period": "month", "cap_points": vv()},
     ],
     exclusions=["fuel"],
-    point_value_reference_inr=verified(0.5),
+    point_value_reference_inr=nested_point_value(
+        voucher=verified(0.5), travel=verified(0.5)
+    ),
 )
 
 VOYAGER_V2 = {

@@ -59,17 +59,38 @@ def test_builder_rejects_unverified_transfer_in_verified_seed():
         build_graph(nodes, [unverified("bad", "x", "y")])
 
 
-def test_builder_rejects_ratio_value_on_unverified_edge():
+def test_register_edge_may_carry_candidate_ratio_but_never_computes():
+    nodes = [node("x", "currency"), node("y", "airline")]
+    candidate = GraphEdgeRecord(
+        edge_id="candidate",
+        from_node="x",
+        to_node="y",
+        edge_type="transfer",
+        ratio=VerifiedValue(
+            value=2.0, status="unverified", source="third-party aggregator", confidence=0.5
+        ),
+        min_transfer=VerifiedValue.unknown(),
+        notes="[NEED: confirm with official source]",
+    )
+    graph = build_graph(nodes, [], unverified_edges=[candidate])
+    result = best_transfer_paths(graph, "x", "y")
+    assert result.paths == []  # candidate ratios never enter path math
+    assert result.unverified_paths_exist is True
+
+
+def test_builder_rejects_verified_status_in_register():
     nodes = [node("x", "currency"), node("y", "airline")]
     bad = GraphEdgeRecord(
         edge_id="bad",
         from_node="x",
         to_node="y",
         edge_type="transfer",
-        ratio=VerifiedValue(value=2.0, status="unverified", source=None, confidence=0.0),
+        ratio=VerifiedValue(
+            value=2.0, status="verified", source="https://example.test", confidence=0.9
+        ),
         min_transfer=VerifiedValue.unknown(),
     )
-    with pytest.raises(GraphSeedError, match="must not carry a ratio value"):
+    with pytest.raises(GraphSeedError, match="must stay status=unverified"):
         build_graph(nodes, [], unverified_edges=[bad])
 
 
@@ -86,9 +107,19 @@ def test_seed_graph_loads_with_verified_synthetic_paths():
     assert result.paths[0].min_transfer == 2000
 
 
-def test_seed_graph_real_paths_only_unverified():
+def test_seed_graph_krisflyer_still_unverified_despite_candidate_ratio():
     graph = load_seed_graph()
     result = best_transfer_paths(graph, "hdfc_reward_points", "singapore_krisflyer")
     assert result.paths == []
     assert result.unverified_paths_exist is True
     assert any("[NEED" in note for note in result.unverified_notes)
+
+
+def test_seed_graph_hdfc_verified_partners():
+    graph = load_seed_graph()
+    for program in ("turkish_miles", "accor", "avianca_lifemiles", "club_itc_green_points"):
+        result = best_transfer_paths(graph, "hdfc_reward_points", program)
+        assert len(result.paths) == 1, program
+        assert result.paths[0].cumulative_ratio == 0.5  # 2:1
+    club_itc = best_transfer_paths(graph, "hdfc_reward_points", "club_itc_green_points")
+    assert club_itc.paths[0].min_transfer == 100

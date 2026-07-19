@@ -4,7 +4,12 @@
   "effective_date": "2026-07-01",
   "reward_currency": "membership_rewards",
   "base_earn": {
-    "rate": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "rate": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "per_amount": 100,
     "currency": "INR"
   },
@@ -13,17 +18,56 @@
   "exclusions": [],
   "milestones": [
     {
-      "spend_threshold": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-      "bonus_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "spend_threshold": {
+        "value": null,
+        "status": "unverified",
+        "source": null,
+        "confidence": 0
+      },
+      "bonus_points": {
+        "value": null,
+        "status": "unverified",
+        "source": null,
+        "confidence": 0
+      },
       "period": "year",
       "notes": "[NEED: verify from issuer docs] milestone 1 spend threshold and bonus"
     },
     {
-      "spend_threshold": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-      "bonus_points": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+      "spend_threshold": {
+        "value": null,
+        "status": "unverified",
+        "source": null,
+        "confidence": 0
+      },
+      "bonus_points": {
+        "value": null,
+        "status": "unverified",
+        "source": null,
+        "confidence": 0
+      },
       "period": "year",
       "notes": "[NEED: verify from issuer docs] milestone 2 spend threshold and bonus"
     }
   ],
-  "point_value_reference_inr": { "value": null, "status": "unverified", "source": null, "confidence": 0 }
+  "point_value_reference_inr": {
+    "cashback": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "voucher": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "travel": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    }
+  }
 }

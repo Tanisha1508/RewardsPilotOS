@@ -23,8 +23,26 @@ VIOLATION_TABLE = [
         "confidence: must be a number between 0 and 1",
     ),
     (
-        lambda r: r.__setitem__("point_value_reference_inr", vv(confidence=0.4)),
-        "confidence: must be 0 when unverified",
+        lambda r: r.__setitem__("point_value_reference_inr", vv()),
+        "flat verified-value structure is obsolete",
+    ),
+    (
+        lambda r: r.__setitem__("point_value_reference_inr", 0.5),
+        "must be a per-channel object",
+    ),
+    (
+        lambda r: r["point_value_reference_inr"].pop("travel"),
+        "point_value_reference_inr.travel: required channel missing",
+    ),
+    (
+        lambda r: r["point_value_reference_inr"].__setitem__(
+            "cashback", vv(value=0.3, confidence=1.0)
+        ),
+        "unverified values cannot claim full confidence",
+    ),
+    (
+        lambda r: r["base_earn"].__setitem__("rate", {**verified(2), "confidence": 0}),
+        "verified values require confidence > 0",
     ),
     (
         lambda r: r["base_earn"].__setitem__("rate", {**verified(2), "value": None}),

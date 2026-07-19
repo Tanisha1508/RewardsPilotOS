@@ -6,8 +6,10 @@ record source for Postgres graph_nodes/graph_edges rows behind the same
 
 The unverified-edge register (need_register.json) holds transfer relationships
 whose ratios are not verified: they are loaded as `unverified_transfer` edges
-so search can surface "unverified path exists", but they NEVER carry a ratio
-and never enter path math.
+so search can surface "unverified path exists". Since the 2026-07-19 spec
+update they may carry a CANDIDATE ratio value with evidence confidence < 1
+(e.g. from third-party aggregators, pending official confirmation), but they
+must remain status=unverified and they never enter path math.
 """
 
 import json
@@ -54,9 +56,10 @@ def build_graph(
     for edge in unverified_edges or []:
         if edge.from_node not in graph or edge.to_node not in graph:
             raise GraphSeedError(f"unverified edge {edge.edge_id} references unknown node")
-        if edge.ratio.value is not None:
+        if edge.ratio.status != "unverified":
             raise GraphSeedError(
-                f"unverified edge {edge.edge_id} must not carry a ratio value"
+                f"register edge {edge.edge_id} must stay status=unverified; a "
+                "verified ratio belongs in graph_edges, not the [NEED] register"
             )
         graph.add_edge(
             edge.from_node,

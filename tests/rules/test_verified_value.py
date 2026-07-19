@@ -1,9 +1,15 @@
-"""VerifiedValue model invariants (contracts/api/verified_value.py)."""
+"""VerifiedValue + PointValueReference invariants (contracts/api).
+
+Confidence semantics per the 2026-07-19 spec update (ADR-001 amendment):
+unverified values may carry a candidate value and evidence confidence < 1;
+verified values require value + source + confidence > 0. Computation gating
+(is_usable) requires verified status regardless of confidence.
+"""
 
 import pytest
 from pydantic import ValidationError
 
-from contracts.api.verified_value import VerifiedValue
+from contracts.api.verified_value import PointValueReference, VerifiedValue
 
 
 def test_unknown_factory():
@@ -21,10 +27,23 @@ def test_verified_usable():
     assert value.is_usable is True
 
 
+def test_unverified_candidate_value_with_evidence_confidence_is_valid_but_unusable():
+    candidate = VerifiedValue(
+        value=0.3, status="unverified", source="third-party aggregator", confidence=0.5
+    )
+    assert candidate.is_usable is False
+
+
 INVALID_TABLE = [
-    {"value": 5, "status": "unverified", "source": None, "confidence": 0.5},
+    # unverified cannot claim full confidence
+    {"value": 1.0, "status": "unverified", "source": "aggregator", "confidence": 1.0},
+    # verified requires a value
     {"value": None, "status": "verified", "source": "https://example.test", "confidence": 0.9},
+    # verified requires a source
     {"value": 5, "status": "verified", "source": None, "confidence": 0.9},
+    # verified requires confidence > 0
+    {"value": 5, "status": "verified", "source": "https://example.test", "confidence": 0.0},
+    # confidence bounds
     {"value": 5, "status": "verified", "source": "https://example.test", "confidence": 1.7},
     {"value": 5, "status": "verified", "source": "https://example.test", "confidence": -0.1},
 ]
@@ -36,6 +55,21 @@ def test_integrity_violations_rejected(payload):
         VerifiedValue.model_validate(payload)
 
 
-def test_unverified_with_rumored_value_is_not_usable():
-    rumored = VerifiedValue(value=500, status="unverified", source=None, confidence=0.0)
-    assert rumored.is_usable is False
+def test_point_value_reference_channels():
+    reference = PointValueReference(
+        travel=VerifiedValue(
+            value=0.5, status="verified", source="https://example.test", confidence=0.9
+        )
+    )
+    assert reference.for_channel("travel").is_usable is True
+    assert reference.for_channel("cashback").is_usable is False
+    with pytest.raises(ValueError, match="unknown redemption channel"):
+        reference.for_channel("crypto")
+
+
+def test_point_value_reference_unknown_factory():
+    reference = PointValueReference.unknown()
+    assert all(
+        not reference.for_channel(channel).is_usable
+        for channel in PointValueReference.CHANNELS
+    )

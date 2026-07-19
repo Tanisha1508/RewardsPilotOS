@@ -4,6 +4,8 @@
 All ratios come from verified edges. Null/unverified edges never enter path
 math — they are surfaced only as "unverified path exists"."""
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 from contracts.api.verified_value import VerifiedValue
@@ -35,6 +37,9 @@ class RedemptionGoal(BaseModel):
     target_program: str
     required_points: float | None = Field(default=None, gt=0)
     description: str | None = None
+    # Which per-channel point value applies (spec update 2026-07-19).
+    # Transfer-to-program redemptions are travel redemptions by default.
+    redemption_type: Literal["cashback", "voucher", "travel"] = "travel"
 
 
 class RedemptionOptionsInput(BaseModel):
@@ -51,6 +56,9 @@ class RedemptionOption(BaseModel):
     points_required: float | None = None
     balance: float
     balance_sufficient: bool | None = None
+    # The point value for the goal's redemption channel, selected from the
+    # per-channel reference table (spec update 2026-07-19).
+    value_channel: str = "travel"
     point_value_reference_inr: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
     value_estimate_inr: float | None = None
     value_status: str = "unknown"  # "computed" only when point value is verified

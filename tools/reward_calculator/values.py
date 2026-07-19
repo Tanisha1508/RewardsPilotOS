@@ -1,10 +1,11 @@
 """Point-value reference lookup for redemption valuation (BUILD_SPEC §7).
 
 Values come from Rule Engine value tables (point_value_reference_inr per rule
-file). Currencies without a rule file, or with null/unverified values, stay
-unknown — valuation is never estimated."""
+file, per redemption channel since the 2026-07-19 spec update). Currencies
+without a rule file, or with null/unverified channel values, stay unknown —
+valuation is never estimated."""
 
-from contracts.api.verified_value import VerifiedValue
+from contracts.api.verified_value import PointValueReference
 from rules.parser.loader import RuleNotFoundError, list_versions
 from rules.versioning.selector import select_version
 
@@ -16,17 +17,17 @@ _CURRENCY_TO_CARD = {
 }
 
 
-def get_point_values(currencies: list[str]) -> dict[str, VerifiedValue]:
-    values: dict[str, VerifiedValue] = {}
+def get_point_values(currencies: list[str]) -> dict[str, PointValueReference]:
+    values: dict[str, PointValueReference] = {}
     for currency in currencies:
         card_key = _CURRENCY_TO_CARD.get(currency)
         if card_key is None:
-            values[currency] = VerifiedValue.unknown()
+            values[currency] = PointValueReference.unknown()
             continue
         try:
             list_versions(card_key)
         except RuleNotFoundError:
-            values[currency] = VerifiedValue.unknown()
+            values[currency] = PointValueReference.unknown()
             continue
         values[currency] = select_version(card_key).point_value_reference_inr
     return values

@@ -4,9 +4,19 @@
     "from_node": "hdfc_reward_points",
     "to_node": "air_india_flying_returns",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "[NEED: verify transfer partnership and ratio from issuer docs] ratio not found in any source",
     "source_doc_id": null,
     "last_verified": null
   },
@@ -15,9 +25,19 @@
     "from_node": "hdfc_reward_points",
     "to_node": "singapore_krisflyer",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
+    "ratio": {
+      "value": 1.0,
+      "status": "unverified",
+      "source": "Third-party aggregators (not official); pending official confirmation",
+      "confidence": 0.5
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "[NEED: confirm with official HDFC source] candidate ratio 1:1 per third-party aggregators",
     "source_doc_id": null,
     "last_verified": null
   },
@@ -26,9 +46,19 @@
     "from_node": "hdfc_reward_points",
     "to_node": "marriott_bonvoy",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
+    "ratio": {
+      "value": 0.5,
+      "status": "unverified",
+      "source": "Third-party aggregators (not official); pending official confirmation",
+      "confidence": 0.5
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "[NEED: confirm with official HDFC source] candidate ratio 2:1 per third-party aggregators",
     "source_doc_id": null,
     "last_verified": null
   },
@@ -37,8 +67,18 @@
     "from_node": "edge_miles",
     "to_node": "air_india_flying_returns",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
     "source_doc_id": null,
     "last_verified": null
@@ -48,8 +88,18 @@
     "from_node": "edge_miles",
     "to_node": "singapore_krisflyer",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
     "source_doc_id": null,
     "last_verified": null
@@ -59,8 +109,18 @@
     "from_node": "membership_rewards",
     "to_node": "air_india_flying_returns",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
     "source_doc_id": null,
     "last_verified": null
@@ -70,8 +130,18 @@
     "from_node": "membership_rewards",
     "to_node": "singapore_krisflyer",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
     "source_doc_id": null,
     "last_verified": null
@@ -81,8 +151,18 @@
     "from_node": "membership_rewards",
     "to_node": "marriott_bonvoy",
     "edge_type": "transfer",
-    "ratio": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
-    "min_transfer": { "value": null, "status": "unverified", "source": null, "confidence": 0 },
+    "ratio": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
     "notes": "[NEED: verify transfer partnership and ratio from issuer docs]",
     "source_doc_id": null,
     "last_verified": null
