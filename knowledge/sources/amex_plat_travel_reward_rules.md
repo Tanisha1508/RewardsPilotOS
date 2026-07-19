@@ -31,7 +31,7 @@ Purchases through the Reward Multiplier portal at eligible merchants (Flipkart, 
 
 The annual fee is INR 5,000 plus GST, the same in the first year and from the second year onward (no separate joining/renewal split; official, retrieved 2026-07-20). The foreign currency markup is 3.5 percent plus GST, approximately 4.4 to 4.5 percent effective, uniform across Amex India cards (three independent trackers plus a cardholder-reported real transaction rate, converging).
 
-Renewal fee waiver policy: [NEED: verify from issuer docs] — not covered by research to date.
+No official spend-based renewal fee waiver exists (three independent sources — CardInsider, Paisabazaar, CardMaven — explicitly stating this in near-identical language, retrieved 2026-07-20). Informal customer-retention offers exist case-by-case: calling Amex near renewal can yield a discretionary partial waiver or a points-for-fee trade (for example, surrendering 10,000 MR points for a full waiver), but this is retention negotiation, not published policy. A spend-based waiver existed historically around 2018 with an INR 15 lakh threshold and was discontinued; it does not apply to current rules.
 
 # Amex Membership Rewards points expiry
 

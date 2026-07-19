@@ -148,7 +148,7 @@ def test_amex_plat_travel_v2_computes(engine, category, channel, status, points,
     assert result.applied == applied
     assert result.cap_applied is cap_applied
     if status == "computed":
-        assert result.rule_version == 2
+        assert result.rule_version == 3
 
 
 def test_amex_structures_parsed(engine):
@@ -165,9 +165,10 @@ def test_amex_structures_parsed(engine):
     assert rule.point_value_reference_inr.for_channel("cashback").value == 0.25
     assert rule.point_value_reference_inr.for_channel("voucher") is None
     assert rule.point_value_reference_inr.for_channel("travel") is None
-    # renewal waiver: the single residual open item — unverified, NOT assumed N/A
-    assert rule.fees.renewal_fee_waiver_spend_inr is not None
-    assert rule.fees.renewal_fee_waiver_spend_inr.is_usable is False
+    # renewal waiver residual closed 2026-07-20: confirmed no official waiver
+    # exists (None = not applicable; finding + retention-offer context in notes)
+    assert rule.fees.renewal_fee_waiver_spend_inr is None
+    assert "NO official spend-based renewal fee waiver" in rule.fees.notes
 
 
 def test_hdfc_voucher_cap_clips(engine):

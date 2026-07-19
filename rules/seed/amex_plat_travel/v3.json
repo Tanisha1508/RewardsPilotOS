@@ -1,0 +1,191 @@
+{
+  "card_key": "amex_plat_travel",
+  "version": 3,
+  "effective_date": "2026-07-20",
+  "reward_currency": "membership_rewards",
+  "base_earn": {
+    "rate": {
+      "value": 1,
+      "status": "verified",
+      "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20 (1 Membership Rewards Point per INR 50; India-issued Platinum Travel \u2014 distinct from Platinum Charge 1/40, Gold, Platinum Reserve, MR Card, SmartEarn: never merge data across these products)",
+      "confidence": 0.9
+    },
+    "per_amount": 50,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "reward_multiplier",
+      "category": "all",
+      "multiplier": {
+        "value": 3,
+        "status": "verified",
+        "source": "americanexpress.com/in/benefits/rewards-program/terms-conditions.html (official Reward Multiplier T&C), retrieved 2026-07-20 (3X total = 1X base + 2X bonus per INR 50, only via the Reward Multiplier portal at eligible merchants; not on direct merchant sites)",
+        "confidence": 0.95
+      },
+      "monthly_cap_points": {
+        "value": 25000,
+        "status": "verified",
+        "source": "americanexpress.com/in/benefits/rewards-program/terms-conditions.html (official Reward Multiplier T&C), retrieved 2026-07-20 (25,000 BONUS MR points/month \u2014 bonus portion only; base 1X uncapped. Engine approximation clips total accelerated points at this ceiling, conservative above ~INR 6.25L/month portal spend)",
+        "confidence": 0.95
+      },
+      "cap_scope": "reward_multiplier_bonus",
+      "notes": "Program validity 2021-01-01 to 2026-07-31 \u2014 end date approaching, renewal unconfirmed (flagged in VERIFICATION_QUEUE). Crediting within 120 business days (hotel/airline: 120 days from service date). Per-merchant exclusions (mobiles, jewellery, large appliances, gift cards, etc.) are out of MVP scope \u2014 documented limitation, not a gap."
+    }
+  ],
+  "caps": [
+    {
+      "scope": "reward_multiplier_bonus",
+      "period": "month",
+      "cap_points": {
+        "value": 25000,
+        "status": "verified",
+        "source": "americanexpress.com/in/benefits/rewards-program/terms-conditions.html (official Reward Multiplier T&C), retrieved 2026-07-20 (bonus-portion monthly cap)",
+        "confidence": 0.95
+      },
+      "notes": "Bonus 2X portion only; base 1X earn is uncapped and separate"
+    }
+  ],
+  "exclusions": [
+    "fuel",
+    "insurance",
+    "utilities",
+    "cash_transactions",
+    "emi_point_of_sale"
+  ],
+  "milestones": [
+    {
+      "spend_threshold": {
+        "value": 190000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 7500,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Recurring each cardmembership year; redeemable on the Platinum Travel Collection. Operational: bonus portion auto-issued only for milestones achieved after 2026-03-09, earlier achievements require manual claim via call/chat."
+    },
+    {
+      "spend_threshold": {
+        "value": 400000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Plus a Taj Experiences E-Gift Card worth INR 10,000 (non-point benefit). Recurring yearly; Platinum Travel Collection; same operational auto-issue flag (post-2026-03-09)."
+    },
+    {
+      "spend_threshold": {
+        "value": 700000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "bonus_points": {
+        "value": 22500,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20 (additional)",
+        "confidence": 0.95
+      },
+      "period": "year",
+      "notes": "Additional 22,500 bonus MR points; recurring yearly; Platinum Travel Collection; same operational auto-issue flag."
+    }
+  ],
+  "point_value_reference_inr": {
+    "cashback": {
+      "value": 0.25,
+      "status": "verified",
+      "source": "2 independent India-specific sources agreeing; general Amex India 'Select & Redeem \u2014 Cover Your Card Charges' statement-credit rate (channel mapping: statement credit -> cashback)",
+      "confidence": 0.75
+    },
+    "voucher": null,
+    "travel": null
+  },
+  "redemption_catalogue": [
+    {
+      "brand": "air_india_vouchers",
+      "rate_per_point_inr": {
+        "value": 0.3,
+        "status": "verified",
+        "source": "Official americanexpress.com/in/benefits/platinum-travel-credit-card/ catalogue page (exact figures), retrieved 2026-07-20 (20,000 pts = INR 6,000 or 40,000 pts = INR 12,000)",
+        "confidence": 0.9
+      },
+      "notes": "Platinum Travel Collection; card-specific preferential rate above the general 0.25 statement-credit rate"
+    },
+    {
+      "brand": "taj_hotels_resorts",
+      "rate_per_point_inr": {
+        "value": 0.4,
+        "status": "verified",
+        "source": "Official americanexpress.com/in/benefits/platinum-travel-credit-card/ catalogue page (exact figures), retrieved 2026-07-20 (12,500 pts = INR 5,000 or 25,000 pts = INR 10,000)",
+        "confidence": 0.9
+      },
+      "notes": "Platinum Travel Collection"
+    },
+    {
+      "brand": "postcard_hotels",
+      "rate_per_point_inr": {
+        "value": 0.5,
+        "status": "verified",
+        "source": "Official americanexpress.com/in/benefits/platinum-travel-credit-card/ catalogue page (exact figures), retrieved 2026-07-20 (20,000 pts = INR 10,000)",
+        "confidence": 0.9
+      },
+      "notes": "Platinum Travel Collection"
+    }
+  ],
+  "points_expiry": {
+    "never_expires": true,
+    "forfeit_on_cancellation_days": 30,
+    "effective_from": "2022-05-03",
+    "notes": "Verified 0.95, official: points never expire while the card is active and in good standing; forfeited within 30 days upon cancellation"
+  },
+  "fees": {
+    "annual_fee_inr": {
+      "value": 5000,
+      "status": "verified",
+      "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20 (INR 5,000 + GST; same first year and second-year-onward, no separate joining/renewal split)",
+      "confidence": 0.95
+    },
+    "renewal_fee_waiver_spend_inr": null,
+    "forex_markup_pct": {
+      "value": 3.5,
+      "status": "verified",
+      "source": "3 independent trackers plus a cardholder-reported real transaction rate, all converging (3.5% + GST, approx 4.4-4.5% effective; uniform across Amex India cards)",
+      "confidence": 0.85
+    },
+    "notes": "Annual fee INR 5,000 + GST. NO official spend-based renewal fee waiver exists (verified 2026-07-20, confidence 0.8: CardInsider, Paisabazaar, and CardMaven explicitly stating this in near-identical language). Informal customer-retention offers exist case-by-case (discretionary partial waiver or points-for-fee trade near renewal) but are not published policy and are not modeled. A spend-based waiver existed historically (~2018, INR 15L threshold) but was discontinued."
+  },
+  "welcome_bonus": [
+    {
+      "issued_from": null,
+      "issued_to": null,
+      "bonus_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "qualifying_transactions": 1,
+      "qualifying_spend_inr": {
+        "value": 15000,
+        "status": "verified",
+        "source": "americanexpress.com/in official pages (multiple, consistent), retrieved 2026-07-20",
+        "confidence": 0.95
+      },
+      "window_days": 90,
+      "notes": "First cardmembership year only. Requires BOTH INR 15,000 spend within 90 days AND annual fee payment."
+    }
+  ]
+}

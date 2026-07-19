@@ -18,10 +18,11 @@ Status values: `not_started` | `in_progress` | `verified` | `blocked`.
 
 ## P1 (MVP issuers — target during D3, Jul 21)
 
-**P1 COMPLETE (2026-07-20): all three MVP cards verified** — HDFC Infinia
-(closed 2026-07-19), Axis Atlas (closed 2026-07-19, 2 noted items), Amex
-Platinum Travel (closed 2026-07-20, 1 residual open item). Next up: P2 in
-listed order, starting with HDFC Diners Club Black.
+**P1 FULLY CLOSED (2026-07-20): all three MVP cards verified, 0 open items**
+— HDFC Infinia (closed 2026-07-19), Axis Atlas (closed 2026-07-19; 2
+noted-but-accepted discrepancies remain on record, not blocking), Amex
+Platinum Travel (closed 2026-07-20, waiver residual resolved same day).
+Next up: P2 in listed order, starting with HDFC Diners Club Black.
 
 ### HDFC Infinia — status: FULLY VERIFIED, no open items (closed 2026-07-19, rules/seed/hdfc_infinia/v3.json)
 
@@ -87,11 +88,18 @@ entered in the rule file or corpus.
 | Group B: Orchid Rewards 1:1 | database/seed/graph_edges.json | verified 2026-07-19 (2 sources agreeing, 0.7) |
 | Removed partners: Marriott Bonvoy, Accor, Qatar Privilege Club (2026-04-02; no edges; Qatar-via-Avios workaround not modeled) | knowledge doc | verified 2026-07-19 (4 sources agreeing on date, 0.8) |
 
-### Amex Platinum Travel — status: VERIFIED, 1 residual open item (closed 2026-07-20, rules/seed/amex_plat_travel/v2.json)
+### Amex Platinum Travel — status: FULLY VERIFIED, no open items (closed 2026-07-20, rules/seed/amex_plat_travel/v3.json)
 
-**Residual open item:** renewal fee waiver policy — not covered by research
-to date; field left `[NEED: verify from issuer docs]` rather than assumed
-absent (unlike Axis, where "no waiver exists" was positively confirmed).
+**Waiver residual resolved 2026-07-20:** NO official spend-based renewal fee
+waiver exists (verified 0.8: CardInsider, Paisabazaar, CardMaven explicitly
+stating this in near-identical language; field recorded as confirmed
+not-applicable). Context, not modeled as a rule-engine field: informal
+customer-retention offers exist — calling Amex near renewal can yield a
+discretionary partial waiver or a points-for-fee trade (e.g. surrender
+10,000 MR points for a full waiver) — but this is case-by-case retention
+negotiation, not published policy. A spend-based waiver existed historically
+(~2018, ₹15L threshold) and was discontinued; not applicable to current
+rules.
 
 **Review flags:** (1) Reward Multiplier program validity ends 2026-07-31 —
 renewal unconfirmed, re-verify as the date passes. (2) Transfer-partner and
