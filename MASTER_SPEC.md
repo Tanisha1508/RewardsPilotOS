@@ -12838,6 +12838,11 @@ RewardsPilotOS begins as an intelligent rewards recommendation platform and evol
 The long-term vision is to help users maximize the lifetime value of every financial product they own by continuously monitoring opportunities, optimizing decisions, and proactively recommending actions.
 
 ---
+# Rule Verifier
+
+An automated verification pipeline that extracts candidate reward values from official issuer documents, diffs them against current rule files, and generates a verification record for manual approval. Never writes to production rule files without explicit human approval. Documented in ADR-009 and BUILD_SPEC.md section 14a. Deferred past MVP; the MVP verification workflow is fully manual.
+
+
 
 # Roadmap Principles
 
@@ -13409,6 +13414,7 @@ ADR-005: Why MCP?
 ADR-006: Why ChromaDB?
 ADR-007: Why PostgreSQL?
 ADR-008: Why Multi-Agent?
+ADR-009: Manual Approval for Rule Verification (Fast-follow)
 
 ---
 

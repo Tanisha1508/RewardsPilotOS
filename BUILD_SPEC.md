@@ -73,7 +73,9 @@ RewardsPilotOS/
 │   ├── api/                   # shared API payload contracts
 │   ├── mcp/                   # MCP server/client contracts
 │   ├── tools/                 # tool input/output schemas
-│   └── events/                # event payloads (knowledge changes, notifications)
+│   └── events/                # event payloads (knowledge changes, notifications,
+│                             #   verification records — see contracts/events/
+│                             #   verification_record.schema.json, Fast Follow section)
 │
 ├── frontend/                  # Next.js 14 App Router
 │   ├── app/                   # (auth)/login, dashboard, cards, chat,
@@ -522,7 +524,100 @@ Each session ends runnable and committed. If a session slips, its remainder move
 
 **D5 (Jul 23–24): Opportunity engine + ship.** monitor.py change records → notifications, opportunities API + UI feed, eval report + CI + eval GitHub Actions, README (problem, architecture diagram, eval results labeled as measured with run date, targets labeled as targets, roadmap, [NEED] register), deploy Supabase → Render → seed + ingest → Vercel, production smoke test on the 10 end-to-end golden queries.
 
-Fast-follow list (post Jul 24, if anything slips): live MCP servers (Email, Calendar, Flight/Hotel Search), additional issuers per VERIFICATION_QUEUE priorities, statement parsing, award availability, email notifications.
+Fast-follow list (post Jul 24, if anything slips): live MCP servers (Email, Calendar, Flight/Hotel Search), Rule Verifier subsystem (see section 14a and ADR-009), additional issuers per VERIFICATION_QUEUE priorities, statement parsing, award availability, email notifications.
+
+## 14a. Fast Follow: Rule Verifier
+
+Not built in the MVP. Documented now so the extension point is designed correctly from day one; see ADR-009 in docs/adr/.
+
+Build a Rule Verifier subsystem that extends the Knowledge Platform (not the Rule Engine):
+
+```
+Knowledge Platform
+    │
+    ├── Crawler
+    ├── Parser
+    ├── Extractor
+    ├── Rule Verifier
+    └── Retrieval
+                │
+                ▼
+        rules/seed/
+                │
+                ▼
+        Rule Engine
+```
+
+Responsibilities:
+
+- Parse official issuer documents.
+- Extract structured reward values.
+- Compare against existing rule definitions.
+- Generate candidate change records conforming to `contracts/events/verification_record.schema.json`.
+- Populate `docs/VERIFICATION_QUEUE.md`.
+- Never modify rule files automatically.
+
+Rule updates require explicit manual approval before becoming active. Successful approval automatically re-runs Rule Engine tests, Graph Engine tests, and evaluation benchmarks.
+
+**Verification record contract** (`contracts/events/verification_record.schema.json`):
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VerificationRecord",
+  "type": "object",
+  "required": ["card", "field", "candidate_value", "status", "confidence", "source", "extractor"],
+  "properties": {
+    "card": { "type": "string" },
+    "field": { "type": "string" },
+    "old_value": { "type": ["string", "number", "null"] },
+    "candidate_value": { "type": ["string", "number", "null"] },
+    "status": { "type": "string", "enum": ["pending_review", "approved", "rejected"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "source": {
+      "type": "object",
+      "required": ["title", "url", "verified_at"],
+      "properties": {
+        "title": { "type": "string" },
+        "url": { "type": "string" },
+        "verified_at": { "type": "string", "format": "date" }
+      }
+    },
+    "extractor": {
+      "type": "object",
+      "required": ["parser", "model"],
+      "properties": {
+        "parser": { "type": "string" },
+        "model": { "type": ["string", "null"] }
+      }
+    },
+    "approved_by": { "type": ["string", "null"] },
+    "approved_at": { "type": ["string", "null"] }
+  }
+}
+```
+
+Example instance:
+
+```yaml
+card: hdfc_infinia
+field: smartbuy_multiplier
+old_value: "10x"
+candidate_value: "5x"
+status: pending_review
+confidence: 0.91
+source:
+  title: "HDFC Infinia Reward Points Terms"
+  url: "https://..."
+  verified_at: "2026-07-19"
+extractor:
+  parser: pdf_parser_v1
+  model: null
+approved_by: null
+approved_at: null
+```
+
+Human-readable and tool-readable by the same structure; keeps verification deterministic and gives a full audit trail.
 
 ## 15. Definition of done (per MASTER_SPEC §17, operationalized)
 
