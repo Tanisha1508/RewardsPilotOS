@@ -35,6 +35,28 @@ class Milestone(BaseModel):
     notes: str | None = None
 
 
+class Fees(BaseModel):
+    """Card fee facts (spec update 2026-07-19). annual_fee and the renewal
+    waiver are distinct facts — never conflated."""
+
+    annual_fee_inr: VerifiedValue
+    renewal_fee_waiver_spend_inr: VerifiedValue = Field(
+        default_factory=VerifiedValue.unknown
+    )
+    notes: str | None = None
+
+
+class ContinuationEligibility(BaseModel):
+    """Card retention requirement (spec update 2026-07-19): annual spend OR
+    relationship value, whichever is met (any_of)."""
+
+    annual_spend_inr: VerifiedValue
+    relationship_value_inr: VerifiedValue
+    requirement: str = "any_of"
+    effective_from: str | None = None
+    notes: str | None = None
+
+
 class RuleFile(BaseModel):
     card_key: str
     version: int
@@ -50,3 +72,5 @@ class RuleFile(BaseModel):
     point_value_reference_inr: PointValueReference = Field(
         default_factory=PointValueReference.unknown
     )
+    fees: Fees | None = None
+    continuation_eligibility: ContinuationEligibility | None = None

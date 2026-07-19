@@ -188,8 +188,7 @@
             "issuer": "hdfc"
           }
         }
-      ],
-      "expect_unknown": true
+      ]
     },
     {
       "id": "e08",

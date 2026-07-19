@@ -13,7 +13,8 @@ def test_ingest_covers_fixture_corpus(ingest_report):
 
 
 def test_unverified_facts_excluded_and_logged(ingest_report, chroma_client):
-    assert len(ingest_report.excluded_facts) >= 12  # real-card [NEED] lines
+    # axis + amex [NEED] lines; hdfc is fully verified as of 2026-07-19
+    assert len(ingest_report.excluded_facts) >= 8
     assert all("[NEED" in fact.line for fact in ingest_report.excluded_facts)
     for name in COLLECTIONS:
         data = get_collection(chroma_client, name).get(include=["documents"])

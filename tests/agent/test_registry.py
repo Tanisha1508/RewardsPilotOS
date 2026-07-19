@@ -98,9 +98,9 @@ def test_transfer_ratio_tool_exposes_verified_and_unverified():
     verified_targets = {r["to_program"] for r in hdfc.result["ratios"]}
     assert verified_targets == {
         "turkish_miles", "accor", "avianca_lifemiles", "club_itc_green_points",
+        "singapore_krisflyer", "marriott_bonvoy", "air_india_flying_returns",
     }
-    assert all("unverified" in p for p in hdfc.result["unverified_partners"])
-    assert len(hdfc.result["unverified_partners"]) == 3  # krisflyer, marriott, air india
+    assert hdfc.result["unverified_partners"] == []  # card fully verified
     axis = execute("GetTransferRatios", {"currency": "edge_miles"})
     assert axis.result["ratios"] == []
     assert axis.result["unverified_partners"]

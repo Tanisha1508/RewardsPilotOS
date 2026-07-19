@@ -1,0 +1,219 @@
+{
+  "card_key": "hdfc_infinia",
+  "version": 3,
+  "effective_date": "2026-07-19",
+  "reward_currency": "hdfc_reward_points",
+  "base_earn": {
+    "rate": {
+      "value": 5,
+      "status": "verified",
+      "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+      "confidence": 0.95
+    },
+    "per_amount": 150,
+    "currency": "INR"
+  },
+  "accelerated": [
+    {
+      "channel": "smartbuy",
+      "category": "flights",
+      "multiplier": {
+        "value": 5,
+        "status": "verified",
+        "source": "SmartBuy public page (offers.smartbuy.hdfc.bank.in), retrieved 2026-07-19 \u2014 general page, not Infinia-login-specific",
+        "confidence": 0.7
+      },
+      "monthly_cap_points": {
+        "value": 15000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "cap_scope": "smartbuy_total",
+      "notes": "5X SmartBuy flights; cap shared across all SmartBuy earning (smartbuy_total)"
+    },
+    {
+      "channel": "smartbuy",
+      "category": "hotels",
+      "multiplier": {
+        "value": 10,
+        "status": "verified",
+        "source": "SmartBuy public page (offers.smartbuy.hdfc.bank.in), retrieved 2026-07-19 \u2014 general page, not Infinia-login-specific",
+        "confidence": 0.7
+      },
+      "monthly_cap_points": {
+        "value": 15000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "cap_scope": "smartbuy_total",
+      "notes": "10X SmartBuy hotels; cap shared across all SmartBuy earning (smartbuy_total)"
+    },
+    {
+      "channel": "smartbuy",
+      "category": "brand_vouchers",
+      "multiplier": {
+        "value": 5,
+        "status": "verified",
+        "source": "CardExpress review (cardexpress.in/reviews/hdfc-infinia) + prior convergent sources (SmartBuy public page, HDFC T&C PDF, product-owner confirmation)",
+        "confidence": 0.85
+      },
+      "monthly_cap_points": {
+        "value": 3000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "cap_scope": "smartbuy_voucher",
+      "notes": "Voucher/Gyftr cap (effective 2026-07-01) is a subset of smartbuy_total, not additional; engine applies the entry cap only. History: HDFC announced a 5X-to-3X devaluation in January 2026 and reversed it on January 14, 2026; current stable rate is 5X (16.5%). Resolves the earlier flagged conflict \u2014 both prior reports were accurate at different points in time."
+    }
+  ],
+  "caps": [
+    {
+      "scope": "smartbuy_total",
+      "period": "month",
+      "cap_points": {
+        "value": 15000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "smartbuy_voucher",
+      "period": "month",
+      "effective_date": "2026-07-01",
+      "cap_points": {
+        "value": 3000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "notes": "Subset of smartbuy_total, not additional"
+    },
+    {
+      "scope": "grocery",
+      "period": "month",
+      "cap_points": {
+        "value": 2000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "insurance",
+      "period": "month",
+      "cap_points": {
+        "value": 10000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "utilities",
+      "period": "month",
+      "cap_points": {
+        "value": 2000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "telecom",
+      "period": "month",
+      "cap_points": {
+        "value": 2000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "statement_cycle_max",
+      "period": "statement_cycle",
+      "cap_points": {
+        "value": 200000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      }
+    },
+    {
+      "scope": "cashback_redemption",
+      "period": "month",
+      "cap_points": {
+        "value": 50000,
+        "status": "verified",
+        "source": "HDFC Rewards Points Program Terms and Conditions PDF (hdfc.bank.in), retrieved 2026-07-19",
+        "confidence": 0.95
+      },
+      "notes": "Redemption cap (points redeemable as cashback per month), not an earn cap"
+    }
+  ],
+  "exclusions": [
+    "fuel",
+    "easyemi",
+    "wallet_loads",
+    "rent",
+    "property_management",
+    "government_payments",
+    "education_third_party_apps"
+  ],
+  "milestones": [],
+  "point_value_reference_inr": {
+    "cashback": {
+      "value": 0.3,
+      "status": "verified",
+      "source": "Two independent sources agreeing (RewardMatrix, CardExpress)",
+      "confidence": 0.8
+    },
+    "voucher": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "Three independent sources agreeing (Paisabazaar, CardMaven, 1Finance). Exception: Apple Products and Tanishq vouchers redeem at the INR 1.00 travel rate, not the standard voucher rate; per-brand rates not modeled.",
+      "confidence": 0.8
+    },
+    "travel": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Four independent sources agreeing, including CardExpress's explicit redemption table",
+      "confidence": 0.8
+    }
+  },
+  "fees": {
+    "annual_fee_inr": {
+      "value": 12500,
+      "status": "verified",
+      "source": "HDFC official fees page (hdfc.bank.in/credit-cards/infinia-credit-card/fees-and-charges), retrieved 2026-07-19",
+      "confidence": 0.95
+    },
+    "renewal_fee_waiver_spend_inr": {
+      "value": 1000000,
+      "status": "verified",
+      "source": "HDFC official page + CardExpress corroboration",
+      "confidence": 0.8
+    },
+    "notes": "Annual fee is INR 12,500 + GST; INR 10 lakh annual spend waives the renewal fee"
+  },
+  "continuation_eligibility": {
+    "annual_spend_inr": {
+      "value": 1800000,
+      "status": "verified",
+      "source": "Multiple independent news reports (Feb 2026) + CardExpress + product owner direct confirmation, 2026-07-19",
+      "confidence": 0.85
+    },
+    "relationship_value_inr": {
+      "value": 5000000,
+      "status": "verified",
+      "source": "Multiple independent news reports (Feb 2026) + CardExpress + product owner direct confirmation, 2026-07-19",
+      "confidence": 0.85
+    },
+    "requirement": "any_of",
+    "effective_from": "2027-04-01",
+    "notes": "INR 18 lakh annual spend OR INR 50 lakh Relationship Value (average balance across savings/current/FD/RD) required to retain the card from April 2027; existing holders protected until March 2027"
+  }
+}

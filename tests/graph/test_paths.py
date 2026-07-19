@@ -107,19 +107,29 @@ def test_seed_graph_loads_with_verified_synthetic_paths():
     assert result.paths[0].min_transfer == 2000
 
 
-def test_seed_graph_krisflyer_still_unverified_despite_candidate_ratio():
+def test_seed_graph_axis_register_edges_still_unverified():
     graph = load_seed_graph()
-    result = best_transfer_paths(graph, "hdfc_reward_points", "singapore_krisflyer")
+    result = best_transfer_paths(graph, "edge_miles", "singapore_krisflyer")
     assert result.paths == []
     assert result.unverified_paths_exist is True
     assert any("[NEED" in note for note in result.unverified_notes)
 
 
-def test_seed_graph_hdfc_verified_partners():
+def test_seed_graph_hdfc_all_seven_partners_verified():
     graph = load_seed_graph()
-    for program in ("turkish_miles", "accor", "avianca_lifemiles", "club_itc_green_points"):
+    expected_ratios = {
+        "turkish_miles": 0.5,
+        "accor": 0.5,
+        "avianca_lifemiles": 0.5,
+        "club_itc_green_points": 0.5,
+        "air_india_flying_returns": 0.5,
+        "marriott_bonvoy": 0.5,
+        "singapore_krisflyer": 1.0,
+    }
+    for program, ratio in expected_ratios.items():
         result = best_transfer_paths(graph, "hdfc_reward_points", program)
         assert len(result.paths) == 1, program
-        assert result.paths[0].cumulative_ratio == 0.5  # 2:1
+        assert result.paths[0].cumulative_ratio == ratio, program
+        assert result.unverified_paths_exist is False, program
     club_itc = best_transfer_paths(graph, "hdfc_reward_points", "club_itc_green_points")
     assert club_itc.paths[0].min_transfer == 100

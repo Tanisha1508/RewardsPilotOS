@@ -76,6 +76,17 @@ VIOLATION_TABLE = [
         ),
         "milestones[0].bonus_points",
     ),
+    (
+        lambda r: r.__setitem__("fees", {"annual_fee_inr": 12500}),
+        "fees.annual_fee_inr: numeric field must be a verified-value object",
+    ),
+    (
+        lambda r: r.__setitem__(
+            "continuation_eligibility",
+            {"annual_spend_inr": verified(1_800_000), "relationship_value_inr": 5_000_000},
+        ),
+        "continuation_eligibility.relationship_value_inr",
+    ),
 ]
 
 
@@ -89,6 +100,23 @@ def test_violations(mutate, fragment):
 
 def test_valid_rule_passes():
     assert validate_rule_dict(make_rule()) == []
+
+
+def test_valid_fees_and_continuation_pass():
+    rule = make_rule(
+        fees={
+            "annual_fee_inr": verified(12500),
+            "renewal_fee_waiver_spend_inr": verified(1_000_000),
+            "notes": "synthetic",
+        },
+        continuation_eligibility={
+            "annual_spend_inr": verified(1_800_000),
+            "relationship_value_inr": verified(5_000_000),
+            "requirement": "any_of",
+            "effective_from": "2027-04-01",
+        },
+    )
+    assert validate_rule_dict(rule) == []
 
 
 def test_missing_optional_point_value_is_allowed():

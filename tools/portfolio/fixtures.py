@@ -25,7 +25,7 @@ CARDS = [
         card_name="HDFC Infinia",
         network="visa",
         reward_currency="hdfc_reward_points",
-        annual_fee=None,  # [NEED: verify from issuer docs]
+        annual_fee=12500.0,  # + GST; verified 2026-07-19 (HDFC official fees page)
         renewal_date="2026-11-01",
     ),
     Card(

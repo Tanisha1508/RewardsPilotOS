@@ -1,15 +1,177 @@
 {
   "description": "10 path queries against the seed graph with hand-computed expected ranked paths. Metric: exact match, target 100%.",
   "queries": [
-    { "id": "g01", "type": "best_transfer_paths", "currency": "voyager_points", "target_program": "skyhigh_airways", "expected": { "paths": [ { "nodes": ["voyager_points", "skyhigh_airways"], "cumulative_ratio": 1.0, "min_transfer": 2000 } ], "unverified_paths_exist": false } },
-    { "id": "g02", "type": "best_transfer_paths", "currency": "voyager_points", "target_program": "grandstay_hotels", "expected": { "paths": [ { "nodes": ["voyager_points", "grandstay_hotels"], "cumulative_ratio": 0.5, "min_transfer": 5000 } ], "unverified_paths_exist": false } },
-    { "id": "g03", "type": "best_transfer_paths", "currency": "trailblazer_miles", "target_program": "skyhigh_airways", "expected": { "paths": [ { "nodes": ["trailblazer_miles", "skyhigh_airways"], "cumulative_ratio": 0.5, "min_transfer": 1000 } ], "unverified_paths_exist": false } },
-    { "id": "g04", "type": "best_transfer_paths", "currency": "trailblazer_miles", "target_program": "grandstay_hotels", "expected": { "paths": [ { "nodes": ["trailblazer_miles", "grandstay_hotels"], "cumulative_ratio": 1.0, "min_transfer": 3000 } ], "unverified_paths_exist": false } },
-    { "id": "g05", "type": "best_transfer_paths", "currency": "hdfc_reward_points", "target_program": "singapore_krisflyer", "expected": { "paths": [], "unverified_paths_exist": true } },
-    { "id": "g06", "type": "best_transfer_paths", "currency": "hdfc_reward_points", "target_program": "air_india_flying_returns", "expected": { "paths": [], "unverified_paths_exist": true } },
-    { "id": "g07", "type": "best_transfer_paths", "currency": "membership_rewards", "target_program": "marriott_bonvoy", "expected": { "paths": [], "unverified_paths_exist": true } },
-    { "id": "g08", "type": "best_transfer_paths", "currency": "edge_miles", "target_program": "skyhigh_airways", "expected": { "paths": [], "unverified_paths_exist": false } },
-    { "id": "g09", "type": "best_transfer_paths", "currency": "voyager_points", "target_program": "marriott_bonvoy", "expected": { "paths": [], "unverified_paths_exist": false } },
-    { "id": "g10", "type": "redemption_options", "portfolio": { "voyager_points": 30000, "trailblazer_miles": 30000 }, "goal": { "target_program": "skyhigh_airways", "required_points": 10000 }, "expected": { "options": [ { "currency": "voyager_points", "points_required": 10000, "balance_sufficient": true, "value_status": "unknown" }, { "currency": "trailblazer_miles", "points_required": 20000, "balance_sufficient": true, "value_status": "unknown" } ] } }
+    {
+      "id": "g01",
+      "type": "best_transfer_paths",
+      "currency": "voyager_points",
+      "target_program": "skyhigh_airways",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "voyager_points",
+              "skyhigh_airways"
+            ],
+            "cumulative_ratio": 1.0,
+            "min_transfer": 2000
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g02",
+      "type": "best_transfer_paths",
+      "currency": "voyager_points",
+      "target_program": "grandstay_hotels",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "voyager_points",
+              "grandstay_hotels"
+            ],
+            "cumulative_ratio": 0.5,
+            "min_transfer": 5000
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g03",
+      "type": "best_transfer_paths",
+      "currency": "trailblazer_miles",
+      "target_program": "skyhigh_airways",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "trailblazer_miles",
+              "skyhigh_airways"
+            ],
+            "cumulative_ratio": 0.5,
+            "min_transfer": 1000
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g04",
+      "type": "best_transfer_paths",
+      "currency": "trailblazer_miles",
+      "target_program": "grandstay_hotels",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "trailblazer_miles",
+              "grandstay_hotels"
+            ],
+            "cumulative_ratio": 1.0,
+            "min_transfer": 3000
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g05",
+      "type": "best_transfer_paths",
+      "currency": "hdfc_reward_points",
+      "target_program": "singapore_krisflyer",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "hdfc_reward_points",
+              "singapore_krisflyer"
+            ],
+            "cumulative_ratio": 1.0,
+            "min_transfer": null
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g06",
+      "type": "best_transfer_paths",
+      "currency": "hdfc_reward_points",
+      "target_program": "air_india_flying_returns",
+      "expected": {
+        "paths": [
+          {
+            "nodes": [
+              "hdfc_reward_points",
+              "air_india_flying_returns"
+            ],
+            "cumulative_ratio": 0.5,
+            "min_transfer": null
+          }
+        ],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g07",
+      "type": "best_transfer_paths",
+      "currency": "membership_rewards",
+      "target_program": "marriott_bonvoy",
+      "expected": {
+        "paths": [],
+        "unverified_paths_exist": true
+      }
+    },
+    {
+      "id": "g08",
+      "type": "best_transfer_paths",
+      "currency": "edge_miles",
+      "target_program": "skyhigh_airways",
+      "expected": {
+        "paths": [],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g09",
+      "type": "best_transfer_paths",
+      "currency": "voyager_points",
+      "target_program": "marriott_bonvoy",
+      "expected": {
+        "paths": [],
+        "unverified_paths_exist": false
+      }
+    },
+    {
+      "id": "g10",
+      "type": "redemption_options",
+      "portfolio": {
+        "voyager_points": 30000,
+        "trailblazer_miles": 30000
+      },
+      "goal": {
+        "target_program": "skyhigh_airways",
+        "required_points": 10000
+      },
+      "expected": {
+        "options": [
+          {
+            "currency": "voyager_points",
+            "points_required": 10000,
+            "balance_sufficient": true,
+            "value_status": "unknown"
+          },
+          {
+            "currency": "trailblazer_miles",
+            "points_required": 20000,
+            "balance_sufficient": true,
+            "value_status": "unknown"
+          }
+        ]
+      }
+    }
   ]
 }

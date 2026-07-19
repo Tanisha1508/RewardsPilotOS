@@ -101,4 +101,14 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
     for i, entry in enumerate(raw.get("milestones") or []):
         for field in _NUMERIC_FIELDS_MILESTONE:
             problems.extend(_check_verified_value(entry.get(field), f"milestones[{i}].{field}"))
+    fees = raw.get("fees")
+    if fees is not None:
+        for field in ("annual_fee_inr", "renewal_fee_waiver_spend_inr"):
+            problems.extend(_check_verified_value(fees.get(field), f"fees.{field}"))
+    continuation = raw.get("continuation_eligibility")
+    if continuation is not None:
+        for field in ("annual_spend_inr", "relationship_value_inr"):
+            problems.extend(
+                _check_verified_value(continuation.get(field), f"continuation_eligibility.{field}")
+            )
     return problems

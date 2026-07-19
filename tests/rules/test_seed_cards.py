@@ -69,7 +69,7 @@ def test_hdfc_infinia_v2_computes(engine, category, channel, status, points, app
     assert result.cap_applied is cap_applied
     if status == "computed":
         assert result.sources, "computed results must carry sources"
-        assert result.rule_version == 2
+        assert result.rule_version == 3
 
 
 def test_hdfc_voucher_cap_clips(engine):
@@ -112,10 +112,10 @@ def test_unverified_seed_files_contain_no_fabricated_numbers(card_key):
     walk(raw)
 
 
-def test_hdfc_v2_verified_fields_carry_sources():
+def test_hdfc_latest_verified_fields_carry_sources():
     """Every verified value in the researched card must carry a source and
     confidence > 0; every unverified value must stay unusable."""
-    raw = json.loads((SEED_DIR / "hdfc_infinia" / "v2.json").read_text())
+    raw = json.loads((SEED_DIR / "hdfc_infinia" / "v3.json").read_text())
 
     def walk(node):
         if isinstance(node, dict):
@@ -135,12 +135,36 @@ def test_hdfc_v2_verified_fields_carry_sources():
     walk(raw)
 
 
-def test_hdfc_point_values_remain_unusable(engine):
-    """Per-channel point values are unverified estimates: present for audit,
-    never computable."""
+def test_hdfc_point_values_now_verified(engine):
+    """All three channel point values are verified as of v3 (2026-07-19):
+    cashback 0.30, voucher 0.50, travel 1.00 INR per point."""
     rule = load_rule("hdfc_infinia")
-    for channel in ("cashback", "voucher", "travel"):
-        assert rule.point_value_reference_inr.for_channel(channel).is_usable is False
+    expected = {"cashback": 0.3, "voucher": 0.5, "travel": 1.0}
+    for channel, value in expected.items():
+        reference = rule.point_value_reference_inr.for_channel(channel)
+        assert reference.is_usable is True
+        assert reference.value == value
+        assert reference.confidence == 0.8
+
+
+def test_hdfc_fees_and_continuation_verified():
+    rule = load_rule("hdfc_infinia")
+    assert rule.fees is not None
+    assert rule.fees.annual_fee_inr.value == 12500
+    assert rule.fees.annual_fee_inr.is_usable is True
+    assert rule.fees.renewal_fee_waiver_spend_inr.value == 1_000_000
+    assert rule.continuation_eligibility is not None
+    assert rule.continuation_eligibility.annual_spend_inr.value == 1_800_000
+    assert rule.continuation_eligibility.relationship_value_inr.value == 5_000_000
+    assert rule.continuation_eligibility.requirement == "any_of"
+    assert rule.continuation_eligibility.effective_from == "2027-04-01"
+
+
+def test_unresearched_cards_have_no_fee_fields():
+    for card_key in UNVERIFIED_CARDS:
+        rule = load_rule(card_key)
+        assert rule.fees is None
+        assert rule.continuation_eligibility is None
 
 
 def test_hdfc_cap_check_now_verified(engine):

@@ -259,16 +259,79 @@
     "ratio": {
       "value": 0.5,
       "status": "verified",
-      "source": "Product owner direct confirmation 2026-07-19; not independently cross-checked against an official HDFC page",
-      "confidence": 0.7
+      "source": "Product owner confirmed twice independently, 2026-07-19",
+      "confidence": 0.85
     },
     "min_transfer": {
       "value": 100,
       "status": "verified",
-      "source": "Product owner direct confirmation 2026-07-19; not independently cross-checked against an official HDFC page",
-      "confidence": 0.7
+      "source": "Product owner confirmed twice independently, 2026-07-19",
+      "confidence": 0.85
     },
-    "notes": "2:1; transfers in multiples of 100 points; credit time 2-4 working days; source is product-owner confirmation, not yet cross-checked against an official page",
+    "notes": "2:1; transfers in multiples of 100 points; credit time 2-4 working days; product owner confirmed twice independently",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_krisflyer",
+    "from_node": "hdfc_reward_points",
+    "to_node": "singapore_krisflyer",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 1.0,
+      "status": "verified",
+      "source": "Product owner confirmation + multiple independent corroborating sources, 2026-07-19",
+      "confidence": 0.8
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "1:1 (10,000 RP = 10,000 KrisFlyer miles); transfer must be initiated via NetBanking, not the SmartBuy portal",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_marriott",
+    "from_node": "hdfc_reward_points",
+    "to_node": "marriott_bonvoy",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "Product owner direct confirmation ('2 Infinia RPs = 1 Marriott Bonvoy point, transfers process within 24 hours'), 2026-07-19",
+      "confidence": 0.8
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "2:1; transfers process within 24 hours",
+    "source_doc_id": "hdfc_infinia_reward_rules",
+    "last_verified": "2026-07-19"
+  },
+  {
+    "edge_id": "transfer_hdfc_air_india",
+    "from_node": "hdfc_reward_points",
+    "to_node": "air_india_flying_returns",
+    "edge_type": "transfer",
+    "ratio": {
+      "value": 0.5,
+      "status": "verified",
+      "source": "Product owner confirmation + 2 independent trackers, 2026-07-19",
+      "confidence": 0.75
+    },
+    "min_transfer": {
+      "value": null,
+      "status": "unverified",
+      "source": null,
+      "confidence": 0
+    },
+    "notes": "2:1; special promotions can sometimes boost this ratio, not modeled",
     "source_doc_id": "hdfc_infinia_reward_rules",
     "last_verified": "2026-07-19"
   }
