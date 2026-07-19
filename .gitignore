@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Environment
+.env
+.env.local
+
+# Data — gitignored except .gitkeep (BUILD_SPEC §2)
+data/*
+!data/raw
+!data/processed
+!data/embeddings
+!data/cache
+data/raw/*
+data/processed/*
+data/embeddings/*
+data/cache/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/embeddings/.gitkeep
+!data/cache/.gitkeep
+
+# Frontend
+node_modules/
+.next/
+out/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Notebooks
+.ipynb_checkpoints/
