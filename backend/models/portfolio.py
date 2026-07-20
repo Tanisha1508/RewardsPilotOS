@@ -35,6 +35,12 @@ class Card(Base):
     issuer: Mapped[str] = mapped_column(String(100), nullable=False)
     card_name: Mapped[str] = mapped_column(String(200), nullable=False)
     network: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Added 2026-07-20 (product-owner approved, closes KNOWN_LIMITATIONS item 17).
+    # Must match a `graph_nodes.node_id` for transfer paths to resolve. It is not
+    # a foreign key: a card can be tracked before its currency is registered in
+    # the graph, and the graph tools report that gap explicitly rather than
+    # returning empty paths.
+    reward_currency: Mapped[str] = mapped_column(String(100), nullable=False)
     joining_date: Mapped[date | None] = mapped_column(Date)
     # Money: Numeric, never float. Annual fees are compared and displayed, and
     # binary floating point cannot represent 12500.00 exactly.

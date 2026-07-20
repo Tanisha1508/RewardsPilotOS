@@ -119,10 +119,11 @@ class PostgresPortfolioSource:
                 issuer=row.issuer,
                 card_name=row.card_name,
                 network=row.network,
-                # Reward currency is a property of the card's rules, not of the
-                # portfolio row; the tool contract asks for it, and the schema
-                # has no column for it (see [NEED] in VERIFICATION_QUEUE).
-                reward_currency=_reward_currency_for(row.issuer, row.card_name),
+                # Read straight from the row since 2026-07-20. It used to be
+                # derived from (issuer, card_name), which meant every new issuer
+                # needed a code change and, without one, resolved to a currency
+                # no graph node matched.
+                reward_currency=row.reward_currency,
                 status=row.status,
                 annual_fee=float(row.annual_fee) if row.annual_fee is not None else None,
                 renewal_date=row.renewal_date.isoformat() if row.renewal_date else None,
@@ -189,16 +190,6 @@ class PostgresPortfolioSource:
                     for g in rows
                 ]
             )
-
-
-def _reward_currency_for(issuer: str, card_name: str) -> str:
-    """Best-effort mapping until the schema carries it. Unknown issuers get a
-    derived placeholder rather than a guessed real currency name."""
-    known = {
-        ("hdfc", "HDFC Infinia"): "hdfc_reward_points",
-        ("axis", "Axis Bank Atlas"): "edge_miles",
-    }
-    return known.get((issuer, card_name), f"{issuer}_points")
 
 
 class InMemoryPortfolioSource:

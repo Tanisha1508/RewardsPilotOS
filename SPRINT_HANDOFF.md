@@ -41,18 +41,18 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 304 tests pass; 28 more are skipped without a database and
+**Current numbers.** 313 tests pass; 31 more are skipped without a database and
 are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10 —
 unchanged by the D2 wiring, which is the point. Retrieval reports precision@3
 0.2833, recall@5 1.0000, MRR 0.5200 — reported honestly rather than tuned to a
 target.
 
 ```
-.venv/bin/python -m pytest                      # 304 passed, 28 skipped
+.venv/bin/python -m pytest                      # 313 passed, 31 skipped
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
 
-# The 28 skipped tests: real Postgres, never DATABASE_URL (see ADR-013)
+# The 31 skipped tests: real Postgres, never DATABASE_URL (see ADR-013)
 TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/db \
   .venv/bin/python -m pytest tests/integration
 
@@ -323,10 +323,13 @@ Three things to know before touching it:
    deliberately do not fall back to `DATABASE_URL` — they run migrations up and
    down, so they create and drop every table. A skipped test proves nothing;
    run them against a Supabase branch before trusting the DB paths.
-3. **Three schema gaps were documented, not patched** (VERIFICATION_QUEUE
-   "Schema decisions pending", KNOWN_LIMITATIONS 16–18): `cap_usage` has no
-   `user_id`, `cards` has no `reward_currency`, `goals` has no
-   `target_program` / `required_points`. Each needs a product-owner decision.
+3. **Three schema gaps were raised; one is fixed, two are deferred**
+   (VERIFICATION_QUEUE "Schema decisions pending", KNOWN_LIMITATIONS 16–18).
+   `cards.reward_currency` was added the same day (migration
+   `cards_reward_currency`) and closed the last silent-empty path in the graph
+   tools. `cap_usage` still has no `user_id` — deferred, and safe only while
+   nothing calls `cap_store.record`. `goals` still has no `target_program` /
+   `required_points` — deferred until goal-driven `RedemptionOptions` (D4).
 
 Still in-memory after D2: knowledge-doc hashes (D3) and opportunities (D5).
 

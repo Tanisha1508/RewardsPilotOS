@@ -90,7 +90,6 @@ def load_seed_graph(seed_dir: Path | None = None) -> nx.DiGraph:
     unverified = []
     if register_path.exists():
         unverified = [
-            GraphEdgeRecord.model_validate(item)
-            for item in json.loads(register_path.read_text())
+            GraphEdgeRecord.model_validate(item) for item in json.loads(register_path.read_text())
         ]
     return build_graph(nodes, edges, unverified)

@@ -20,6 +20,10 @@ class CardIn(BaseModel):
     issuer: str = Field(min_length=1, max_length=100)
     card_name: str = Field(min_length=1, max_length=200)
     network: str = Field(min_length=1, max_length=50)
+    # Required, with no default. A card's reward currency is the key that links
+    # it to the transfer graph; defaulting it would mean guessing, and a wrong
+    # guess resolves to the wrong graph node rather than failing.
+    reward_currency: str = Field(min_length=1, max_length=100)
     joining_date: date | None = None
     annual_fee: float | None = Field(default=None, ge=0)
     renewal_date: date | None = None
@@ -30,6 +34,7 @@ class CardPatch(BaseModel):
     issuer: str | None = Field(default=None, min_length=1, max_length=100)
     card_name: str | None = Field(default=None, min_length=1, max_length=200)
     network: str | None = Field(default=None, min_length=1, max_length=50)
+    reward_currency: str | None = Field(default=None, min_length=1, max_length=100)
     joining_date: date | None = None
     annual_fee: float | None = Field(default=None, ge=0)
     renewal_date: date | None = None
@@ -43,6 +48,7 @@ class CardOut(BaseModel):
     issuer: str
     card_name: str
     network: str
+    reward_currency: str
     joining_date: date | None = None
     annual_fee: float | None = None
     renewal_date: date | None = None

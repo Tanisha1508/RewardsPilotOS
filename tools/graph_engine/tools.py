@@ -49,6 +49,13 @@ def get_transfer_ratios(args: GetTransferRatiosInput) -> GetTransferRatiosOutput
     graph = _graph()
     output = GetTransferRatiosOutput(currency=args.currency)
     if args.currency not in graph:
+        # An unregistered currency has no partners *and* no data. Saying only
+        # "no partners" would present the gap as a finding.
+        output.no_transfer_data = (
+            f"no transfer data: currency {args.currency!r} is not registered in the "
+            f"transfer graph. This is missing data, not a confirmed absence of "
+            f"transfer partners."
+        )
         return output
     for _, target, data in graph.out_edges(args.currency, data=True):
         if data["edge_type"] == "transfer" and data["ratio"].is_usable:

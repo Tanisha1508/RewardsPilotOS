@@ -14,6 +14,7 @@ const EMPTY_FORM = {
   issuer: "",
   card_name: "",
   network: "visa",
+  reward_currency: "",
   annual_fee: "",
   renewal_date: "",
 };
@@ -33,6 +34,7 @@ export default function CardsPage() {
         issuer: form.issuer.trim(),
         card_name: form.card_name.trim(),
         network: form.network.trim(),
+        reward_currency: form.reward_currency.trim(),
         annual_fee: form.annual_fee === "" ? null : Number(form.annual_fee),
         renewal_date: form.renewal_date === "" ? null : form.renewal_date,
         joining_date: null,
@@ -61,7 +63,7 @@ export default function CardsPage() {
     <Shell>
       <h1 className="text-lg font-semibold tracking-tight">Cards</h1>
 
-      <form onSubmit={addCard} className="mt-6 grid gap-3 sm:grid-cols-5">
+      <form onSubmit={addCard} className="mt-6 grid gap-3 sm:grid-cols-6">
         <Field
           label="Issuer"
           value={form.issuer}
@@ -81,6 +83,13 @@ export default function CardsPage() {
           value={form.network}
           onChange={(v) => setForm({ ...form, network: v })}
           placeholder="visa"
+          required
+        />
+        <Field
+          label="Reward currency"
+          value={form.reward_currency}
+          onChange={(v) => setForm({ ...form, reward_currency: v })}
+          placeholder="hdfc_reward_points"
           required
         />
         <Field

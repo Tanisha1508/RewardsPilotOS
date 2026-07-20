@@ -32,7 +32,5 @@ class GetPromotionsOutput(BaseModel):
 
 
 def get_promotions(args: GetPromotionsInput) -> GetPromotionsOutput:
-    chunks = get_retriever().search(
-        args.query, issuer=args.issuer, doc_type="promotions", k=args.k
-    )
+    chunks = get_retriever().search(args.query, issuer=args.issuer, doc_type="promotions", k=args.k)
     return GetPromotionsOutput(promotions=chunks)

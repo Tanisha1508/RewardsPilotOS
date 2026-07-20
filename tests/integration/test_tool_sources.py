@@ -32,7 +32,12 @@ from tools.portfolio.tools import (
 def seeded_user(user_id):
     sync_user(user_id, "user@example.test", "Test User")
     card = portfolio_service.add_card(
-        user_id, issuer="hdfc", card_name="HDFC Infinia", network="visa", annual_fee=12500.0
+        user_id,
+        issuer="hdfc",
+        card_name="HDFC Infinia",
+        network="visa",
+        reward_currency="hdfc_reward_points",
+        annual_fee=12500.0,
     )
     portfolio_service.set_balance(user_id, card.card_id, "hdfc_reward_points", 48000)
     goals_service.create_goal(user_id, "trip", "Award flight on Skyhigh Airways")
@@ -61,6 +66,56 @@ def test_travel_goals_surface_unknown_rather_than_guessing(seeded_user):
     assert len(goals) == 1
     assert goals[0].target_program is None
     assert goals[0].required_points is None
+
+
+def test_reward_currency_comes_from_the_card_row(seeded_user):
+    """No per-issuer mapping in code: whatever was stored is what is returned."""
+    cards = get_cards(UserScopedInput(user_id=str(seeded_user))).cards
+    assert cards[0].reward_currency == "hdfc_reward_points"
+
+
+def test_a_new_issuer_needs_no_code_change(user_id):
+    """The point of the S2 fix. An issuer nobody anticipated resolves to exactly
+    the currency it was registered with — previously this fell through to a
+    derived `{issuer}_points` placeholder."""
+    sync_user(user_id, "new@example.test", "New")
+    portfolio_service.add_card(
+        user_id,
+        issuer="newbank",
+        card_name="NewBank Voyager",
+        network="rupay",
+        reward_currency="newbank_altitude_miles",
+    )
+    cards = get_cards(UserScopedInput(user_id=str(user_id))).cards
+    assert cards[0].reward_currency == "newbank_altitude_miles"
+
+
+def test_card_whose_currency_is_not_in_the_graph_reports_missing_data(user_id):
+    """End-to-end version of tests/graph/test_unregistered_currency.py: add a
+    real card through the application layer, ask for redemption options, and
+    require the answer to distinguish "no data" from "no routes"."""
+    from contracts.tools.graph_engine import RedemptionGoal, RedemptionOptionsInput
+    from tools.graph_engine.tools import redemption_options
+    from tools.portfolio.source import acting_as
+
+    sync_user(user_id, "unregistered@example.test", "Unregistered")
+    card = portfolio_service.add_card(
+        user_id,
+        issuer="newbank",
+        card_name="NewBank Voyager",
+        network="rupay",
+        reward_currency="newbank_altitude_miles",
+    )
+    portfolio_service.set_balance(user_id, card.card_id, "newbank_altitude_miles", 30_000)
+
+    with acting_as(str(user_id)):
+        output = redemption_options(
+            RedemptionOptionsInput(goal=RedemptionGoal(target_program="skyhigh_airways"))
+        )
+
+    assert output.options == []
+    assert output.no_transfer_data, "zero options with no stated reason is the bug"
+    assert "newbank_altitude_miles" in output.no_transfer_data[0]
 
 
 def test_unknown_user_raises_rather_than_returning_an_empty_portfolio(user_id):

@@ -33,6 +33,12 @@ def redemption_options(
             for note in search.unverified_notes:
                 if note not in output.unverified_notes:
                     output.unverified_notes.append(note)
+        if search.no_transfer_data is not None:
+            # Distinct from "no route found": this currency is absent from the
+            # graph, so silence here would report a data gap as a conclusion.
+            if search.no_transfer_data not in output.no_transfer_data:
+                output.no_transfer_data.append(search.no_transfer_data)
+            continue
         if not search.paths:
             continue
         best = search.paths[0]

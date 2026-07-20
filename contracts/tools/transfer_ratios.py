@@ -23,3 +23,7 @@ class GetTransferRatiosOutput(BaseModel):
     currency: str
     ratios: list[TransferRatio] = Field(default_factory=list)
     unverified_partners: list[str] = Field(default_factory=list)
+    # Set when the currency is not a node in the transfer graph at all, which is
+    # missing data rather than an absence of partners (spec update 2026-07-20;
+    # see BestTransferPathsOutput.no_transfer_data for the full reasoning).
+    no_transfer_data: str | None = None

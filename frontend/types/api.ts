@@ -38,6 +38,9 @@ export interface Card {
   issuer: string;
   card_name: string;
   network: string;
+  /** Links the card to the transfer graph. Required — a guessed value resolves
+   *  to the wrong graph node instead of failing. */
+  reward_currency: string;
   joining_date: string | null;
   annual_fee: number | null;
   renewal_date: string | null;

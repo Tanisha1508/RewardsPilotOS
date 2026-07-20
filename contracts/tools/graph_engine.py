@@ -31,6 +31,15 @@ class BestTransferPathsOutput(BaseModel):
     paths: list[TransferPath] = Field(default_factory=list)
     unverified_paths_exist: bool = False
     unverified_notes: list[str] = Field(default_factory=list)
+    # Set when the currency or the target program is not a node in the transfer
+    # graph at all (spec update 2026-07-20, closes KNOWN_LIMITATIONS item 17).
+    #
+    # Empty `paths` used to mean two different things: "this currency is known
+    # and has no verified route to the target" and "we hold no transfer data for
+    # this currency whatsoever". The first is an answer; the second is missing
+    # data, and reporting it as an answer is how an unregistered issuer looked
+    # like a card with no transfer options.
+    no_transfer_data: str | None = None
 
 
 class RedemptionGoal(BaseModel):
@@ -70,3 +79,8 @@ class RedemptionOptionsOutput(BaseModel):
     options: list[RedemptionOption] = Field(default_factory=list)
     unverified_paths_exist: bool = False
     unverified_notes: list[str] = Field(default_factory=list)
+    # One entry per portfolio currency the transfer graph does not know about
+    # (spec update 2026-07-20). Without this, a portfolio of entirely
+    # unregistered cards returns zero options and reads as "nothing to
+    # recommend" rather than "we have no data on your cards".
+    no_transfer_data: list[str] = Field(default_factory=list)

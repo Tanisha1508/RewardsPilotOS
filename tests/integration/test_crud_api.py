@@ -36,6 +36,7 @@ def add_card(client, secret, user_id, **overrides) -> dict:
         "issuer": "hdfc",
         "card_name": "HDFC Infinia",
         "network": "visa",
+        "reward_currency": "hdfc_reward_points",
         "annual_fee": 12500.0,
         **overrides,
     }

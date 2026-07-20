@@ -132,7 +132,8 @@ roadmap — none is silently papered over.
     vocabulary against those maps, and the integration test that catches an
     omission is a cross-card comparison, not per-field verification.
 
-16. **`cap_usage` is not scoped to a user.** BUILD_SPEC §4 specifies
+16. **`cap_usage` is not scoped to a user — DEFERRED (product owner,
+    2026-07-20).** BUILD_SPEC §4 specifies
     `(card_id, category, month, accrued_points)` with no `user_id`, so accrual
     rows are global: two users holding the same card would share one monthly
     cap counter. Two further mismatches with the `CapUsageStore` protocol are
@@ -140,28 +141,55 @@ roadmap — none is silently papered over.
     rule-engine `card_key` ("hdfc_infinia"), and `category` holds a cap
     `scope` ("smartbuy_total").
 
-    Latent, not live: nothing writes to the table. `RuleEngine.calculate_earn`
-    is a pure query — comparing or re-asking never consumes cap — and the
-    application layer has no spend-recording path yet. A multi-user write path
-    must not be built on this table until the schema question is settled
-    (found 2026-07-20 during D2 wiring; needs a product-owner schema decision).
+    **Deferred until multi-user write paths exist**, because the problem is
+    latent rather than live: nothing writes to this table.
+    `RuleEngine.calculate_earn` is a read-only query — comparing or re-asking
+    never consumes cap — and the application layer has no spend-recording path
+    yet. Cap *reads* are correct today because every accrual row is absent and
+    therefore zero.
 
-17. **`cards` has no `reward_currency` column.** The `Card` tool contract
-    requires it, and BUILD_SPEC §4's `cards` table does not carry it, because
-    reward currency is a property of the card's *rules* rather than of the
-    user's card row. The Postgres source currently maps the three known MVP
-    cards by (issuer, card_name) and derives a placeholder for anything else.
-    That mapping is a stopgap: a new issuer will get a derived name that no
-    graph node matches, so transfer paths for it will silently come back empty
-    — the same failure mode ADR-010 and ADR-011 were written to fix. The real
-    fix is a join to `rule_versions` or a column, both schema decisions.
+    **The condition that ends the deferral:** the first code path that calls
+    `cap_store.record` for a specific user. At that point the shared counter
+    stops being theoretical and one user's spend starts consuming another's
+    headroom. Do not build that path before adding `user_id` to the table.
 
-18. **`goals` carries no `target_program` or `required_points`.** The
-    `TravelGoal` contract has both and BUILD_SPEC §4's `goals` table has
-    neither, so goals loaded from Postgres return them as `None`. Parsing them
-    out of the free-text description would be inventing data. Consequence:
-    `RedemptionOptions` cannot be driven by a stored goal yet — the caller must
-    pass the goal explicitly, which the workflow does.
+17. **`cards` had no `reward_currency` column — CLOSED 2026-07-20.** Fixed by
+    migration `cards_reward_currency` (product owner approved). The column is
+    `NOT NULL` and the Postgres source reads it directly, so a new issuer
+    resolves correctly with no per-issuer code change. The migration adds the
+    column nullable and then sets `NOT NULL` with **no backfill**: an existing
+    database holding card rows fails the migration loudly rather than having a
+    currency guessed for it.
+
+    The related silent failure is closed too. A currency absent from the
+    transfer graph now sets `no_transfer_data` on `BestTransferPathsOutput`,
+    `GetTransferRatiosOutput`, and `RedemptionOptionsOutput` — previously it
+    returned empty paths, indistinguishable from a registered currency with no
+    verified route. Regression cover in
+    `tests/graph/test_unregistered_currency.py` and
+    `tests/integration/test_tool_sources.py`.
+
+    What remains: nothing validates that a card's `reward_currency` matches a
+    registered `graph_nodes.node_id` at write time. Adding a card with a
+    currency the graph does not know is allowed — it now reports the gap at
+    query time instead of hiding it, which is the honest behaviour, but a
+    warning at card-creation time would catch a typo sooner.
+
+18. **`goals` carries no `target_program` or `required_points` — DEFERRED
+    (product owner, 2026-07-20).** The `TravelGoal` contract has both and
+    BUILD_SPEC §4's `goals` table has neither, so goals loaded from Postgres
+    return them as `None`. Parsing them out of the free-text description would
+    be inventing data.
+
+    **Deferred until goal-driven `RedemptionOptions` is built (likely D4).**
+    Nothing is wrong today because nothing reads those fields from a stored
+    goal: the workflow passes the redemption target explicitly in the tool
+    call, and `RedemptionOptionsInput.goal` is required. Stored goals are
+    descriptive records for the UI.
+
+    **The condition that ends the deferral:** the first feature that answers
+    "how do I reach my saved goal?" without the caller restating the target.
+    Until then the two `None`s are honest — the columns genuinely hold nothing.
 
 19. **Freshness is metadata-driven.** Retrieval freshness decay trusts
    `last_changed` from the corpus; a source that changes without the crawler
