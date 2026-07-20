@@ -28,8 +28,9 @@ roadmap — none is silently papered over.
    (VERIFICATION_QUEUE P1–P3). Cards, currencies, and program assumptions
    (INR blocks, Indian transfer partners) do not generalize yet.
 
-6. **Recommendation quality depends on verified data.** All real-card
-   numerics currently ship unverified (`[NEED]` register), so real-card math
+6. **Recommendation quality depends on verified data.** P1 cards (HDFC
+   Infinia, Axis Atlas, Amex Platinum Travel) are fully verified as of
+   2026-07-20; the seven P2 cards ship all-null skeletons, so their math
    honestly returns "unknown" until VERIFICATION_QUEUE work lands. Synthetic
    fixture entities (Demo Bank, Sample Bank, Skyhigh, Grandstay) exist only
    to exercise the computed paths and are labeled as such everywhere.
@@ -50,7 +51,60 @@ roadmap — none is silently papered over.
    (conservative above the cap; base-rate fallback on excess is not modeled
    for any issuer).
 
-9. **Freshness is metadata-driven.** Retrieval freshness decay trusts
+9. **Category earn caps are reported, not enforced, in CalculateEarn.**
+   `evaluate_earn` clips only accelerated-entry caps (e.g. SmartBuy 15,000
+   pts/month). Category caps in the rule file (Infinia grocery 2,000,
+   insurance 10,000, utilities 2,000, telecom 2,000 pts/month, statement-
+   cycle max) are queryable via CheckCap but do not clip base earn — a large
+   base-rate spend in a capped category can be over-estimated. The Planner
+   pairs CheckCap with CalculateEarn for capped categories so the
+   Recommender states cap headroom alongside the uncapped figure; enforcing
+   category caps in the evaluator is a cap-semantics change reserved for a
+   spec update (evaluator docstring, found 2026-07-20 during demo-query
+   testing).
+
+10. **Accelerated-earn validity windows are not enforced.** `AcceleratedEarn`
+    has no validity fields, so a program's start/end dates live only in
+    `notes` prose and the evaluator cannot check them. The Amex Reward
+    Multiplier's defined validity ends **2026-07-31**; after that date the
+    engine will keep applying the 3X multiplier until someone edits the rule
+    file by hand. This is the one open case where the system could compute
+    with a lapsed rate rather than returning unknown. Fixing it requires
+    adding validity fields to the rule-file schema — a product-owner spec
+    decision, not a unilateral change (found 2026-07-20, demo query d5).
+
+11. **Milestone and tier data is verified but unreachable by the engines.**
+    Rule files carry fully verified `milestones` and `tiers` (e.g. Atlas
+    Platinum at ₹15,00,000 annual spend, 5,000 renewal miles), but the Tool
+    Registry enumerated in BUILD_SPEC §8 has no tool that exposes them. A
+    milestone question ("how much more to hit Platinum?") therefore answers
+    from retrieved prose at **low** confidence while the deterministic
+    numbers sit unused, and the engine cannot compute spend-to-go because it
+    holds no year-to-date spend. Adding a tool changes the spec'd 15-tool
+    registry — a product-owner decision (found 2026-07-20, demo query d4).
+
+12. **Transfer valuations are source-program valuations.** For a transfer
+    goal, `redemption_options` values the points required at the SOURCE
+    program's point value (`RedemptionGoal` documents transfer-to-program as
+    a travel redemption). What the resulting partner balance is actually
+    worth is a property of the partner program, which the system holds no
+    verified value for. Two consequences when a transfer option is shown
+    beside a cashback option: the figures may rest on different quantities of
+    source points, and the transfer figure describes source-program value
+    rather than realised partner value. Amex sidesteps this by encoding
+    `travel: null` ("value varies by partner"); HDFC's `travel: 1.0` does
+    not. Whether to keep, relabel, or restrict this is a product-semantics
+    decision — the current behaviour is spec'd and test-covered, so it was
+    left unchanged (found 2026-07-20, demo query d3).
+
+13. **Confidence calibration is deliberately conservative.** The ceiling is
+    the minimum source confidence across ALL results in state, so one weak
+    edge caps the whole answer even when it is irrelevant to the question
+    (an EDGE Miles airline query is capped at medium by a hotel partner at
+    0.65). Under-claiming is the intended failure direction; relevance
+    weighting would risk over-claiming and is not attempted.
+
+14. **Freshness is metadata-driven.** Retrieval freshness decay trusts
    `last_changed` from the corpus; a source that changes without the crawler
    noticing (hash collision, blocked crawl per robots.txt) keeps its old
    timestamp. Sources disallowing crawling are skipped and logged, not
