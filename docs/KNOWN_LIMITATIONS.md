@@ -35,10 +35,12 @@ roadmap — none is silently papered over.
    fixture entities (Demo Bank, Sample Bank, Skyhigh, Grandstay) exist only
    to exercise the computed paths and are labeled as such everywhere.
 
-7. **Sprint-stage stores.** Cap usage, knowledge-doc hashes, preferences,
-   episodic events, and opportunities live in in-memory fakes behind the
-   production interfaces; restarting the process resets them until D2 wires
-   Postgres.
+7. **Sprint-stage stores — partially closed by D2 (2026-07-20).** Portfolio,
+   cards, balances, loyalty, goals, preferences (semantic memory), episodic
+   events, and cap usage now read and write Postgres behind the same
+   interfaces (ADR-013). Still in-memory and reset on restart: knowledge-doc
+   hashes (wired D3 with the ingestion pipeline) and opportunities (wired D5
+   with the opportunity engine).
 
 8. **Per-merchant accelerated-earn exclusions are not modeled.** The Amex
    Reward Multiplier applies broad per-merchant exclusions (mobile phones,
@@ -130,7 +132,38 @@ roadmap — none is silently papered over.
     vocabulary against those maps, and the integration test that catches an
     omission is a cross-card comparison, not per-field verification.
 
-15. **Freshness is metadata-driven.** Retrieval freshness decay trusts
+16. **`cap_usage` is not scoped to a user.** BUILD_SPEC §4 specifies
+    `(card_id, category, month, accrued_points)` with no `user_id`, so accrual
+    rows are global: two users holding the same card would share one monthly
+    cap counter. Two further mismatches with the `CapUsageStore` protocol are
+    absorbed by the column names rather than the schema — `card_id` holds a
+    rule-engine `card_key` ("hdfc_infinia"), and `category` holds a cap
+    `scope` ("smartbuy_total").
+
+    Latent, not live: nothing writes to the table. `RuleEngine.calculate_earn`
+    is a pure query — comparing or re-asking never consumes cap — and the
+    application layer has no spend-recording path yet. A multi-user write path
+    must not be built on this table until the schema question is settled
+    (found 2026-07-20 during D2 wiring; needs a product-owner schema decision).
+
+17. **`cards` has no `reward_currency` column.** The `Card` tool contract
+    requires it, and BUILD_SPEC §4's `cards` table does not carry it, because
+    reward currency is a property of the card's *rules* rather than of the
+    user's card row. The Postgres source currently maps the three known MVP
+    cards by (issuer, card_name) and derives a placeholder for anything else.
+    That mapping is a stopgap: a new issuer will get a derived name that no
+    graph node matches, so transfer paths for it will silently come back empty
+    — the same failure mode ADR-010 and ADR-011 were written to fix. The real
+    fix is a join to `rule_versions` or a column, both schema decisions.
+
+18. **`goals` carries no `target_program` or `required_points`.** The
+    `TravelGoal` contract has both and BUILD_SPEC §4's `goals` table has
+    neither, so goals loaded from Postgres return them as `None`. Parsing them
+    out of the free-text description would be inventing data. Consequence:
+    `RedemptionOptions` cannot be driven by a stored goal yet — the caller must
+    pass the goal explicitly, which the workflow does.
+
+19. **Freshness is metadata-driven.** Retrieval freshness decay trusts
    `last_changed` from the corpus; a source that changes without the crawler
    noticing (hash collision, blocked crawl per robots.txt) keeps its old
    timestamp. Sources disallowing crawling are skipped and logged, not

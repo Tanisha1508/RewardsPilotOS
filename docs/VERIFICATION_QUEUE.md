@@ -16,6 +16,21 @@ values. Rules of the queue:
 
 Status values: `not_started` | `in_progress` | `verified` | `blocked`.
 
+## Schema decisions pending (raised D2, 2026-07-20)
+
+Not card data — these are gaps between BUILD_SPEC §4's tables and what the tool
+contracts need, found while wiring Postgres behind the existing interfaces
+(ADR-013). Each is a schema change, which is a spec decision, so all three were
+documented rather than patched. **Product-owner input required.**
+
+| # | Gap | Effect today | Options |
+|---|---|---|---|
+| S1 | `cap_usage` has no `user_id` | Cap accrual rows are global; two users with the same card would share one counter | Add `user_id` to the table, or scope cap state per user elsewhere. Latent until something writes cap usage — nothing does |
+| S2 | `cards` has no `reward_currency` | The `Card` tool contract requires it; the Postgres source maps the three MVP cards by (issuer, card_name) and derives a placeholder otherwise | Add the column, or join `rule_versions` to the card's rule file. The stopgap fails the ADR-010/011 way: an unregistered card gets a currency no graph node matches, and transfer paths come back empty rather than erroring |
+| S3 | `goals` has no `target_program` / `required_points` | Goals read from Postgres return both as `None`, so `RedemptionOptions` cannot be driven by a stored goal | Add the columns, or keep goals descriptive and require the caller to pass the redemption target explicitly (current behaviour) |
+
+Detail in KNOWN_LIMITATIONS items 16–18.
+
 ## P1 (MVP issuers — target during D3, Jul 21)
 
 **P1 FULLY CLOSED (2026-07-20): all three MVP cards verified, 0 open items**

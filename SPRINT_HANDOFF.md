@@ -23,7 +23,7 @@ are D2+ and were deliberately out of sprint scope.
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
 | Evaluation (`evaluation/`) | Four golden sets + runners + report generator. |
-| Docs (`docs/`) | ADR-001..012, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
+| Docs (`docs/`) | ADR-001..013, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
 
 **Verification status — P1 fully closed.** All three MVP cards are verified
 end to end: rule file, knowledge doc, and graph edges.
@@ -41,14 +41,27 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 275 tests pass. Rules 25/25, graph 10/10, end-to-end
-10/10. Retrieval reports precision@3 0.2833, recall@5 1.0000, MRR 0.5200 —
-reported honestly rather than tuned to a target.
+**Current numbers.** 304 tests pass; 28 more are skipped without a database and
+are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10 —
+unchanged by the D2 wiring, which is the point. Retrieval reports precision@3
+0.2833, recall@5 1.0000, MRR 0.5200 — reported honestly rather than tuned to a
+target.
 
 ```
-.venv/bin/python -m pytest                      # 275 passed
+.venv/bin/python -m pytest                      # 304 passed, 28 skipped
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
+
+# The 28 skipped tests: real Postgres, never DATABASE_URL (see ADR-013)
+TEST_DATABASE_URL=postgresql+psycopg://user:pass@host/db \
+  .venv/bin/python -m pytest tests/integration
+
+# Migrations
+.venv/bin/alembic -c database/migrations/alembic.ini upgrade head
+
+# Backend / frontend
+.venv/bin/uvicorn backend.main:app --reload
+cd frontend && npm install && npm run dev
 ```
 
 ---
@@ -291,23 +304,31 @@ is *understated* if the program was in fact renewed. Check the official T&C; on
 renewal, ship a new rule version extending `valid_until` (with the new
 multiplier if it changed). If it genuinely ended, no edit is needed.
 
-**D2 — Postgres wiring.** The highest-value next step, and the interfaces were
-built for it. Replace the in-memory fakes behind the existing contracts,
-without changing tool signatures:
+**D2 — Postgres wiring. Built 2026-07-20 (ADR-013).** Migrations for the full
+BUILD_SPEC §4 schema (single head, generated from `Base.metadata` rather than
+transcribed), Supabase JWT verification and middleware, CRUD APIs for
+portfolio / cards / balances / loyalty / preferences / goals on the spec'd
+envelope, and Postgres behind the existing tool contracts — same handler
+signatures, unchanged Planner and Recommender, evals unmoved.
 
-- `tools/portfolio/fixtures.py` → real queries (`GetPortfolio`, `GetCards`,
-  `GetRewardBalances`, `GetTravelGoals`).
-- `rules/engine/cap_store.py` `InMemoryCapUsageStore` → the `cap_usage` table
-  (card_id, category, month, accrued_points) per BUILD_SPEC §2. Note the Rule
-  Engine is a *pure query* — comparing never consumes cap; the application
-  layer records actual spend via `cap_store.record`.
-- Knowledge-doc hashes, preferences, episodic memory, and opportunities are
-  likewise in-memory today and reset on restart (item 7).
+Three things to know before touching it:
 
-Then migrations, auth (JWT bearer on everything except `/health` and auth
-routes), and CRUD APIs under `/api/v1/...` with the
-`{data, error, meta{request_id, generated_at}}` envelope. Business logic stays
-out of routers; services raise domain exceptions that the API layer maps.
+1. **The tools resolve their data source; they do not take one.** Handler
+   signatures are spec'd, so `tools/portfolio/source.py` and
+   `tools/memory/source.py` look the source up. **Postgres is the default and
+   there is no fixture fallback** — a missing database raises. The seeded fakes
+   are installed explicitly by `tests/conftest.py` and the eval harness, and the
+   fixture data now lives in `database/seed/demo_portfolio.json`.
+2. **28 integration tests skip unless `TEST_DATABASE_URL` is set**, and they
+   deliberately do not fall back to `DATABASE_URL` — they run migrations up and
+   down, so they create and drop every table. A skipped test proves nothing;
+   run them against a Supabase branch before trusting the DB paths.
+3. **Three schema gaps were documented, not patched** (VERIFICATION_QUEUE
+   "Schema decisions pending", KNOWN_LIMITATIONS 16–18): `cap_usage` has no
+   `user_id`, `cards` has no `reward_currency`, `goals` has no
+   `target_program` / `required_points`. Each needs a product-owner decision.
+
+Still in-memory after D2: knowledge-doc hashes (D3) and opportunities (D5).
 
 **D3 — knowledge at scale.** Crawlers, change detection, and the Rule Verifier
 (ADR-009 / BUILD_SPEC §14a) — detection is not extraction; verification stays
