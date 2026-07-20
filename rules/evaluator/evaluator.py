@@ -14,6 +14,7 @@ import math
 
 from contracts.api.verified_value import VerifiedValue
 from contracts.tools.rule_engine import CapStatus, EarnResult
+from rules.evaluator.categories import category_matches
 from rules.parser.models import AcceleratedEarn, RuleFile
 
 
@@ -25,7 +26,7 @@ def find_accelerated(rule: RuleFile, category: str, channel: str | None) -> Acce
     if channel is None:
         return None
     for entry in rule.accelerated:
-        if entry.channel == channel and entry.category in (category, "all"):
+        if entry.channel == channel and category_matches(entry.category, category):
             return entry
     return None
 
