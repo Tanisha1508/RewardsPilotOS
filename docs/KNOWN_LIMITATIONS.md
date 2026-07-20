@@ -76,6 +76,15 @@ roadmap — none is silently papered over.
     not overlap — overlapping entries would resolve to whichever is listed
     first.
 
+    Also: **validity is checked at month granularity**, matching the rest of
+    the card model (monthly caps, `cap_usage` keyed by month). A window
+    boundary falling mid-month is therefore approximated — a `valid_until` of
+    the 15th applies the rate for the whole month and over-credits spend after
+    it, which is the wrong error direction. Latent, not live: Amex's end date
+    is a month boundary and no other entry declares dates. A real mid-month
+    window should be treated as unknown for the partial month rather than
+    guessed.
+
 11. **Milestone and tier data is verified but unreachable by the engines.**
     Rule files carry fully verified `milestones` and `tiers` (e.g. Atlas
     Platinum at ₹15,00,000 annual spend, 5,000 renewal miles), but the Tool

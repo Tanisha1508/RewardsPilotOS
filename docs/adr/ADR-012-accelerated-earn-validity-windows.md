@@ -31,7 +31,19 @@ enforce them in `rules/evaluator/validity.py`.
 transaction date, so an entry is active when its window overlaps the queried
 month at all. A program ending 2026-07-31 applies for all of 2026-07 and stops
 at 2026-08. Enforcing at day resolution would require a transaction-date input
-the tool contract does not have.
+the tool contract does not have, and month granularity is what the rest of the
+card model already works in — monthly caps, `cap_usage` keyed by month. Adding
+day precision here alone would be precision the surrounding system cannot
+honour.
+
+The edge this leaves: a window boundary falling *mid*-month. A `valid_until` of
+the 15th applies the accelerated rate for that whole month, over-crediting
+spend after the 15th — the wrong error direction under "unknown over
+incorrect". A mid-month `valid_from` under-credits, which is the safe
+direction. This is latent rather than live: Amex's end date is a month
+boundary, and no other seed entry declares dates. Should a mid-month window
+ever appear, the honest fix is to treat the partial month as unknown rather
+than to guess which side of the boundary the spend fell on.
 
 **Both bounds, and both optional.** `None` means unbounded on that side, so
 entries with no published window behave exactly as before — the change is inert
