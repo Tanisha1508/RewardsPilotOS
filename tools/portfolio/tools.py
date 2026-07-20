@@ -1,4 +1,9 @@
-"""Portfolio tools (fixture-backed for the sprint)."""
+"""Portfolio tools (BUILD_SPEC §8).
+
+Signatures are unchanged from the sprint; only where the data comes from has
+moved. See `tools/portfolio/source.py` for why the source is resolved rather
+than passed in.
+"""
 
 from contracts.tools.portfolio import (
     GetCardsOutput,
@@ -7,25 +12,20 @@ from contracts.tools.portfolio import (
     GetTravelGoalsOutput,
     UserScopedInput,
 )
-from tools.portfolio.fixtures import BALANCES, CARDS, GOALS
+from tools.portfolio.source import get_source
 
 
 def get_portfolio(args: UserScopedInput) -> GetPortfolioOutput:
-    return GetPortfolioOutput(
-        portfolio_id="portfolio_fixture_1",
-        portfolio_name="Primary portfolio (fixture)",
-        user_id=args.user_id,
-        cards=CARDS,
-    )
+    return get_source().portfolio(args.user_id)
 
 
 def get_cards(args: UserScopedInput) -> GetCardsOutput:
-    return GetCardsOutput(cards=CARDS)
+    return get_source().cards(args.user_id)
 
 
 def get_reward_balances(args: UserScopedInput) -> GetRewardBalancesOutput:
-    return GetRewardBalancesOutput(balances=BALANCES)
+    return get_source().balances(args.user_id)
 
 
 def get_travel_goals(args: UserScopedInput) -> GetTravelGoalsOutput:
-    return GetTravelGoalsOutput(goals=GOALS)
+    return get_source().goals(args.user_id)

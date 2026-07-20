@@ -19,6 +19,10 @@ from pathlib import Path
 
 from agents.state.schema import initial_state
 from agents.workflows.graph import build_workflow
+from tools.memory.source import InMemoryMemorySource
+from tools.memory.source import set_source as set_memory_source
+from tools.portfolio.source import InMemoryPortfolioSource, acting_as, load_seed
+from tools.portfolio.source import set_source as set_portfolio_source
 
 DATASET = Path(__file__).resolve().parent.parent / "datasets" / "recommendations.json"
 
@@ -113,11 +117,27 @@ def _numbers_traceable(recommendation: dict, state: dict) -> bool:
 
 
 def run() -> dict:
+    # The golden set is defined against the demo portfolio, so the eval installs
+    # it explicitly. Since D2 the portfolio and memory tools read Postgres by
+    # default with no fixture fallback, and an eval that quietly scored against
+    # whatever happened to be in a database would not be a golden set at all.
+    seed = load_seed()
+    set_portfolio_source(InMemoryPortfolioSource(seed))
+    set_memory_source(InMemoryMemorySource(seed))
+    try:
+        with acting_as(seed["user_id"]):
+            return _run_queries(seed["user_id"])
+    finally:
+        set_portfolio_source(None)
+        set_memory_source(None)
+
+
+def _run_queries(user_id: str) -> dict:
     dataset = json.loads(DATASET.read_text())
     per_query = []
     for item in dataset["queries"]:
         workflow = build_workflow(EvalLLM(item["intent"], item["plan"]))
-        final = workflow.invoke(initial_state(item["query"], "fixture_user"))
+        final = workflow.invoke(initial_state(item["query"], user_id))
         recommendation = final["recommendation"]
         checks = {"recommendation_produced": recommendation is not None}
         if recommendation is not None:

@@ -1,0 +1,103 @@
+{
+  "_comment": [
+    "Demo portfolio seed (BUILD_SPEC §2: database/seed holds seed and fixture data).",
+    "Moved here from tools/portfolio/fixtures.py in D2 so no production module ships",
+    "fixture data. Loaded by the test suite and the evaluation harness, and by the",
+    "seeding script for a demo database — never by tools/ at runtime.",
+    "",
+    "The synthetic Demo Bank Voyager exists so end-to-end flows exercise computed",
+    "paths without shipping fabricated real-issuer numbers; it is labelled SYNTHETIC",
+    "everywhere it surfaces. The two real cards carry verified fee figures and their",
+    "reward math resolves through the real rule files."
+  ],
+  "user_id": "fixture_user",
+  "portfolio_id": "portfolio_fixture_1",
+  "portfolio_name": "Primary portfolio (fixture)",
+  "cards": [
+    {
+      "card_id": "card_demo_voyager",
+      "issuer": "demo_bank",
+      "card_name": "Demo Bank Voyager (SYNTHETIC FIXTURE)",
+      "network": "visa",
+      "reward_currency": "voyager_points",
+      "annual_fee": 10000.0,
+      "renewal_date": "2027-01-15",
+      "status": "active"
+    },
+    {
+      "card_id": "card_hdfc_infinia",
+      "issuer": "hdfc",
+      "card_name": "HDFC Infinia",
+      "network": "visa",
+      "reward_currency": "hdfc_reward_points",
+      "annual_fee": 12500.0,
+      "renewal_date": "2026-11-01",
+      "status": "active",
+      "_annual_fee_note": "+ GST; verified 2026-07-19 (HDFC official fees page)"
+    },
+    {
+      "card_id": "card_axis_atlas",
+      "issuer": "axis",
+      "card_name": "Axis Bank Atlas",
+      "network": "visa",
+      "reward_currency": "edge_miles",
+      "annual_fee": 5000.0,
+      "renewal_date": "2027-03-20",
+      "status": "active",
+      "_annual_fee_note": "+ GST; verified 2026-07-19 (official source)"
+    }
+  ],
+  "balances": [
+    {
+      "card_id": "card_demo_voyager",
+      "reward_currency": "voyager_points",
+      "current_balance": 32000,
+      "expiry_date": "2028-06-30",
+      "last_updated": "2026-07-15"
+    },
+    {
+      "card_id": "card_hdfc_infinia",
+      "reward_currency": "hdfc_reward_points",
+      "current_balance": 48000,
+      "expiry_date": null,
+      "last_updated": "2026-07-10"
+    },
+    {
+      "card_id": "card_axis_atlas",
+      "reward_currency": "edge_miles",
+      "current_balance": 15000,
+      "expiry_date": null,
+      "last_updated": "2026-07-01"
+    }
+  ],
+  "goals": [
+    {
+      "goal_id": "goal_skyhigh_trip",
+      "goal_type": "trip",
+      "description": "Award flight on Skyhigh Airways (synthetic fixture goal)",
+      "target_date": "2027-03-01",
+      "status": "active",
+      "target_program": "skyhigh_airways",
+      "required_points": 10000
+    }
+  ],
+  "preferences": {
+    "preferred_airline_program": "skyhigh_airways",
+    "home_airport": "DEL",
+    "redemption_strategy": "maximize_transfer_ratio"
+  },
+  "episodic": [
+    {
+      "event_id": "event_1",
+      "event_type": "recommendation_accepted",
+      "payload": { "summary": "transferred voyager_points to skyhigh_airways" },
+      "created_at": "2026-06-20T10:00:00Z"
+    },
+    {
+      "event_id": "event_2",
+      "event_type": "search",
+      "payload": { "query": "best card for flights" },
+      "created_at": "2026-07-01T18:30:00Z"
+    }
+  ]
+}

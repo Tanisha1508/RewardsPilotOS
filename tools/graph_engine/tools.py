@@ -33,9 +33,14 @@ def best_transfer_paths(args: BestTransferPathsInput) -> BestTransferPathsOutput
 def redemption_options(args: RedemptionOptionsInput) -> RedemptionOptionsOutput:
     portfolio = args.portfolio
     if portfolio is None:
-        from tools.portfolio.fixtures import BALANCES
+        # The contract says the tool loads the user's own balances when the
+        # caller omits them. Since D2 that means a real read for the user in
+        # context — not a fixture portfolio, which would answer a real question
+        # with someone else's numbers.
+        from tools.portfolio.source import current_user, get_source
 
-        portfolio = {b.reward_currency: b.current_balance for b in BALANCES}
+        balances = get_source().balances(current_user()).balances
+        portfolio = {b.reward_currency: b.current_balance for b in balances}
     point_values = get_point_values(list(portfolio))
     return _redemption_options(_graph(), portfolio, args.goal, point_values)
 
