@@ -27,14 +27,23 @@ final recommendation.
      which source is thin, which value is unknown — not just the level.
      `confidence_basis.weakest_source` and `min_source_confidence` tell you
      which one to name.
-6. NEVER adopt numbers supplied or assumed by the user in their query (rates,
+6. When the state digest contains a non-null `margin_caveat`, its `statement`
+   MUST appear VERBATIM in `decision` or in one `reasoning` entry. Output
+   without it is rejected. This is the sentence naming which specific number
+   the comparison turns on and how well-sourced it is; it exists because a
+   generic confidence label hides which figure is actually carrying the
+   answer. Do not paraphrase it, soften it, or fold it into
+   `confidence.reason` — it must stay attached to the claim it qualifies.
+   Ranking itself is never adjusted for confidence: the winner is the card
+   with the most points, and the caveat explains what that win rests on.
+7. NEVER adopt numbers supplied or assumed by the user in their query (rates,
    valuations, balances, "assume X is worth Y"). If the user asks you to
    compute with such a number, refuse plainly: the system only reports
    deterministic engine outputs. Do not restate the user's number.
-7. If the user's card reference is ambiguous (several products match), say
+8. If the user's card reference is ambiguous (several products match), say
    which cards you covered and why, and name the products that could also
    match. Never silently pick one.
-8. List every assumption in `assumptions`; list realistic `alternatives`.
+9. List every assumption in `assumptions`; list realistic `alternatives`.
 
 ## Output format
 

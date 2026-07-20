@@ -57,6 +57,7 @@ def validate_recommendation(
     retrieved_sources: list[Citation],
     grounded_text: str | None = None,
     confidence_ceiling: str | None = None,
+    required_statement: str | None = None,
 ) -> Recommendation:
     """Validate schema + data integrity:
     - every calculations entry must be verbatim (deep-equal) from
@@ -68,6 +69,11 @@ def validate_recommendation(
       figures through `decision`/`reasoning`
     - when `confidence_ceiling` is given, the reported confidence may not
       exceed what the evidence supports (agents.recommendation.calibration)
+    - when `required_statement` is given, it must appear VERBATIM in the
+      decision or reasoning. Used for the winning-margin caveat
+      (agents.recommendation.margin): the sentence naming which specific
+      number carries a comparison must reach the user intact, not be
+      softened into a generic confidence label or dropped.
     """
     recommendation = Recommendation.model_validate(payload)
     allowed = list(rule_results) + list(graph_results)
@@ -88,6 +94,15 @@ def validate_recommendation(
         raise RecommendationValidationError(
             f"confidence '{recommendation.confidence.level}' exceeds what the "
             f"evidence supports (ceiling '{confidence_ceiling}')"
+        )
+    if required_statement is not None and not any(
+        required_statement in field
+        for field in [recommendation.decision, *recommendation.reasoning]
+    ):
+        raise RecommendationValidationError(
+            "required margin caveat missing from decision/reasoning: the "
+            "sentence naming which number carries the comparison must appear "
+            "verbatim"
         )
     if grounded_text is not None:
         prose = " ".join(

@@ -9,6 +9,7 @@ import json
 from pathlib import Path
 
 from agents.recommendation.calibration import confidence_basis
+from agents.recommendation.margin import margin_caveat
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState
 from contracts.api.recommendation import (
@@ -51,7 +52,7 @@ def _retrieved_citations(state: AgentState) -> list[Citation]:
     return citations
 
 
-def _state_digest(state: AgentState, basis: dict) -> str:
+def _state_digest(state: AgentState, basis: dict, caveat: dict | None) -> str:
     def chunk_dump(chunk):
         return chunk.model_dump() if hasattr(chunk, "model_dump") else chunk
 
@@ -69,16 +70,22 @@ def _state_digest(state: AgentState, basis: dict) -> str:
             # Deterministic calibration ceiling: reporting a HIGHER confidence
             # than this is rejected; reporting lower is allowed.
             "confidence_basis": basis,
+            # When present, `statement` MUST be reproduced verbatim in the
+            # decision or reasoning — validation rejects output without it.
+            "margin_caveat": caveat,
         },
         default=str,
     )
 
 
-def _grounded_text(state: AgentState) -> str:
+def _grounded_text(state: AgentState, caveat: dict | None = None) -> str:
     """Text the prose-number check validates against: everything the tools
     produced or retrieval returned — deliberately excluding the user query, so
     a number the user invented ("assume miles are worth 1.5 rupees") can never
-    be echoed back as if it were computed."""
+    be echoed back as if it were computed.
+
+    The margin caveat is included because it is deterministic text derived
+    from the tool results; its figures are engine outputs, not model claims."""
 
     def chunk_dump(chunk):
         return chunk.model_dump() if hasattr(chunk, "model_dump") else chunk
@@ -91,6 +98,7 @@ def _grounded_text(state: AgentState) -> str:
             "rule_results": state["rule_results"],
             "graph_results": state["graph_results"],
             "memory": state["memory"],
+            "margin_caveat": caveat,
         },
         default=str,
     )
@@ -108,7 +116,8 @@ def _parse_payload(raw: str) -> dict:
 def recommend(state: AgentState, llm: LLM) -> AgentState:
     system = PROMPT_PATH.read_text()
     basis = confidence_basis(state["rule_results"], state["graph_results"], state["errors"])
-    user = _state_digest(state, basis)
+    caveat = margin_caveat(state["rule_results"])
+    user = _state_digest(state, basis, caveat)
     retrieved = _retrieved_citations(state)
     feedback = ""
     for attempt in range(2):  # initial + single retry on contract violation
@@ -126,8 +135,9 @@ def recommend(state: AgentState, llm: LLM) -> AgentState:
                 state["rule_results"],
                 state["graph_results"],
                 retrieved,
-                grounded_text=_grounded_text(state),
+                grounded_text=_grounded_text(state, caveat),
                 confidence_ceiling=basis["ceiling"],
+                required_statement=caveat["statement"] if caveat else None,
             )
         except (json.JSONDecodeError, RecommendationValidationError, ValueError) as exc:
             feedback = (
