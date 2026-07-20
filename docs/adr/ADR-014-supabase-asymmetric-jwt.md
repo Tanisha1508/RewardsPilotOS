@@ -71,6 +71,27 @@ left unset; the error message says which scheme a token used and which value is
 missing, since "unauthorized" would otherwise be indistinguishable from a
 misconfigured server.
 
+## Found by smoke-testing against the live project (2026-07-20)
+
+Running a real server against the real Supabase instance caught a defect the
+unit tests had not. A Supabase **`anon` API key** — a legacy HS256 JWT, and a
+genuine, *public* credential — was rejected with **503 `auth_not_configured`**
+instead of 401. Two things were wrong with that: it blames the server for a
+credential the caller chose, and it lets anyone holding a public key trip a
+server-fault alert.
+
+The cause was collapsing two different states into one. On a project using JWT
+signing keys, an HS256 token that is not verifiable is simply **not one of
+ours** (401), which is different from **no verification path is configured at
+all** (503, and only when neither `SUPABASE_JWT_SECRET` nor `SUPABASE_URL` is
+set). The fix separates them; both are now tested, and the live server was
+re-checked to confirm the anon key returns 401.
+
+The general lesson, already a theme in this repo: a skipped or absent test and
+a green one look identical. The unit tests exercised valid and forged tokens
+but never the *real public credential a client might plausibly send*, and only
+a live request surfaced it.
+
 ## Alternatives rejected
 
 **Keep HS256 only and tell the operator to use the legacy secret.** The

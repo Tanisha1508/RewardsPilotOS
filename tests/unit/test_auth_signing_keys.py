@@ -140,6 +140,39 @@ def test_public_key_cannot_be_used_as_an_hmac_secret(signing_key):
         verify_token(forged)
 
 
+def test_supabase_anon_key_is_rejected_as_unauthorized_not_misconfigured(monkeypatch):
+    """A Supabase `anon` API key is a legacy HS256 JWT and a perfectly real
+    credential — for Supabase's REST API, never as a user session here.
+
+    Found by smoke-testing against the live project: it returned 503
+    `auth_not_configured`, which blames the server for a credential the caller
+    chose, and lets anyone holding a *public* API key trip server-fault alerts.
+    On a project using JWT signing keys, an HS256 token simply is not ours.
+    """
+    monkeypatch.delenv("SUPABASE_JWT_SECRET", raising=False)
+    get_settings.cache_clear()
+
+    anon_like = jwt.encode(
+        {"iss": "supabase", "role": "anon", "aud": "authenticated"},
+        "whatever-the-project-secret-is",
+        algorithm="HS256",
+    )
+    with pytest.raises(AuthError):
+        verify_token(anon_like)
+
+
+def test_no_verification_path_at_all_is_a_misconfiguration(monkeypatch):
+    """The genuine 503: neither scheme is configured, so nothing can be
+    verified. Distinct from "this token is not ours"."""
+    monkeypatch.delenv("SUPABASE_JWT_SECRET", raising=False)
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    get_settings.cache_clear()
+
+    token = jwt.encode({"sub": str(USER_ID), "aud": "authenticated"}, "x", algorithm="HS256")
+    with pytest.raises(AuthNotConfiguredError):
+        verify_token(token)
+
+
 def test_unsupported_algorithm_is_rejected(signing_key):
     """RS256 is a perfectly good algorithm and still not one we accept — the
     allowlist is closed, not "anything asymmetric"."""

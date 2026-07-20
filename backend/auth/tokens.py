@@ -88,13 +88,24 @@ def _verification_key(token: str) -> tuple[object, str]:
 
     if algorithm == LEGACY_ALGORITHM:
         secret = get_settings().supabase_jwt_secret
-        if not secret:
-            raise AuthNotConfiguredError(
-                "token is signed with the legacy HS256 scheme but "
-                "SUPABASE_JWT_SECRET is not set — refusing to accept it without "
-                "verifying the signature."
-            )
-        return secret, algorithm
+        if secret:
+            return secret, algorithm
+        if jwks_url():
+            # The project verifies against JWT signing keys, so an HS256 token
+            # cannot be one of ours whatever it is signed with. Reject it as a
+            # bad token, not as a broken server.
+            #
+            # This is the path a Supabase `anon` or `service_role` API key takes:
+            # both are real credentials for Supabase's own REST API and legacy
+            # HS256 JWTs, and neither is ever a user session here. Reporting 503
+            # would let anyone holding a public API key raise a server-fault
+            # alert, and would blame us for a credential the caller chose.
+            raise AuthError("token uses an unsupported legacy signing scheme")
+        raise AuthNotConfiguredError(
+            "token is signed with the legacy HS256 scheme, but neither "
+            "SUPABASE_JWT_SECRET nor SUPABASE_URL is set, so there is no way to "
+            "verify any token. Refusing to accept it unverified."
+        )
 
     url = jwks_url()
     if not url:

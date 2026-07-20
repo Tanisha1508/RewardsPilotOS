@@ -41,14 +41,14 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 353 tests pass, including 31 against real Postgres. Without
+**Current numbers.** 355 tests pass, including 31 against real Postgres. Without
 a database those 31 skip and are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10 —
 unchanged by the D2 wiring, which is the point. Retrieval reports precision@3
 0.2833, recall@5 1.0000, MRR 0.5200 — reported honestly rather than tuned to a
 target.
 
 ```
-.venv/bin/python -m pytest                      # 353 passed (31 need TEST_DATABASE_URL)
+.venv/bin/python -m pytest                      # 355 passed (31 need TEST_DATABASE_URL)
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
 
