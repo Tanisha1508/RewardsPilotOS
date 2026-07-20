@@ -45,3 +45,6 @@ out/
 # Internal harness files — never commit
 CLAUDE.md
 CLAUDE_CODE_PROMPTS.md
+
+# Personal notes — never commit
+docs/interview-pointer*.md
