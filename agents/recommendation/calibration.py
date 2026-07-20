@@ -7,8 +7,9 @@ on. This module derives that ceiling deterministically from the tool results
 so the Recommender reports calibrated confidence instead of a uniform "high".
 
 Rules:
-- any unknown/excluded result, tool error, or unverified path present -> the
-  ceiling drops (unknowns are the dominant signal, per the hard rules)
+- any unknown/excluded result, tool error, lapsed accelerated rate, or
+  unverified path present -> the ceiling drops (unknowns are the dominant
+  signal, per the hard rules)
 - otherwise the ceiling follows the minimum source confidence used:
   >= 0.8 allows "high", below that caps at "medium"
 
@@ -58,6 +59,11 @@ def confidence_basis(
         entry.get("status") == "computed" or entry.get("paths") or entry.get("options")
         for entry in results
     )
+    # A lapsed accelerated rate (ADR-012) computes cleanly from a verified base
+    # rate, so nothing above would catch it — but the figure may understate the
+    # card if the program was renewed, which is exactly the kind of uncertainty
+    # confidence is supposed to express.
+    has_expired = any(entry.get("expiry_note") for entry in results)
 
     confidences: list[tuple[float, str]] = []
     _walk_confidences(results, confidences)
@@ -66,13 +72,17 @@ def confidence_basis(
     if not has_computed:
         ceiling = "low"
         reason = "no value could be computed; all required inputs are unknown"
-    elif has_unknowns or errors:
+    elif has_unknowns or errors or has_expired:
         ceiling = "medium"
-        reason = (
-            "some values were computed while others are unknown pending " "verification"
-            if has_unknowns
-            else "one or more tools failed"
-        )
+        if has_unknowns:
+            reason = "some values were computed while others are unknown pending verification"
+        elif errors:
+            reason = "one or more tools failed"
+        else:
+            reason = (
+                "an accelerated rate has lapsed and base earn was used instead; "
+                "whether the program was renewed is unconfirmed"
+            )
     elif min_confidence is not None and min_confidence < HIGH_CONFIDENCE_FLOOR:
         ceiling = "medium"
         reason = (

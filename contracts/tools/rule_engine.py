@@ -49,6 +49,10 @@ class EarnResult(BaseModel):
     points_before_cap: float | None = None
     cap_applied: bool = False
     cap_scope: str | None = None
+    # Set when an accelerated entry matched the query but fell outside its
+    # validity window, so `points` is base earn rather than accelerated
+    # (ADR-012). Deterministic text; the Recommender may repeat it verbatim.
+    expiry_note: str | None = None
     unknown_reasons: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     rule_version: int | None = None

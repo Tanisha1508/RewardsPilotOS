@@ -57,7 +57,7 @@ def validate_recommendation(
     retrieved_sources: list[Citation],
     grounded_text: str | None = None,
     confidence_ceiling: str | None = None,
-    required_statement: str | None = None,
+    required_statement: str | list[str] | None = None,
 ) -> Recommendation:
     """Validate schema + data integrity:
     - every calculations entry must be verbatim (deep-equal) from
@@ -69,11 +69,14 @@ def validate_recommendation(
       figures through `decision`/`reasoning`
     - when `confidence_ceiling` is given, the reported confidence may not
       exceed what the evidence supports (agents.recommendation.calibration)
-    - when `required_statement` is given, it must appear VERBATIM in the
-      decision or reasoning. Used for the winning-margin caveat
-      (agents.recommendation.margin): the sentence naming which specific
-      number carries a comparison must reach the user intact, not be
-      softened into a generic confidence label or dropped.
+    - when `required_statement` is given (one string or several), each must
+      appear VERBATIM in the decision or reasoning. Used for deterministic
+      sentences that must reach the user intact rather than being softened or
+      dropped: the winning-margin caveat (agents.recommendation.margin), which
+      names which specific number carries a comparison, and lapsed-rate expiry
+      notes (ADR-012), which say a card's accelerated rate has expired and the
+      figure shown is base earn. A prompt instruction is not a guarantee;
+      anything that must reach the user is checked here.
     """
     recommendation = Recommendation.model_validate(payload)
     allowed = list(rule_results) + list(graph_results)
@@ -95,15 +98,20 @@ def validate_recommendation(
             f"confidence '{recommendation.confidence.level}' exceeds what the "
             f"evidence supports (ceiling '{confidence_ceiling}')"
         )
-    if required_statement is not None and not any(
-        required_statement in field
-        for field in [recommendation.decision, *recommendation.reasoning]
-    ):
-        raise RecommendationValidationError(
-            "required margin caveat missing from decision/reasoning: the "
-            "sentence naming which number carries the comparison must appear "
-            "verbatim"
-        )
+    required = (
+        [required_statement]
+        if isinstance(required_statement, str)
+        else list(required_statement or [])
+    )
+    for statement in required:
+        if not any(
+            statement in field for field in [recommendation.decision, *recommendation.reasoning]
+        ):
+            raise RecommendationValidationError(
+                f"required statement missing from decision/reasoning — it must "
+                f"appear verbatim, not paraphrased or folded into the confidence "
+                f"reason: {statement!r}"
+            )
     if grounded_text is not None:
         prose = " ".join(
             [recommendation.decision, recommendation.confidence.reason]

@@ -30,7 +30,9 @@
         "confidence": 0.95
       },
       "cap_scope": "reward_multiplier_bonus",
-      "notes": "Program validity 2021-01-01 to 2026-07-31 \u2014 end date approaching, renewal unconfirmed (flagged in VERIFICATION_QUEUE). Crediting within 120 business days (hotel/airline: 120 days from service date). Per-merchant exclusions (mobiles, jewellery, large appliances, gift cards, etc.) are out of MVP scope \u2014 documented limitation, not a gap."
+      "valid_from": "2021-01-01",
+      "valid_until": "2026-07-31",
+      "notes": "Program validity 2021-01-01 to 2026-07-31, enforced by the evaluator since ADR-012 \u2014 end date approaching, renewal unconfirmed (flagged in VERIFICATION_QUEUE). Crediting within 120 business days (hotel/airline: 120 days from service date). Per-merchant exclusions (mobiles, jewellery, large appliances, gift cards, etc.) are out of MVP scope \u2014 documented limitation, not a gap."
     }
   ],
   "caps": [

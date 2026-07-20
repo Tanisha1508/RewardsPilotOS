@@ -13,8 +13,10 @@ point_value_reference_inr is per-channel (cashback / voucher / travel), each
 channel a verified-value structure.
 """
 
+import re
 from typing import Any
 
+_ISO_DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _POINT_VALUE_CHANNELS = ("cashback", "voucher", "travel")
 _NUMERIC_FIELDS_BASE_EARN = ["rate"]
 _NUMERIC_FIELDS_ACCELERATED = ["multiplier", "monthly_cap_points"]
@@ -76,6 +78,23 @@ def _check_point_value_reference(node: Any, path: str) -> list[str]:
     return problems
 
 
+def _check_validity_window(entry: dict[str, Any], path: str) -> list[str]:
+    """Validity dates must be well-formed and ordered (ADR-012).
+
+    A malformed date is worse than a missing one: the evaluator compares
+    dates as strings, so garbage would silently make an entry permanently
+    active or permanently lapsed instead of erroring."""
+    problems: list[str] = []
+    for field in ("valid_from", "valid_until"):
+        value = entry.get(field)
+        if value is not None and not (isinstance(value, str) and _ISO_DATE.match(value)):
+            problems.append(f"{path}.{field}: must be an ISO date (YYYY-MM-DD), got {value!r}")
+    start, end = entry.get("valid_from"), entry.get("valid_until")
+    if isinstance(start, str) and isinstance(end, str) and not problems and start > end:
+        problems.append(f"{path}: valid_from {start} is after valid_until {end}")
+    return problems
+
+
 def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
     """Return a list of violations; empty list means the file is valid."""
     problems: list[str] = []
@@ -100,6 +119,7 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
                 problems.extend(_check_verified_value(entry[field], f"accelerated[{i}].{field}"))
         if "multiplier" not in entry:
             problems.append(f"accelerated[{i}].multiplier: required verified-value field missing")
+        problems.extend(_check_validity_window(entry, f"accelerated[{i}]"))
     for i, entry in enumerate(raw.get("caps") or []):
         problems.extend(_check_verified_value(entry.get("cap_points"), f"caps[{i}].cap_points"))
     for i, entry in enumerate(raw.get("milestones") or []):

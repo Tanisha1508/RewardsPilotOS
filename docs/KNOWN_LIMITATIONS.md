@@ -63,15 +63,18 @@ roadmap — none is silently papered over.
    spec update (evaluator docstring, found 2026-07-20 during demo-query
    testing).
 
-10. **Accelerated-earn validity windows are not enforced.** `AcceleratedEarn`
-    has no validity fields, so a program's start/end dates live only in
-    `notes` prose and the evaluator cannot check them. The Amex Reward
-    Multiplier's defined validity ends **2026-07-31**; after that date the
-    engine will keep applying the 3X multiplier until someone edits the rule
-    file by hand. This is the one open case where the system could compute
-    with a lapsed rate rather than returning unknown. Fixing it requires
-    adding validity fields to the rule-file schema — a product-owner spec
-    decision, not a unilateral change (found 2026-07-20, demo query d5).
+10. **Mid-window accelerated rate changes are not modeled.** *(Superseded: the
+    original item — validity windows not enforced at all — was closed
+    2026-07-20 by ADR-012, which added `valid_from`/`valid_until` to
+    `AcceleratedEarn`. The Amex Reward Multiplier's 2026-07-31 expiry is now
+    engine-enforced: from 2026-08 it falls back to base earn with an expiry
+    note and a medium confidence ceiling.)* What remains: one accelerated
+    entry carries one multiplier, so a program that changed its rate inside
+    its validity window must be expressed as two entries with adjacent
+    windows. The schema supports this; no seed data uses it, and nothing
+    validates that windows on entries matching the same channel/category do
+    not overlap — overlapping entries would resolve to whichever is listed
+    first.
 
 11. **Milestone and tier data is verified but unreachable by the engines.**
     Rule files carry fully verified `milestones` and `tiers` (e.g. Atlas

@@ -12,11 +12,19 @@ class BaseEarn(BaseModel):
 
 
 class AcceleratedEarn(BaseModel):
+    """Accelerated earn entry. `valid_from` / `valid_until` are ISO dates
+    bounding the program's published validity (spec update 2026-07-20,
+    ADR-012); None on either side means unbounded in that direction. The
+    evaluator refuses to apply an entry outside its window and falls back to
+    base earn with an explicit expiry note."""
+
     channel: str
     category: str
     multiplier: VerifiedValue
     monthly_cap_points: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
     cap_scope: str | None = None
+    valid_from: str | None = None
+    valid_until: str | None = None
     notes: str | None = None
 
 

@@ -102,12 +102,14 @@ negotiation, not published policy. A spend-based waiver existed historically
 rules.
 
 **Review flags:** (1) Reward Multiplier program validity ends 2026-07-31 —
-renewal unconfirmed, re-verify as the date passes. **ACTION REQUIRED before
-2026-07-31:** the engine cannot enforce this date. `AcceleratedEarn` has no
-validity fields, so the 3X multiplier keeps applying after the program lapses
-until the rule file is edited by hand. Either confirm renewal, or ship a new
-version with the accelerated entry removed, or approve adding validity fields
-to the rule-file schema (KNOWN_LIMITATIONS item 10, found 2026-07-20). (2) Transfer-partner and
+renewal unconfirmed. **Now engine-enforced** (ADR-012, 2026-07-20): the entry
+carries `valid_from` 2021-01-01 / `valid_until` 2026-07-31, and from 2026-08
+the evaluator falls back to base earn with an expiry note and a medium
+confidence ceiling. No longer a correctness risk, but still a **research
+item**: from 2026-08-01 the card is understated if the program was in fact
+renewed. On renewal, ship a new rule version extending `valid_until` (with
+the renewed multiplier if it changed); if the program genuinely ended, no
+edit is needed. (2) Transfer-partner and
 statement-credit confidences carry a 0.7–0.75 ceiling reflecting the genuine
 absence of an accessible India-specific official transfer portal (login-
 gated) — same pattern as the toughest HDFC Infinia and Axis Atlas fields,

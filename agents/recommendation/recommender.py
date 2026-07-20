@@ -104,6 +104,18 @@ def _grounded_text(state: AgentState, caveat: dict | None = None) -> str:
     )
 
 
+def _required_statements(caveat: dict | None, rule_results: list[dict]) -> list[str]:
+    """Deterministic sentences that must reach the user verbatim.
+
+    The margin caveat names which number a comparison turns on; an expiry note
+    (ADR-012) says a card's accelerated rate has lapsed and the figure shown is
+    base earn. Both are engine-derived text, and both are the kind of thing a
+    model quietly smooths away — so neither is left to the prompt alone."""
+    statements = [caveat["statement"]] if caveat else []
+    statements += [note for entry in rule_results if (note := entry.get("expiry_note"))]
+    return statements
+
+
 def _parse_payload(raw: str) -> dict:
     text = raw.strip()
     if text.startswith("```"):
@@ -137,7 +149,7 @@ def recommend(state: AgentState, llm: LLM) -> AgentState:
                 retrieved,
                 grounded_text=_grounded_text(state, caveat),
                 confidence_ceiling=basis["ceiling"],
-                required_statement=caveat["statement"] if caveat else None,
+                required_statement=_required_statements(caveat, state["rule_results"]),
             )
         except (json.JSONDecodeError, RecommendationValidationError, ValueError) as exc:
             feedback = (

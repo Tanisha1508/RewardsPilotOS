@@ -43,7 +43,14 @@ final recommendation.
 8. If the user's card reference is ambiguous (several products match), say
    which cards you covered and why, and name the products that could also
    match. Never silently pick one.
-9. List every assumption in `assumptions`; list realistic `alternatives`.
+9. When a `rule_results` entry carries a non-null `expiry_note`, say so in
+   `reasoning`: that card's accelerated rate has lapsed, the figure shown is
+   base earn, and the rate needs re-verification. The note names the expiry
+   date — use that date, do not infer one. Never present the lapsed
+   accelerated rate as if it still applied, and do not quietly drop the card
+   from the comparison either; a lower number with a stated reason is the
+   honest answer.
+10. List every assumption in `assumptions`; list realistic `alternatives`.
 
 ## Output format
 

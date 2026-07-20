@@ -110,7 +110,10 @@ def test_recommendation_without_the_caveat_is_rejected():
     state = recommend(_state_with_comparison(), PayloadLLM(recommender_payloads=[payload, payload]))
 
     assert state["recommendation"] is None
-    assert any("required margin caveat missing" in error for error in state["errors"])
+    # message generalised when ADR-012 added expiry notes as a second kind of
+    # must-appear-verbatim statement; the rejection itself is unchanged
+    assert any("required statement missing" in error for error in state["errors"])
+    assert any("accelerated multiplier" in error for error in state["errors"])
 
 
 def test_paraphrasing_the_caveat_is_rejected():

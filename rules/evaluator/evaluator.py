@@ -16,6 +16,7 @@ from contracts.api.verified_value import VerifiedValue
 from contracts.tools.rule_engine import CapStatus, EarnResult
 from rules.evaluator.categories import category_matches
 from rules.evaluator.channels import channel_matches
+from rules.evaluator.validity import is_active, lapse_note
 from rules.parser.models import AcceleratedEarn, RuleFile
 
 
@@ -23,13 +24,38 @@ def _sources(*values: VerifiedValue) -> list[str]:
     return [v.source for v in values if v.source]
 
 
-def find_accelerated(rule: RuleFile, category: str, channel: str | None) -> AcceleratedEarn | None:
+def _matching(rule: RuleFile, category: str, channel: str | None) -> AcceleratedEarn | None:
+    """The entry whose channel and category cover the query, ignoring dates."""
     if channel is None:
         return None
     for entry in rule.accelerated:
         if channel_matches(entry.channel, channel) and category_matches(entry.category, category):
             return entry
     return None
+
+
+def find_accelerated(
+    rule: RuleFile, category: str, channel: str | None, month: str
+) -> AcceleratedEarn | None:
+    """The accelerated entry that applies in `month`, or None.
+
+    An entry outside its validity window is not returned (ADR-012), so every
+    caller — earn math and cap-accrual lookup alike — agrees on whether the
+    accelerated rate is in force."""
+    entry = _matching(rule, category, channel)
+    if entry is None or not is_active(entry, month):
+        return None
+    return entry
+
+
+def find_lapsed(
+    rule: RuleFile, category: str, channel: str | None, month: str
+) -> AcceleratedEarn | None:
+    """The entry that would have matched but is outside its validity window."""
+    entry = _matching(rule, category, channel)
+    if entry is None or is_active(entry, month):
+        return None
+    return entry
 
 
 def cap_status(rule: RuleFile, scope: str, month: str, accrued: float) -> CapStatus:
@@ -98,7 +124,10 @@ def evaluate_earn(
         base.unknown_reasons = [f"category '{category}' is excluded from earning"]
         return base
 
-    accelerated = find_accelerated(rule, category, channel)
+    accelerated = find_accelerated(rule, category, channel, month)
+    lapsed = find_lapsed(rule, category, channel, month) if accelerated is None else None
+    if lapsed is not None:
+        base.expiry_note = lapse_note(lapsed, month)
     rate = rule.base_earn.rate
     base.rate = rate
 

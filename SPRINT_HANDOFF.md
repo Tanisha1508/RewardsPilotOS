@@ -23,7 +23,7 @@ are D2+ and were deliberately out of sprint scope.
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
 | Evaluation (`evaluation/`) | Four golden sets + runners + report generator. |
-| Docs (`docs/`) | ADR-001..011, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
+| Docs (`docs/`) | ADR-001..012, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
 
 **Verification status — P1 fully closed.** All three MVP cards are verified
 end to end: rule file, knowledge doc, and graph edges.
@@ -41,12 +41,12 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 254 tests pass. Rules 25/25, graph 10/10, end-to-end
+**Current numbers.** 275 tests pass. Rules 25/25, graph 10/10, end-to-end
 10/10. Retrieval reports precision@3 0.2833, recall@5 1.0000, MRR 0.5200 —
 reported honestly rather than tuned to a target.
 
 ```
-.venv/bin/python -m pytest                      # 254 passed
+.venv/bin/python -m pytest                      # 275 passed
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
 ```
@@ -158,6 +158,44 @@ two or more digits, so `2.5` — exactly the shape of a point valuation — slip
 through. Widened to catch any decimal while still ignoring bare single digits
 ("3 cards") that would otherwise fail every answer.
 
+**7. A lapsed accelerated rate would have kept applying. (Scheduled, not
+present.)** `AcceleratedEarn` had no date fields, so a program's published
+validity lived in `notes` prose where the evaluator cannot read it. Amex
+Platinum Travel's Reward Multiplier is valid to **2026-07-31**; from
+2026-08-01 the engine would have gone on applying 3X — the one remaining case
+where it could compute with a rate it had no right to use rather than
+returning unknown.
+
+This is a *different failure class* from bugs 1 and 1b, and worth naming as
+such: those were wrong the moment they ran, this one is **correct today and
+wrong later**. No test written on the day the data was verified can fail,
+because the bug is scheduled rather than present. Catching it requires a test
+that moves the clock — the same argument as bug 1b's ("verification and
+integration are different failure surfaces"), extended along the time axis.
+The generalizable rule: *data with an expiry date needs a test dated after
+it.*
+
+Fixed by adding optional `valid_from` / `valid_until` to `AcceleratedEarn` and
+enforcing them at month resolution (`rules/evaluator/validity.py`). A lapsed
+entry falls back to **base earn, not unknown** — the base rate is still
+verified, so discarding it would throw away something we know — and the result
+carries a new `expiry_note` naming the expiry date and asking for
+re-verification. Because the note rides on the tool result it sits inside the
+Recommender's grounded text, so the date can be repeated verbatim without
+being invented — and, like the margin caveat, it is **required verbatim in the
+answer by validation, not merely requested by the prompt**. Reporting the lower
+number without the reason would show a card quietly getting worse with no
+explanation. (`validate_recommendation`'s `required_statement` now accepts
+several statements; the margin caveat and any expiry notes go through the same
+gate.) A lapsed rate also caps confidence at medium: nothing else in
+calibration would notice, since the computation is clean and every source
+verified, but the figure understates the card if the program was renewed. See
+**ADR-012**; regression cover in `tests/rules/test_validity.py` (the dated
+case — 2026-08 returns 1,000 base points plus the note, not 3,000 — plus a
+check that the other two P1 cards are unaffected, and rule-file validation of
+malformed or reversed date windows) and `tests/agent/test_expiry_note.py` (the
+note cannot be dropped, paraphrased, or shipped at high confidence).
+
 ### Verified, no change needed: confidence never influences ranking
 
 Worth knowing because it is the question a reviewer will ask. A full audit
@@ -209,13 +247,11 @@ behaviour.
 These need a product-owner decision because fixing them means changing a
 spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–14.
 
-- **Accelerated validity windows are not enforced (items 10).** *Time-sensitive.*
-  The Amex Reward Multiplier's validity ends **2026-07-31**. `AcceleratedEarn`
-  has no validity fields, so after that date the engine keeps applying the 3X
-  multiplier until the rule file is edited by hand — the one open case where
-  it could compute with a lapsed rate instead of returning unknown. Needs
-  either confirmed renewal, a new rule version dropping the entry, or approval
-  to add validity fields to the schema.
+- ~~**Accelerated validity windows are not enforced (item 10).**~~ **Closed
+  2026-07-20 by ADR-012** — the product owner approved the schema change. See
+  bug 7 above. What remains under item 10 is narrower: one entry carries one
+  multiplier, so a mid-window rate change needs two adjacent entries, and
+  overlapping windows are not validated.
 - **Milestone/tier data is verified but unreachable (item 11).** No tool in the
   BUILD_SPEC §8 registry exposes `milestones`/`tiers`, so "how much more to hit
   Platinum?" answers from retrieved prose at low confidence while verified
@@ -248,8 +284,12 @@ not clip base earn (item 9). The Planner prompt now pairs `CheckCap` with
 
 Nothing here is started. Sprint scope explicitly excluded all of it.
 
-**Before anything else — the 2026-07-31 Amex deadline.** See above; it is the
-only dated item and it degrades correctness silently if missed.
+**The 2026-07-31 Amex date is no longer a correctness risk** — ADR-012 makes
+the engine enforce it, so from 2026-08 the Reward Multiplier stops applying on
+its own and says why. It remains a **research** item: after that date the card
+is *understated* if the program was in fact renewed. Check the official T&C; on
+renewal, ship a new rule version extending `valid_until` (with the new
+multiplier if it changed). If it genuinely ended, no edit is needed.
 
 **D2 — Postgres wiring.** The highest-value next step, and the interfaces were
 built for it. Replace the in-memory fakes behind the existing contracts,
@@ -295,8 +335,14 @@ alone will not catch the integration failures described above:
    category term with a subsumption relationship not yet declared, register
    it — otherwise the card silently earns base rate in every cross-card
    comparison while every one of its fields passes review.
-4. Extend `tests/rules/test_channels.py` / `test_categories.py` with the new
+4. **Record `valid_from` / `valid_until` on any accelerated entry whose
+   program publishes dates** (ADR-012). Dates in `notes` prose are invisible
+   to the evaluator, so an entry without them applies forever.
+5. Extend `tests/rules/test_channels.py` / `test_categories.py` with the new
    card in a cross-card comparison, asserting it does not fall back to base.
+   If the card has a dated program, add a `test_validity.py` case **dated
+   after its expiry** — data with an expiry date needs a test dated after it,
+   or the bug simply waits.
 
 ---
 

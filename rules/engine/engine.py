@@ -33,7 +33,7 @@ class RuleEngine:
         month: str,
     ) -> EarnResult:
         rule = select_version(card_key, seed_dir=self._seed_dir)
-        accelerated = find_accelerated(rule, category, channel)
+        accelerated = find_accelerated(rule, category, channel, month)
         accrued = 0.0
         if accelerated is not None:
             scope = accelerated.cap_scope or f"{accelerated.channel}_{accelerated.category}"
@@ -57,7 +57,10 @@ class RuleEngine:
     ) -> list[EarnResult]:
         """Evaluate each card and sort: computed (highest points first), then
         unknown, then excluded. Missing cards yield unknown results — graceful
-        degradation, never a crash mid-comparison."""
+        degradation, never a crash mid-comparison.
+
+        Pass `month`: since ADR-012 it also selects which accelerated programs
+        are in force, and the epoch default predates every one of them."""
         results: list[EarnResult] = []
         for card_key in cards:
             try:
