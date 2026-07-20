@@ -104,7 +104,21 @@ roadmap — none is silently papered over.
     0.65). Under-claiming is the intended failure direction; relevance
     weighting would risk over-claiming and is not attempted.
 
-14. **Freshness is metadata-driven.** Retrieval freshness decay trusts
+    Note this is separate from the winning-margin caveat
+    (`agents/recommendation/margin.py`), which names the specific number a
+    comparison turns on. Ranking is never adjusted for confidence — see
+    ADR-002 and `tests/rules/test_confidence_does_not_rank.py`.
+
+14. **Cross-issuer vocabulary is declared, not inferred.** Category
+    subsumption (ADR-010) and canonical channels (ADR-011) are hand-maintained
+    maps. A new issuer whose portal name or category term is not registered
+    will silently fall back to base earn in a cross-card comparison rather
+    than erroring — the same failure mode both ADRs were written to fix.
+    Adding a card therefore requires checking its channel and category
+    vocabulary against those maps, and the integration test that catches an
+    omission is a cross-card comparison, not per-field verification.
+
+15. **Freshness is metadata-driven.** Retrieval freshness decay trusts
    `last_changed` from the corpus; a source that changes without the crawler
    noticing (hash collision, blocked crawl per robots.txt) keeps its old
    timestamp. Sources disallowing crawling are skipped and logged, not

@@ -23,7 +23,7 @@ are D2+ and were deliberately out of sprint scope.
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
 | Evaluation (`evaluation/`) | Four golden sets + runners + report generator. |
-| Docs (`docs/`) | ADR-001..010, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
+| Docs (`docs/`) | ADR-001..011, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
 
 **Verification status — P1 fully closed.** All three MVP cards are verified
 end to end: rule file, knowledge doc, and graph edges.
@@ -41,12 +41,12 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 235 tests pass. Rules 25/25, graph 10/10, end-to-end
+**Current numbers.** 254 tests pass. Rules 25/25, graph 10/10, end-to-end
 10/10. Retrieval reports precision@3 0.2833, recall@5 1.0000, MRR 0.5200 —
 reported honestly rather than tuned to a target.
 
 ```
-.venv/bin/python -m pytest                      # 235 passed
+.venv/bin/python -m pytest                      # 254 passed
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
 ```
@@ -62,6 +62,23 @@ found is fixed or documented below, and each fix carries a regression test.
 
 Confidence now varies across the eight queries (high / medium / high / low /
 high / medium / medium / high) rather than reading uniformly high.
+
+### The pattern behind the two worst bugs
+
+Two of the defects below (categories, channels) are the same bug on different
+axes, and both survived a full field-by-field verification pass. That is not a
+verification failure — **verification and integration are different failure
+surfaces**. Every rule field was individually correct at the source. Both bugs
+lived in the *matching layer* between a query and the right rule, which no
+amount of per-field research can catch, and both produced confidently wrong
+answers rather than honest unknowns.
+
+The test that catches this class is a **cross-card query exercising each
+issuer's actual channel and category vocabulary** — structurally different
+from "is this rule field correct". `tests/rules/test_channels.py` and
+`tests/rules/test_categories.py` are that test; extend them when adding a
+card. The lesson is emphatically *not* "add more confidence checking":
+confidence was accurate throughout and would not have flagged either bug.
 
 ### Bugs found and fixed
 
@@ -81,6 +98,17 @@ Fixed with a one-directional subsumption map in
 the reverse). It is a taxonomy, not reward data — no rate, cap, or policy.
 See **ADR-010**; regression cover in `tests/rules/test_categories.py`,
 including the exact failing comparison.
+
+**1b. The same bug on the channel axis.** Each issuer names its portal
+differently (`smartbuy` / `travel_edge` / `reward_multiplier`) and
+`CompareCards` takes one channel for all cards, so a portal comparison matched
+exactly one card and silently returned base rate for the rest — Atlas showed
+1,000 points instead of 2,500. Fixed with canonical channels: `issuer_portal`
+resolves to whichever channel each card declares, one-directionally, so
+querying `smartbuy` never matches an Axis booking. Card-agnostic by design, so
+registering a new issuer's portal name needs no per-card table. See
+**ADR-011**; regression cover in `tests/rules/test_channels.py` asserts no card
+falls back to base on a three-card portal comparison.
 
 **2. Confidence was uniform, not calibrated.** Confidence was derived from
 whether values computed, ignoring how good the sources were — a figure from
@@ -110,6 +138,20 @@ Removed the invented figure rather than loosening the check.
 confidence heuristic ("all computed → high") that disagreed with the new
 ceiling, so `e07` failed. Pointed it at `confidence_basis` so evaluation and
 production are held to one calibration.
+
+**5b. Confidence was reported but never reached the claim it qualified.**
+Ranking is points-only and stays that way — weighting by confidence would
+manufacture a "confidence-adjusted points" figure no cardholder earns, which
+is exactly the synthetic-number injection the whole design forbids. But a
+generic "medium confidence" tag hid *which* number was carrying an answer. On
+the ₹50,000 portal hotel comparison, Infinia wins by 5× on a SmartBuy
+multiplier sourced at 0.7 while Amex and Atlas score lower on 0.95-sourced
+rates. `agents/recommendation/margin.py` now deterministically detects when
+the winner's deciding field is materially thinner-sourced than a competitor's
+(a gap over 0.15, or below 0.75 against a competitor at 0.8+) and produces a
+sentence naming that specific number, its source, and the better-evidenced
+competitor. Validation requires it **verbatim** in `decision` or `reasoning`,
+so it cannot be paraphrased away — the same treatment `calculations` get.
 
 **6. The prose-number check missed short decimals.** The first regex required
 two or more digits, so `2.5` — exactly the shape of a point valuation — slipped
