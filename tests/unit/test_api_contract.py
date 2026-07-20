@@ -16,11 +16,23 @@ from tests.unit.test_auth_tokens import SECRET, make_token
 
 @pytest.fixture()
 def client(monkeypatch):
+    """A app with no database configured.
+
+    `dispose_engine()` is required, not tidiness: the engine is a module global,
+    so if the integration suite ran earlier in the session it is still bound to
+    the test database and these tests would see a healthy connection while
+    asserting there is none. Unsetting the env var alone does not undo a
+    connection that already exists.
+    """
+    from database.postgres.session import dispose_engine
+
     monkeypatch.setenv("SUPABASE_JWT_SECRET", SECRET)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     get_settings.cache_clear()
+    dispose_engine()
     with TestClient(create_app(), raise_server_exceptions=False) as test_client:
         yield test_client
+    dispose_engine()
     get_settings.cache_clear()
 
 

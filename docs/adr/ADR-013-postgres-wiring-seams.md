@@ -68,9 +68,34 @@ end-to-end evals still run without a database and still score identically.
 **A missing database is now loud.** `/health` reports `not_configured` rather
 than green; an authenticated request without a database returns 503, not 500.
 
-**Test suite splits.** 304 tests run everywhere; 28 integration tests skip
+**Test suite splits.** 313 tests run everywhere; 31 integration tests skip
 unless `TEST_DATABASE_URL` is set. A skipped test proves nothing, so this is
 stated in the handoff rather than counted as coverage.
+
+**What running them against real Postgres immediately found (2026-07-20).**
+The first execution surfaced three defects that a skipping suite had hidden:
+
+1. **The suite could have dropped the application's tables.** `get_engine()`
+   lazily falls back to `DATABASE_URL` when no engine is configured, and the
+   migration round-trip test disposes the engine by design — so every test
+   ordered after it silently re-pointed at `DATABASE_URL`. With a real Supabase
+   URL configured, an ordinary `pytest` run would have created and dropped
+   tables in that database. The fallback is correct for the application and
+   catastrophic here, so `tests/integration/conftest.py` now binds the engine
+   explicitly before every test and refuses to run if the two URLs resolve to
+   the same database.
+2. **`KEY=            # explanation` does not parse as empty.** python-dotenv
+   strips an inline comment only when a value precedes it, so an unset variable
+   took the comment text as its value. `DATABASE_URL` became a sentence, which
+   turned "not configured" into a connection error and made `/health` report a
+   fault instead of `not_configured`. Templates now keep comments on their own
+   line, and a settings validator blanks a comment-only value regardless.
+3. **`TEST_DATABASE_URL` was read from `os.environ` only**, so configuring it
+   the documented way — in `.env` — left the suite skipping silently. A suite
+   that skips looks exactly like a suite that passes.
+
+Each of these was invisible while the tests were skipped, which is the argument
+for running them rather than counting them.
 
 **Fakes must be uninstalled deliberately.** `tests/integration/conftest.py`
 resets both sources, because integration tests passing against seeded fakes

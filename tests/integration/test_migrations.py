@@ -66,18 +66,32 @@ def test_every_specced_table_exists(migrated_database):
 def test_downgrade_then_upgrade_round_trips(migrated_database, database_url):
     """A downgrade that does not fully undo its upgrade leaves a database that
     cannot be migrated forward again — the failure only shows up the next time
-    someone tries, which is usually mid-deploy."""
+    someone tries, which is usually mid-deploy.
+
+    The `finally` is not decoration. This test drops the whole schema mid-way;
+    without it, any failure here leaves every subsequent test in the session
+    reporting `UndefinedTable`, which buries the real error under dozens of
+    unrelated ones.
+
+    Note it rebinds with `configure_engine` rather than calling `get_engine`:
+    after `dispose_engine()` the latter lazily falls back to DATABASE_URL, which
+    is the application's database, not this one.
+    """
     from sqlalchemy import inspect
 
-    from database.postgres.session import dispose_engine, get_engine
+    from database.postgres.session import configure_engine, dispose_engine
     from tests.integration.conftest import run_alembic
 
-    dispose_engine()
-    run_alembic("downgrade base", database_url)
+    try:
+        dispose_engine()
+        run_alembic("downgrade base", database_url)
 
-    remaining = set(inspect(get_engine()).get_table_names()) - {"alembic_version"}
-    assert remaining == set(), f"downgrade left tables behind: {sorted(remaining)}"
+        engine = configure_engine(database_url)
+        remaining = set(inspect(engine).get_table_names()) - {"alembic_version"}
+        assert remaining == set(), f"downgrade left tables behind: {sorted(remaining)}"
+    finally:
+        dispose_engine()
+        run_alembic("upgrade head", database_url)
+        engine = configure_engine(database_url)
 
-    dispose_engine()
-    run_alembic("upgrade head", database_url)
-    assert "users" in set(inspect(get_engine()).get_table_names())
+    assert "users" in set(inspect(engine).get_table_names())

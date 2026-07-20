@@ -34,21 +34,28 @@ def configured_secret(monkeypatch):
     get_settings.cache_clear()
 
 
-def make_token(secret=SECRET, *, sub=None, aud="authenticated", expires_in=3600, **extra):
+def make_token(
+    secret=SECRET, *, sub=None, aud="authenticated", expires_in=3600, email=None, **extra
+):
+    subject = str(sub or USER_ID)
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": str(sub or USER_ID),
+        "sub": subject,
         "aud": aud,
         "exp": now + timedelta(seconds=expires_in),
         "iat": now,
-        "email": "user@example.test",
+        # Derived from the subject, not a constant. `users.email` is UNIQUE — as
+        # it should be, since two Supabase accounts cannot share an address — so
+        # a fixed email here made the second user in any multi-user test fail to
+        # sync, and the test then read the resulting 404 as "no cards".
+        "email": email or f"{subject}@example.test",
         **extra,
     }
     return jwt.encode(payload, secret, algorithm="HS256")
 
 
 def test_valid_token_yields_claims():
-    claims = verify_token(make_token())
+    claims = verify_token(make_token(email="user@example.test"))
     assert claims.user_id == USER_ID
     assert claims.email == "user@example.test"
 
