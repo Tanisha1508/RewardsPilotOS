@@ -29,7 +29,14 @@ Reply with a single JSON object, no markdown fences, no commentary:
 - Request memory recall (RecallMemory) only when intent benefits from
   preferences or history (spend / transfer / redeem).
 - For spend questions: GetCards → CompareCards (all relevant cards) →
-  SearchKnowledge for context.
+  SearchKnowledge for context. When the spend category is one issuers cap
+  (grocery, utilities, insurance, telecom, portal/accelerated spend), also
+  plan CheckCap for that scope so the Recommender can state cap headroom —
+  CalculateEarn clips only accelerated caps, not category caps.
+- If the user's card reference is ambiguous (e.g. "my Platinum card" could be
+  several products), plan against the matching cards actually in the user's
+  portfolio and let the Recommender state the ambiguity — never guess a card
+  key the portfolio or query does not support.
 - For transfer/redeem questions: GetRewardBalances → BestTransferPaths or
   RedemptionOptions → GetTransferRatios / SearchKnowledge for context.
 - For portfolio questions: GetPortfolio, GetRewardBalances, GetTravelGoals,

@@ -92,9 +92,7 @@ class ScriptedLLM:
         ]
         deduped = [dict(t) for t in {tuple(sorted(c.items())) for c in citations}]
         unknown_notes = [
-            note
-            for result in state["graph_results"]
-            for note in result.get("unverified_notes", [])
+            note for result in state["graph_results"] for note in result.get("unverified_notes", [])
         ]
         decision = (
             "Transfer Voyager Points to Skyhigh Airways using the verified 1:1 "
@@ -134,10 +132,12 @@ class ScriptedLLM:
                     "(10000 points), not live availability.",
                 ],
                 "alternatives": [
-                    "Wait for HDFC transfer partners to be verified before "
-                    "moving points.",
-                    "Use Trailblazer Miles (0.5 ratio) if Voyager balance is "
-                    "insufficient.",
+                    "Wait for HDFC transfer partners to be verified before " "moving points.",
+                    # No ratio quoted here: Trailblazer Miles were not queried
+                    # for this goal, so no verified ratio is in the tool
+                    # results and stating one would be ungrounded.
+                    "Check Trailblazer Miles as a source if the Voyager "
+                    "balance is insufficient.",
                 ],
             }
         )

@@ -52,6 +52,12 @@ class EvalLLM:
                     "doc_id": chunk["metadata"]["doc_id"],
                 }
             )
+        # Calibration comes from the deterministic basis in the state digest
+        # (agents.recommendation.calibration) — the same ceiling a real LLM is
+        # held to, so the eval cannot pass with a confidence the evidence does
+        # not support.
+        basis = state["confidence_basis"]
+        level, reason = basis["ceiling"], basis["reason"]
         unknowns = [
             entry
             for entry in calculations
@@ -59,17 +65,6 @@ class EvalLLM:
             or entry.get("unverified_paths_exist")
             or (entry.get("paths") == [] and entry.get("tool") == "BestTransferPaths")
         ]
-        has_computed = any(
-            entry.get("status") == "computed" or entry.get("paths") for entry in calculations
-        )
-        if unknowns and not has_computed:
-            level, reason = "low", "all required values are unknown pending verification"
-        elif unknowns:
-            level, reason = "medium", "some values verified, others unknown pending verification"
-        elif has_computed:
-            level, reason = "high", "all values verified and computed deterministically"
-        else:
-            level, reason = "low", "no deterministic computations were required"
         decision = "Deterministic tool results attached; see calculations."
         if unknowns:
             decision += (
@@ -99,8 +94,9 @@ def _numbers_traceable(recommendation: dict, state: dict) -> bool:
             "graph_results": state["graph_results"],
             "portfolio": state["portfolio"],
             "memory": state["memory"],
-            "knowledge": [c.model_dump() if hasattr(c, "model_dump") else c
-                          for c in state["knowledge"]],
+            "knowledge": [
+                c.model_dump() if hasattr(c, "model_dump") else c for c in state["knowledge"]
+            ],
         },
         default=str,
     )
@@ -138,9 +134,7 @@ def run() -> dict:
             ) and bool(recommendation["confidence"]["reason"])
             if item.get("expect_unknown"):
                 checks["unknown_stated"] = "unknown" in recommendation["decision"].lower()
-        per_query.append(
-            {"id": item["id"], "passed": all(checks.values()), "checks": checks}
-        )
+        per_query.append({"id": item["id"], "passed": all(checks.values()), "checks": checks})
     passed_count = sum(1 for q in per_query if q["passed"])
     return {
         "name": "end_to_end",

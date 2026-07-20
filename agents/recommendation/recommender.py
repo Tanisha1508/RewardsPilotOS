@@ -8,6 +8,7 @@ the single retry, then a typed failure."""
 import json
 from pathlib import Path
 
+from agents.recommendation.calibration import confidence_basis
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState
 from contracts.api.recommendation import (
@@ -50,7 +51,7 @@ def _retrieved_citations(state: AgentState) -> list[Citation]:
     return citations
 
 
-def _state_digest(state: AgentState) -> str:
+def _state_digest(state: AgentState, basis: dict) -> str:
     def chunk_dump(chunk):
         return chunk.model_dump() if hasattr(chunk, "model_dump") else chunk
 
@@ -65,6 +66,31 @@ def _state_digest(state: AgentState) -> str:
             "graph_results": state["graph_results"],
             "memory": state["memory"],
             "tool_errors": state["errors"],
+            # Deterministic calibration ceiling: reporting a HIGHER confidence
+            # than this is rejected; reporting lower is allowed.
+            "confidence_basis": basis,
+        },
+        default=str,
+    )
+
+
+def _grounded_text(state: AgentState) -> str:
+    """Text the prose-number check validates against: everything the tools
+    produced or retrieval returned — deliberately excluding the user query, so
+    a number the user invented ("assume miles are worth 1.5 rupees") can never
+    be echoed back as if it were computed."""
+
+    def chunk_dump(chunk):
+        return chunk.model_dump() if hasattr(chunk, "model_dump") else chunk
+
+    return json.dumps(
+        {
+            "portfolio": state["portfolio"],
+            "preferences": state["preferences"],
+            "knowledge": [chunk_dump(c) for c in state["knowledge"]],
+            "rule_results": state["rule_results"],
+            "graph_results": state["graph_results"],
+            "memory": state["memory"],
         },
         default=str,
     )
@@ -81,7 +107,8 @@ def _parse_payload(raw: str) -> dict:
 
 def recommend(state: AgentState, llm: LLM) -> AgentState:
     system = PROMPT_PATH.read_text()
-    user = _state_digest(state)
+    basis = confidence_basis(state["rule_results"], state["graph_results"], state["errors"])
+    user = _state_digest(state, basis)
     retrieved = _retrieved_citations(state)
     feedback = ""
     for attempt in range(2):  # initial + single retry on contract violation
@@ -95,7 +122,12 @@ def recommend(state: AgentState, llm: LLM) -> AgentState:
         try:
             payload = _parse_payload(raw)
             recommendation = validate_recommendation(
-                payload, state["rule_results"], state["graph_results"], retrieved
+                payload,
+                state["rule_results"],
+                state["graph_results"],
+                retrieved,
+                grounded_text=_grounded_text(state),
+                confidence_ceiling=basis["ceiling"],
             )
         except (json.JSONDecodeError, RecommendationValidationError, ValueError) as exc:
             feedback = (

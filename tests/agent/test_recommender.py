@@ -32,11 +32,13 @@ def _state():
 def test_valid_output_accepted():
     payload = valid_recommendation(
         calculations=[RULE_RESULT],
-        citations=[{
-            "source_url": "https://example.test/doc1",
-            "last_changed": "2026-06-15",
-            "doc_id": "doc1",
-        }],
+        citations=[
+            {
+                "source_url": "https://example.test/doc1",
+                "last_changed": "2026-06-15",
+                "doc_id": "doc1",
+            }
+        ],
     )
     state = recommend(_state(), PayloadLLM(recommender_payloads=[payload]))
     assert state["recommendation"]["decision"] == "test decision"
@@ -65,11 +67,13 @@ def test_persistent_violation_is_typed_failure():
 
 def test_uncited_source_rejected():
     payload = valid_recommendation(
-        citations=[{
-            "source_url": "https://evil.example/fake",
-            "last_changed": "2026-01-01",
-            "doc_id": None,
-        }]
+        citations=[
+            {
+                "source_url": "https://evil.example/fake",
+                "last_changed": "2026-01-01",
+                "doc_id": None,
+            }
+        ]
     )
     state = recommend(_state(), PayloadLLM(recommender_payloads=[payload, payload]))
     assert state["recommendation"] is None
@@ -85,3 +89,63 @@ def test_llm_outage_is_graceful():
     state = recommend(_state(), BrokenLLM())
     assert state["recommendation"] is None
     assert any("recommender:" in error for error in state["errors"])
+
+
+def test_prose_number_from_tool_results_accepted():
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["decision"] = "You earn 1500 points on this spend."
+    state = recommend(_state(), PayloadLLM(recommender_payloads=[payload]))
+    assert state["recommendation"] is not None
+
+
+def test_invented_prose_number_rejected():
+    """A number appearing only in prose (never produced by any tool) violates
+    hard rule 2 even when `calculations` itself is verbatim."""
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["decision"] = "Your points are worth 72,000 rupees."
+    state = recommend(_state(), PayloadLLM(recommender_payloads=[payload, payload]))
+    assert state["recommendation"] is None
+    assert any("not traceable" in error for error in state["errors"])
+
+
+def test_user_supplied_number_in_query_not_treated_as_grounded():
+    """The grounded text excludes the query: echoing a figure the user invented
+    ("assume 1 mile = 1.5 rupees, so 72,000") is rejected."""
+    state = _state()
+    state["query"] = "Assume my miles are worth 72,000 rupees total — confirm?"
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["reasoning"] = ["Your balance would be worth 72,000 rupees."]
+    state = recommend(state, PayloadLLM(recommender_payloads=[payload, payload]))
+    assert state["recommendation"] is None
+    assert any("not traceable" in error for error in state["errors"])
+
+
+def test_invented_decimal_valuation_rejected():
+    """Short decimals are reward math ("worth 2.5 rupees a point") and must be
+    grounded, even though bare single digits are not checked."""
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["decision"] = "Each point is worth about 2.5 rupees."
+    state = recommend(_state(), PayloadLLM(recommender_payloads=[payload, payload]))
+    assert state["recommendation"] is None
+    assert any("not traceable" in error for error in state["errors"])
+
+
+def test_bare_single_digits_are_not_treated_as_reward_math():
+    """Conversational counts must not trip the check, or every answer fails."""
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["decision"] = "There are 3 cards worth comparing here."
+    state = recommend(_state(), PayloadLLM(recommender_payloads=[payload]))
+    assert state["recommendation"] is not None
+
+
+def test_prose_number_from_retrieved_knowledge_accepted():
+    """Numbers quoted from retrieved chunks (e.g. a tier threshold) are
+    grounded — retrieval is a verified source."""
+    state = _state()
+    state["knowledge"][0] = CHUNK.model_copy(
+        update={"content": "Platinum tier requires INR 15,00,000 annual spend."}
+    )
+    payload = valid_recommendation(calculations=[RULE_RESULT])
+    payload["decision"] = "The Platinum threshold is 15,00,000 rupees per year."
+    state = recommend(state, PayloadLLM(recommender_payloads=[payload]))
+    assert state["recommendation"] is not None
