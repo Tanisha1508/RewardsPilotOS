@@ -158,6 +158,39 @@ two or more digits, so `2.5` — exactly the shape of a point valuation — slip
 through. Widened to catch any decimal while still ignoring bare single digits
 ("3 cards") that would otherwise fail every answer.
 
+### Verified, no change needed: confidence never influences ranking
+
+Worth knowing because it is the question a reviewer will ask. A full audit
+confirmed that source confidence (0.7 vs 0.95) **never** touches which card
+wins or how any value is computed. Ranking is on verified computed values
+only:
+
+| Path | Sort key |
+|---|---|
+| `rules/engine/engine.py` `compare_cards` | `(status_order, -points)` |
+| `graph/search/paths.py` | `(-cumulative_ratio, hop_count)` |
+| `graph/optimization/redemption.py` | `-cumulative_ratio` |
+
+The separation point is `VerifiedValue.is_usable`
+(`contracts/api/verified_value.py`), which gates computation on
+`status == "verified" and value is not None` — `confidence` is a sibling field
+it never reads. A grep for `confidence` across `rules/`, `graph/`, and
+`tools/` returns nothing outside schema validation; it appears only in
+integrity checks and in reporting on the final answer.
+
+`tests/rules/test_confidence_does_not_rank.py` locks this in with two cards
+identical in every computed value and differing only in confidence: they
+compute identically, confidence is not a tiebreaker at equal points (checked
+in both input orders, since a stable sort would otherwise hide a reordering),
+a 0.6-sourced higher rate still out-ranks a 0.95-sourced lower one, and low
+confidence never filters a value out of computation. **No production code was
+changed** — the behaviour was already correct.
+
+Do not "fix" this later by weighting ranking with confidence. It would
+manufacture a confidence-adjusted point total no cardholder earns, injecting
+a synthetic number into the one place that must stay purely arithmetic. The
+evidence gap is surfaced by the margin caveat (5b) instead.
+
 ### Adversarial results
 
 All three held. Note that the stand-in LLMs repeat the same bad payload on
@@ -174,7 +207,7 @@ behaviour.
 ### Found, deliberately NOT fixed
 
 These need a product-owner decision because fixing them means changing a
-spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–13.
+spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–14.
 
 - **Accelerated validity windows are not enforced (items 10).** *Time-sensitive.*
   The Amex Reward Multiplier's validity ends **2026-07-31**. `AcceleratedEarn`
@@ -195,6 +228,14 @@ spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–13.
   a deliberate decision, rather than rewriting the tests to match my opinion.
 - **Calibration is min-over-all-results (item 13).** One weak irrelevant edge
   can cap an otherwise strong answer. Under-claiming is the intended direction.
+  Distinct from the margin caveat (5b), which names a specific number rather
+  than adjusting an overall label.
+- **Cross-issuer vocabulary is hand-maintained (item 14).** The category
+  subsumption map (ADR-010) and canonical channel map (ADR-011) are declared,
+  not inferred. A new issuer whose portal name or category term is not
+  registered falls back to base earn in a comparison **silently, without
+  erroring** — the exact failure mode both ADRs were written to fix. See the
+  card-onboarding step in §4.
 
 Also worth knowing: `CalculateEarn` clips only *accelerated* caps. Category
 caps (Infinia grocery 2,000/month, etc.) are queryable via `CheckCap` but do
@@ -243,6 +284,20 @@ issuer fully before the next. Do not start without product-owner-supplied
 verified sources — the no-fabrication rule means rule data cannot be inferred,
 and each batch lands as a new rule version plus corpus and graph updates.
 
+**Card-onboarding checklist — do not skip step 3.** Per-field verification
+alone will not catch the integration failures described above:
+
+1. Verify every field against official sources; new rule version.
+2. Update the knowledge doc and graph edges; re-run `need_register`.
+3. **Check the card's channel and category vocabulary** against
+   `rules/evaluator/channels.py` and `rules/evaluator/categories.py`. If its
+   portal has a name not yet registered under `issuer_portal`, or it uses a
+   category term with a subsumption relationship not yet declared, register
+   it — otherwise the card silently earns base rate in every cross-card
+   comparison while every one of its fields passes review.
+4. Extend `tests/rules/test_channels.py` / `test_categories.py` with the new
+   card in a cross-card comparison, asserting it does not fall back to base.
+
 ---
 
 ## 4. Conventions worth not relearning
@@ -250,6 +305,15 @@ and each batch lands as a new rule version plus corpus and graph updates.
 - **Unknown over incorrect, always.** A refusal is a success; a confident wrong
   number is the failure mode the whole design exists to prevent. Defect 1 above
   is what that looks like when it slips through.
+- **Verification and integration catch different bug classes, and neither
+  substitutes for the other.** Defects 1 and 1b were individually-correct
+  fields composed into a wrong answer — per-field review is structurally blind
+  to them. The converse also holds: the SmartBuy 5X/3X reversal and the Axis
+  Group B cap discrepancy were field-level catches that no integration test
+  would have found, because a wrong-but-consistently-applied rate produces a
+  perfectly coherent comparison. Run both.
+- **Ranking is on computed values only.** Confidence is reported, never
+  weighted into the math (see the audit above and ADR-002).
 - `None` on a numeric field means **confirmed not applicable** (e.g. Atlas and
   Amex have no spend-based fee waiver). `unverified` means **open work**. They
   are different states and must not be collapsed.
