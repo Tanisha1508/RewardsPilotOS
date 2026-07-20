@@ -38,14 +38,25 @@ ALEMBIC_INI = REPO_ROOT / "database" / "migrations" / "alembic.ini"
 
 
 def _test_database_url() -> str | None:
-    """Read from the environment, then from `.env`.
+    """Read from the environment, then from `.env` directly.
 
     `.env.example` documents TEST_DATABASE_URL, so setting it there has to work —
     reading only `os.environ` meant the suite silently skipped for anyone who
     configured it the documented way, and a suite that skips looks the same as a
     suite that passes.
+
+    Read via `dotenv_values`, not `Settings`: the suite deliberately stops
+    `Settings` from loading `.env` at all (see `tests/conftest.py`), so this one
+    intentional dependency on the file stays visible instead of riding along on
+    a general-purpose settings object.
     """
-    return os.environ.get("TEST_DATABASE_URL") or get_settings().test_database_url
+    from dotenv import dotenv_values
+
+    if url := os.environ.get("TEST_DATABASE_URL"):
+        return url
+    value = dotenv_values(REPO_ROOT / ".env").get("TEST_DATABASE_URL")
+    # A commented-out line parses as the comment text, not as empty.
+    return value if value and not value.strip().startswith("#") else None
 
 
 TEST_DATABASE_URL = _test_database_url()

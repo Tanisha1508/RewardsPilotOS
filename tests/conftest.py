@@ -13,10 +13,33 @@ these out.
 
 import pytest
 
+from backend.config.settings import Settings, get_settings
 from tools.memory.source import InMemoryMemorySource
 from tools.memory.source import set_source as set_memory_source
 from tools.portfolio.source import InMemoryPortfolioSource, acting_as, load_seed
 from tools.portfolio.source import set_source as set_portfolio_source
+
+
+@pytest.fixture(autouse=True, scope="session")
+def settings_ignore_dotenv():
+    """Stop `Settings` reading the developer's `.env` during tests.
+
+    `Settings(env_file=".env")` means a real local `.env` leaks into every test.
+    A test that asserts "no database is configured" passes only while the
+    developer's `DATABASE_URL` happens to be blank, and starts failing the day
+    they configure the project properly — a test outcome that depends on an
+    untracked file is not a test result.
+
+    Integration tests still get `TEST_DATABASE_URL` from `.env`; they read it
+    directly (`tests/integration/conftest.py`) rather than through `Settings`,
+    which keeps that one deliberate dependency explicit.
+    """
+    original = Settings.model_config.get("env_file")
+    Settings.model_config["env_file"] = None
+    get_settings.cache_clear()
+    yield
+    Settings.model_config["env_file"] = original
+    get_settings.cache_clear()
 
 
 @pytest.fixture(scope="session")
