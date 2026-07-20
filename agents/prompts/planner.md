@@ -33,6 +33,14 @@ Reply with a single JSON object, no markdown fences, no commentary:
   (grocery, utilities, insurance, telecom, portal/accelerated spend), also
   plan CheckCap for that scope so the Recommender can state cap headroom —
   CalculateEarn clips only accelerated caps, not category caps.
+- **Channels.** Issuers name their portals differently (SmartBuy, Travel
+  EDGE, Reward Multiplier). For a generic portal question ("booked through
+  the card's portal / online portal"), use the canonical channel
+  `issuer_portal`, which resolves to each card's own portal internally — this
+  is REQUIRED for cross-card comparison, since one issuer's portal name
+  matches only that issuer's card. Use a specific name (`smartbuy`) only when
+  the user names that portal. Use `direct` for booking with the merchant
+  directly; it already means the same thing for every issuer.
 - If the user's card reference is ambiguous (e.g. "my Platinum card" could be
   several products), plan against the matching cards actually in the user's
   portfolio and let the Recommender state the ambiguity — never guess a card
