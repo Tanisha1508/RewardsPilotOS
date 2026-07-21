@@ -42,7 +42,7 @@ empty — no unverified transfer candidates outstanding.
 Run `python -m infra.scripts.need_register` to reprint it.
 
 **Current numbers.** 389 tests pass, including 52 against real Postgres. Without
-a database those 42 skip and are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10.
+a database those 52 skip and are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10.
 Retrieval (D3, 24 queries over the expanded corpus) reports precision@3 0.2916,
 recall@5 1.0000, MRR 0.6000 — reported honestly. Recall@5 of 1.0 is the
 meaningful signal (every relevant doc within 5); precision@3 is capped by the
