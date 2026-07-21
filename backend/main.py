@@ -23,6 +23,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.api import auth, health, knowledge, portfolio, preferences
+from backend.api.chat import chat_router, rec_router
 from backend.api.responses import HANDLED_EXCEPTIONS, error_response, request_id_of
 from backend.config.settings import get_settings
 from backend.middleware.auth import JWTAuthMiddleware
@@ -52,6 +53,8 @@ def create_app() -> FastAPI:
         portfolio.router,
         preferences.router,
         knowledge.router,
+        chat_router,
+        rec_router,
     ):
         app.include_router(router)
 

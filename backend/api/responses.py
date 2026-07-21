@@ -10,6 +10,7 @@ business logic in routers).
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from backend.application.chat import RecommendationUnavailableError
 from backend.application.errors import (
     ApplicationError,
     ConflictError,
@@ -29,6 +30,9 @@ STATUS_BY_EXCEPTION: list[tuple[type[Exception], int]] = [
     (AuthError, 401),
     (AuthNotConfiguredError, 503),
     (DatabaseNotConfiguredError, 503),
+    # The workflow ran but could not produce a valid recommendation (LLM down,
+    # or output failed the contract). An upstream failure, not the client's.
+    (RecommendationUnavailableError, 502),
 ]
 
 

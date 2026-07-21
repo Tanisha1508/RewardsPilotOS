@@ -39,6 +39,13 @@ class GeminiClient:
         return response.text or ""
 
 
+def default_llm() -> LLM:
+    """The production LLM the application layer runs the workflow with. Kept here
+    so LLM construction stays inside agents/ (BUILD_SPEC §3: no LLM calls outside
+    agents/) — the application orchestrates, but the client lives here."""
+    return GeminiClient()
+
+
 def complete_with_retry(llm: LLM, system: str, user: str, backoff_s: float = 1.0) -> str:
     """1 retry per LLM node with backoff (BUILD_SPEC §8)."""
     try:
