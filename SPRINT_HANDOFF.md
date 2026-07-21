@@ -1,6 +1,6 @@
 # Sprint handoff — RewardsPilotOS intelligence core
 
-**As of 2026-07-20.** Written for whoever picks this up next, assuming no
+**As of 2026-07-21.** Written for whoever picks this up next, assuming no
 memory of the sprint.
 
 Read `BUILD_SPEC.md` (engineering source of truth) and `MASTER_SPEC.md`
@@ -18,7 +18,7 @@ are D2+ and were deliberately out of sprint scope.
 | Subsystem | State |
 |---|---|
 | Rule Engine (`rules/`) | Complete. 100% branch coverage. Versioned JSON rule files, verified-value refusal paths. |
-| Retrieval (`knowledge/`) | Complete. ChromaDB + BM25 + RRF + freshness decay over a 21-doc corpus. |
+| Retrieval (`knowledge/`) | Complete. ChromaDB + BM25 + RRF + freshness decay over a 24-doc corpus (D3). |
 | Graph Engine (`graph/`) | Complete. NetworkX, verified-only path math, unverified register kept separate. |
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
