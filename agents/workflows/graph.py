@@ -54,6 +54,10 @@ def run_tools(state: AgentState) -> AgentState:
 
 
 def _route_after_planner(state: AgentState) -> str:
+    # The Planner may already have produced a deterministic direct response (the
+    # empty-portfolio gate, D4). If so, skip tools and the recommender entirely.
+    if state["recommendation"] is not None:
+        return "done"
     return "tools" if state["plan"] else "recommender"
 
 
@@ -64,7 +68,9 @@ def build_workflow(llm: LLM):
     graph.add_node("recommender", lambda state: recommender_node(state, llm))
     graph.set_entry_point("planner")
     graph.add_conditional_edges(
-        "planner", _route_after_planner, {"tools": "tools", "recommender": "recommender"}
+        "planner",
+        _route_after_planner,
+        {"tools": "tools", "recommender": "recommender", "done": END},
     )
     graph.add_edge("tools", "recommender")
     graph.add_edge("recommender", END)

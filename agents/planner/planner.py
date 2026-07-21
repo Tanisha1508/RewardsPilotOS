@@ -8,6 +8,11 @@ it enters the state; malformed entries are rejected and recorded in errors.
 import json
 from pathlib import Path
 
+from agents.planner.empty_portfolio import (
+    CARD_DEPENDENT_INTENTS,
+    empty_portfolio_recommendation,
+    has_no_cards,
+)
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState, ToolInvocation
 from tools.registry import REGISTRY, ToolInputError, ToolNotFoundError, validate_args
@@ -71,4 +76,14 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
     intent = payload.get("intent")
     state["intent"] = intent if intent in VALID_INTENTS else "general"
     state["plan"] = validate_plan(payload.get("plan") or [], state["errors"])
+
+    # Empty-portfolio gate (D4): a card-dependent question against zero cards has
+    # no answer to compute. Produce a deterministic direct response and clear the
+    # plan; the workflow routes this straight to END, skipping tools and the LLM
+    # recommender entirely.
+    if state["intent"] in CARD_DEPENDENT_INTENTS and has_no_cards(state["user_id"]):
+        state["plan"] = []
+        state["recommendation"] = empty_portfolio_recommendation()
+        state["confidence"] = state["recommendation"]["confidence"]["level"]
+        state["citations"] = []
     return state
