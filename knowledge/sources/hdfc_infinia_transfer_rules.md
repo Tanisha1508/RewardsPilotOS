@@ -3,7 +3,7 @@ doc_id: hdfc_infinia_transfer_rules
 issuer: hdfc
 program: hdfc_reward_points
 doc_type: transfer_rules
-source_url: https://www.hdfcbank.com/personal/pay/cards/credit-cards/infinia-credit-card
+source_url: https://www.hdfc.bank.in/credit-cards/infinia-credit-card
 last_changed: 2026-07-19
 ---
 

@@ -23,12 +23,19 @@ Two pressures make that path insufficient past the MVP:
    repeatable operation rather than a bespoke session, has no home in the
    product.
 
-2. **For HDFC Infinia it is now the *only* freshness path.** ADR-016 records
-   that `robots.txt` fully blocks automated crawling of HDFC's official page, so
-   the crawler cannot detect HDFC changes at all (KNOWN_LIMITATIONS item 20).
-   Automated change detection covers Axis and Amex at the HTML level; HDFC
-   depends entirely on a human remembering to re-check. Nothing in the product
-   surfaces *which* cards are in that position.
+2. **Some cards' key facts are crawler blind spots, and nothing surfaces
+   which.** The crawler detects HTML-level change but cannot read JS-rendered
+   detail — Axis's Travel EDGE transfer-partner table, Amex's exact figures and
+   MR partner list (KNOWN_LIMITATIONS items 20–21). Those specific facts depend
+   on a human remembering to re-check, and nothing in the product tells an
+   operator *which* cards are in that position versus fully covered by automated
+   detection.
+
+   *(This point originally cited HDFC as fully robots-blocked — the only
+   freshness path being manual. That was corrected 2026-07-22: it was a wrong
+   URL, not a real block; HDFC is fully crawlable. The blind-spot-visibility
+   argument stands on Axis and Amex, and the scaling argument in point 1 never
+   depended on HDFC.)*
 
 The crawler (D3) already detects change and the Rule Verifier design (ADR-009)
 already defines how a detected change becomes a reviewed, approved rule update
@@ -58,11 +65,11 @@ for machinery that already exists, not a second verification system. Scope:
   ADR-009. Nothing is applied to rule files automatically — the panel is the
   approval gate, not an auto-apply path.
 - **Blind-spot visibility per card** — surface which cards carry crawler blind
-  spots (KNOWN_LIMITATIONS 20–22: HDFC robots-blocked, Axis JS-rendered partner
-  table, Amex JS-rendered figures) so an operator can tell at a glance which
-  cards need **scheduled manual re-checks** versus which are covered by
-  **automated detection**. Without this the "up to a week / never" reaction
-  distinction (items 20, 23) lives only in docs, not in the tool the operator
+  spots (KNOWN_LIMITATIONS 20–21: Axis JS-rendered partner table, Amex
+  JS-rendered figures) so an operator can tell at a glance which cards need
+  **scheduled manual re-checks** versus which are covered by **automated
+  detection**. Without this the reaction-delay distinction (items 20–22) lives
+  only in docs, not in the tool the operator
   actually uses.
 
 **This requires a new admin role/permission layer the auth system does not
@@ -83,9 +90,10 @@ P1 cards done, seven P2 cards queued at a deliberate one-card-at-a-time cadence
 that a single operator sustains. The cost is that scaling operators, or turning
 verification into a repeatable non-chat operation, waits.
 
-**HDFC freshness stays a human calendar item** until the panel makes "which
-cards need manual re-checks" visible in-product. Recorded so it is a known
-gap, not a surprise (KNOWN_LIMITATIONS item 20 already states it).
+**Blind-spot facts stay a human calendar item** (Axis partner table, Amex
+figures) until the panel makes "which cards need manual re-checks" visible
+in-product. Recorded so it is a known gap, not a surprise (KNOWN_LIMITATIONS
+items 20–21).
 
 **When built, it is additive.** It consumes ADR-009's verification records and
 the D3 crawler unchanged; the new work is the admin identity layer and the UI,
@@ -115,6 +123,6 @@ no in-product view of blind-spot coverage. Fine until the MVP ships; not after.
 
 - ADR-009 — Manual Approval for Rule Verification (the pipeline this panel drives)
 - ADR-014 — Supabase asymmetric JWT (the single-user auth this extends)
-- ADR-016 — Crawler detects change, does not re-ingest (HDFC robots block)
-- KNOWN_LIMITATIONS items 20–23 — crawler blind spots and weekly cadence
+- ADR-016 — Crawler detects change, does not re-ingest
+- KNOWN_LIMITATIONS items 20–22 — crawler blind spots and weekly cadence
 - BUILD_SPEC §14a — Fast Follow: Rule Verifier

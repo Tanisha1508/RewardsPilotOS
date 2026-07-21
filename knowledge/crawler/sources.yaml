@@ -29,12 +29,16 @@ sources:
     doc_id: hdfc_infinia_reward_rules
     issuer: hdfc
     program: hdfc_reward_points
-    url: https://www.hdfcbank.com/personal/pay/cards/credit-cards/infinia-credit-card
-    crawlable: false
-    # robots.txt disallows this path (verified 2026-07-21: can_fetch → False).
-    # Per BUILD_SPEC §6 the crawler skips and logs rather than working around it.
-    # Verified facts come from the HDFC Rewards Points T&C PDF, reviewed manually.
-    blind_spot: "robots.txt disallows crawling the Infinia product path"
+    url: https://www.hdfc.bank.in/credit-cards/infinia-credit-card
+    crawlable: true
+    # Corrected 2026-07-22. D3 used https://www.hdfcbank.com/... — a Cloudflare-
+    # protected mirror whose /robots.txt returns HTTP 403, which RobotFileParser
+    # reads (per RFC) as disallow-all. That was the wrong host, not a real block:
+    # HDFC's canonical domain www.hdfc.bank.in serves /robots.txt as 200 with
+    # "User-Agent: * / Allow: /" (it even allows ClaudeBot explicitly), and
+    # /credit-cards/infinia-credit-card returns 200 with the reward content
+    # (base 5/150, SmartBuy 10x) in STATIC HTML. No blind spot — fully crawlable.
+    blind_spot: null
 
   - key: axis_atlas
     doc_id: axis_atlas_reward_rules

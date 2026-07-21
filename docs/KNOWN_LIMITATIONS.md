@@ -197,16 +197,7 @@ roadmap — none is silently papered over.
    timestamp. Sources disallowing crawling are skipped and logged, not
    worked around.
 
-20. **Crawler blind spot — HDFC Infinia is not crawlable at all (robots).**
-    Fetch-testing on 2026-07-21 confirmed `robots.txt` disallows the Infinia
-    product path (`can_fetch` → False). Per BUILD_SPEC §6 the crawler skips and
-    logs it rather than working around it, so the crawler **cannot detect when
-    the HDFC source changes**. HDFC's verified facts come from manual review of
-    the Rewards Points T&C PDF, and staleness there will not be caught
-    automatically — re-verification of HDFC is a calendar item, not a crawl
-    trigger. `sources.yaml` marks it `crawlable: false` with the reason.
-
-21. **Crawler blind spot — Axis Atlas transfer-partner table is JS-rendered.**
+20. **Crawler blind spot — Axis Atlas transfer-partner table is JS-rendered.**
     The Atlas page is crawlable and the crawler detects HTML-level change, but
     the Travel EDGE transfer-partner table is rendered by JavaScript: of the
     partner names, only one ("accor") appears in the static HTML the crawler
@@ -216,7 +207,7 @@ roadmap — none is silently papered over.
     browser (free-tier constraint, and it is exactly the content that needs
     human verification — ADR-016).
 
-22. **Crawler blind spot — Amex Platinum Travel exact figures are not static.**
+21. **Crawler blind spot — Amex Platinum Travel exact figures are not static.**
     The page is crawlable, but exact reward figures (milestone thresholds like
     24,000 MR, Reward Multiplier caps) and the MR transfer-partner list are
     JS-rendered or in a linked benefits catalogue, not in the static HTML
@@ -224,13 +215,22 @@ roadmap — none is silently papered over.
     read those specific numbers, which came from the official catalogue reviewed
     manually.
 
-    Items 20–22 share one shape: **the crawler detects change, it does not
+    Items 20–21 share one shape: **the crawler detects change, it does not
     extract verified facts** (ADR-016). Detection is wired (D3); extraction and
     approval are the Rule Verifier's job (BUILD_SPEC §14a, fast follow). Until
     then, a flagged change means "a human re-verifies", and the facts a crawler
     cannot see are re-verified on a schedule regardless.
 
-23. **Crawl cadence is weekly, not daily — reaction to change is delayed up to
+    *(A former item — "HDFC Infinia is not crawlable at all (robots)" — was
+    removed 2026-07-22. It was based on the wrong host: D3 pointed the crawler at
+    `www.hdfcbank.com`, a Cloudflare mirror whose `/robots.txt` returns HTTP 403,
+    which `RobotFileParser` reads per RFC as disallow-all. HDFC's canonical
+    domain `www.hdfc.bank.in` serves `robots.txt` as `Allow: /` and its Infinia
+    page returns the reward content in static HTML — fully crawlable, no blind
+    spot. `sources.yaml` corrected. The crawler's robots handling was never
+    buggy; the URL was wrong.)*
+
+22. **Crawl cadence is weekly, not daily — reaction to change is delayed up to
     a week.** BUILD_SPEC §6 specified a daily cron; the MVP runs weekly
     (`.github/workflows/crawl.yml`, `cron: "0 3 * * 1"`). Reward T&C pages change
     infrequently — observed directly during verification, where HDFC's SmartBuy

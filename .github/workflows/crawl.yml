@@ -15,7 +15,7 @@
 # reward T&C pages change infrequently (observed during verification — the
 # SmartBuy 5X/3X change and its reversal were weeks apart), so weekly is a
 # better cost/signal ratio. Tradeoff: up to a week's delay noticing a real
-# change, e.g. a lapsed promotional rate (KNOWN_LIMITATIONS item 23).
+# change, e.g. a lapsed promotional rate (KNOWN_LIMITATIONS item 22).
 #
 # Cadence is the single `cron` value below — changing it is a config edit here,
 # never a crawler code change (crawl.py is cadence-agnostic). To move to monthly

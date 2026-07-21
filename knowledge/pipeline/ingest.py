@@ -42,6 +42,20 @@ def chunk_id(doc_id: str, index: int) -> str:
     return f"{doc_id}::{index}"
 
 
+def _fingerprint(doc: SourceDoc) -> str:
+    """Hash the body AND the citation metadata that ships with each chunk.
+
+    The embeddings depend only on the body, but source_url and last_changed flow
+    verbatim into chunk metadata and become the citation shown to the user. If
+    the fingerprint covered the body alone, correcting a source_url — or bumping
+    last_changed after a crawler flag — would leave the skip-logic thinking the
+    doc was unchanged, and the stale citation would never propagate. Found
+    2026-07-22 when the corrected HDFC URL did not reach the store.
+    """
+    fingerprint = f"{doc.body}\x00{doc.source_url}\x00{doc.last_changed}"
+    return hashlib.sha256(fingerprint.encode()).hexdigest()
+
+
 def _ingest_doc(doc: SourceDoc, client: chromadb.ClientAPI, report: IngestReport) -> int:
     body, excluded = strip_unverified_facts(doc.doc_id, doc.body)
     report.excluded_facts.extend(excluded)
@@ -103,7 +117,7 @@ def ingest_sources(
     report = IngestReport()
     for path in sorted((sources_dir or SOURCES_DIR).glob("*.md")):
         doc = parse_source_file(path)
-        content_hash = hashlib.sha256(doc.body.encode()).hexdigest()
+        content_hash = _fingerprint(doc)
         if store.get_hash(doc.doc_id) == content_hash:
             report.docs_unchanged += 1
             continue

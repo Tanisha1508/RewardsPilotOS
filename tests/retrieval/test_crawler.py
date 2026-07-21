@@ -20,10 +20,12 @@ def test_sources_yaml_loads_and_declares_crawlability():
     _ua, sources = load_sources()
     keys = {s.key for s in sources}
     assert {"hdfc_infinia", "axis_atlas", "amex_plat_travel"} <= keys
+    # All three P1 sources are crawlable. HDFC was corrected 2026-07-22: D3 had
+    # pointed at a Cloudflare mirror (www.hdfcbank.com) whose robots.txt 403s;
+    # the canonical www.hdfc.bank.in allows crawling with content in static HTML.
     hdfc = next(s for s in sources if s.key == "hdfc_infinia")
-    # HDFC is robots-disallowed and flagged not crawlable — a documented blind spot.
-    assert hdfc.crawlable is False
-    assert hdfc.blind_spot
+    assert hdfc.crawlable is True
+    assert hdfc.url.startswith("https://www.hdfc.bank.in/")
 
 
 def test_extract_main_text_drops_scripts():
@@ -32,12 +34,33 @@ def test_extract_main_text_drops_scripts():
     assert "x()" not in text  # script stripped
 
 
-def test_non_crawlable_source_is_skipped_and_recorded():
-    report = crawl(store=InMemoryCrawlStateStore(), fetcher=fetch_fixed, today="2026-07-21")
-    hdfc = next(r for r in report.records if r.key == "hdfc_infinia")
-    assert hdfc.status == "skipped_config"
+def test_non_crawlable_source_is_skipped_and_recorded(tmp_path):
+    """A `crawlable: false` source is skipped before any fetch and recorded, not
+    dropped. No real P1 source is non-crawlable anymore (HDFC was corrected
+    2026-07-22), so this uses a synthetic sources file to exercise the behavior
+    the mechanism still needs — a future P2 source may genuinely be blocked."""
+    sources = tmp_path / "sources.yaml"
+    sources.write_text(
+        'user_agent: "test-agent"\n'
+        "sources:\n"
+        "  - key: blocked_card\n"
+        "    doc_id: blocked_card_reward_rules\n"
+        "    issuer: someissuer\n"
+        "    program: some_points\n"
+        "    url: https://example.test/blocked\n"
+        "    crawlable: false\n"
+        '    blind_spot: "T&C only in a login-gated PDF"\n'
+    )
+    report = crawl(
+        store=InMemoryCrawlStateStore(),
+        sources_path=sources,
+        fetcher=fetch_fixed,
+        today="2026-07-21",
+    )
+    rec = next(r for r in report.records if r.key == "blocked_card")
+    assert rec.status == "skipped_config"
     # Skipped, but present in the report — a blind spot must be visible, not silent.
-    assert hdfc.detail
+    assert rec.detail
 
 
 def test_first_crawl_is_new_then_unchanged_then_changed(tmp_path):
@@ -64,8 +87,9 @@ def test_a_fetch_error_is_logged_not_fatal():
 
     report = crawl(store=InMemoryCrawlStateStore(), fetcher=boom, today="2026-07-21")
     errors = report.by_status("error")
-    # Both crawlable sources error; the non-crawlable one is skipped first.
-    assert len(errors) == 2
+    # All three P1 sources are crawlable (HDFC corrected 2026-07-22), so all
+    # three reach the fetcher and error — none is fatal, each is logged.
+    assert len(errors) == 3
     assert all("ConnectionError" in r.detail for r in errors)
 
 

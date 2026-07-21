@@ -4,6 +4,16 @@
 
 Accepted (2026-07-21). Refines BUILD_SPEC §6 crawler behaviour for D3.
 
+**Amendment (2026-07-22).** The HDFC "robots.txt disallows the product path"
+example used below was wrong — the crawler had been pointed at `www.hdfcbank.com`
+(a Cloudflare mirror whose `/robots.txt` 403s, which `RobotFileParser` reads as
+disallow-all), not HDFC's canonical `www.hdfc.bank.in`, which allows crawling.
+HDFC is now fully crawlable (`sources.yaml` corrected). The decision here is
+**unchanged** — Axis's JS-rendered partner table and Amex's JS-rendered figures
+still justify detect-not-reingest, and the verified-corpus-vs-scraped-HTML
+argument never depended on HDFC. The HDFC references in the text below are left
+as written but should be read through this correction.
+
 ## Context
 
 BUILD_SPEC §6 describes the crawler as: "fetches, extracts main content,
@@ -23,8 +33,9 @@ found during D3 make that assumption unsafe:
 
 2. **The live pages are partial blind spots.** Fetch-testing on 2026-07-21 found
    the reward detail is often not in the static HTML the crawler can read:
-   - **HDFC Infinia** — `robots.txt` disallows the product path. Not fetchable
-     at all, by policy.
+   - ~~**HDFC Infinia** — `robots.txt` disallows the product path. Not fetchable
+     at all, by policy.~~ *(Wrong — see the 2026-07-22 amendment above. This was
+     the wrong host; HDFC is fully crawlable.)*
    - **Axis Atlas** — the Travel EDGE transfer-partner table is JS-rendered;
      only one partner name appears in static HTML.
    - **Amex Platinum Travel** — exact milestone/Reward-Multiplier figures and the
@@ -77,7 +88,7 @@ running.
 crawlable at all (robots); Axis's partner table and Amex's exact figures are not
 in the crawlable HTML. So a change to *those specific facts* on the source can
 go undetected while the surrounding page is unchanged. This is recorded in
-KNOWN_LIMITATIONS (items 20–22) rather than papered over with a headless browser
+KNOWN_LIMITATIONS (items 20–21) rather than papered over with a headless browser
 the free-tier constraint would not sustain.
 
 **Namespaced rows share a table with corpus metadata.** Reading `knowledge_docs`
