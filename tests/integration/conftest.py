@@ -173,18 +173,27 @@ def clean_tables(migrated_database):
 
 @pytest.fixture(autouse=True)
 def postgres_sources(migrated_database):
-    """Undo the suite-wide in-memory sources from `tests/conftest.py`.
+    """Undo the suite-wide in-memory sources from `tests/conftest.py` for the
+    duration of an integration test, then restore them.
 
-    Without this these tests would pass against seeded fakes while appearing to
-    exercise Postgres — the exact false green that makes an integration suite
-    worthless.
+    Without the swap these tests would pass against seeded fakes while appearing
+    to exercise Postgres — the false green that makes an integration suite
+    worthless. Restoring afterwards matters just as much: leaving the source as
+    Postgres would pollute later non-integration tests (which expect the demo
+    fake), so a test that runs after integration would see the wrong source
+    depending only on collection order.
     """
+    from tools.memory.source import InMemoryMemorySource
     from tools.memory.source import set_source as set_memory_source
+    from tools.portfolio.source import InMemoryPortfolioSource, load_seed
     from tools.portfolio.source import set_source as set_portfolio_source
 
     set_portfolio_source(None)
     set_memory_source(None)
     yield
+    seed = load_seed()
+    set_portfolio_source(InMemoryPortfolioSource(seed))
+    set_memory_source(InMemoryMemorySource(seed))
 
 
 @pytest.fixture()

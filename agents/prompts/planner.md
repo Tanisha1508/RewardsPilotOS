@@ -28,9 +28,13 @@ Reply with a single JSON object, no markdown fences, no commentary:
   tools are available yet — never invent one).
 - Request memory recall (RecallMemory) only when intent benefits from
   preferences or history (spend / transfer / redeem).
-- For spend questions: GetCards → CompareCards (all relevant cards) →
-  SearchKnowledge for context. When the spend category is one issuers cap
-  (grocery, utilities, insurance, telecom, portal/accelerated spend), also
+- For spend questions you MUST include CompareCards — it is what produces the
+  numbers the answer needs; without it there is nothing to compute and the
+  Recommender can only say "unable to determine". Plan: GetCards → CompareCards
+  → SearchKnowledge for context. **Leave CompareCards' `cards` list EMPTY
+  (`[]`)**: the system fills it deterministically with the user's held cards'
+  keys. Do not guess or omit card keys. When the spend category is one issuers
+  cap (grocery, utilities, insurance, telecom, portal/accelerated spend), also
   plan CheckCap for that scope so the Recommender can state cap headroom —
   CalculateEarn clips only accelerated caps, not category caps.
 - **Channels.** Issuers name their portals differently (SmartBuy, Travel

@@ -15,6 +15,7 @@ from backend.application.errors import NotFoundError, PermissionDeniedError
 from backend.models.identity import User
 from backend.models.portfolio import Card, LoyaltyAccount, Portfolio, RewardBalance
 from database.postgres.session import session_scope
+from rules.parser.catalog import resolve_card_key
 
 
 def _portfolio_for(session, user_id: uuid.UUID) -> Portfolio:
@@ -84,6 +85,9 @@ def add_card(
             card_name=card_name,
             network=network,
             reward_currency=reward_currency,
+            # Resolve the Rule Engine card_key at creation; None if the engine has
+            # no verified rule file for this card (2026-07-22).
+            card_key=resolve_card_key(issuer, card_name),
             joining_date=joining_date,
             annual_fee=annual_fee,
             renewal_date=renewal_date,
@@ -101,6 +105,10 @@ def update_card(user_id: uuid.UUID, card_id: uuid.UUID, **changes) -> Card:
         # the same as an explicit null, so unset values never reach here.
         for field, value in changes.items():
             setattr(card, field, value)
+        # A changed identity re-resolves the card_key — editing an issuer or name
+        # into (or out of) a card the engine knows must not leave a stale key.
+        if "issuer" in changes or "card_name" in changes:
+            card.card_key = resolve_card_key(card.issuer, card.card_name)
         session.flush()
         return card
 

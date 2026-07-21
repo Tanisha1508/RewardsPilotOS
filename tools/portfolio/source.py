@@ -124,6 +124,9 @@ class PostgresPortfolioSource:
                 # needed a code change and, without one, resolved to a currency
                 # no graph node matched.
                 reward_currency=row.reward_currency,
+                # Rule Engine card_key, resolved at creation; None if the engine
+                # has no verified rule file for the card (2026-07-22).
+                card_key=row.card_key,
                 status=row.status,
                 annual_fee=float(row.annual_fee) if row.annual_fee is not None else None,
                 renewal_date=row.renewal_date.isoformat() if row.renewal_date else None,

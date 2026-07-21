@@ -11,7 +11,8 @@ from pathlib import Path
 from agents.planner.empty_portfolio import (
     CARD_DEPENDENT_INTENTS,
     empty_portfolio_recommendation,
-    has_no_cards,
+    held_cards,
+    inject_card_keys,
 )
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState, ToolInvocation
@@ -75,15 +76,25 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
         return state
     intent = payload.get("intent")
     state["intent"] = intent if intent in VALID_INTENTS else "general"
-    state["plan"] = validate_plan(payload.get("plan") or [], state["errors"])
+    raw_plan = payload.get("plan") or []
 
-    # Empty-portfolio gate (D4): a card-dependent question against zero cards has
-    # no answer to compute. Produce a deterministic direct response and clear the
-    # plan; the workflow routes this straight to END, skipping tools and the LLM
-    # recommender entirely.
-    if state["intent"] in CARD_DEPENDENT_INTENTS and has_no_cards(state["user_id"]):
-        state["plan"] = []
-        state["recommendation"] = empty_portfolio_recommendation()
-        state["confidence"] = state["recommendation"]["confidence"]["level"]
-        state["citations"] = []
+    # Card-dependent intents need the held cards (D4): fetched once, used for both
+    # the empty gate and card-key injection. Injection happens BEFORE validation:
+    # a model that correctly declines to guess card_keys emits CompareCards with
+    # an empty `cards` list, which validation would reject (min_length=1) — so
+    # the keys must be filled in first, or the comparison is lost entirely (the
+    # exact D4 live-/chat failure).
+    if state["intent"] in CARD_DEPENDENT_INTENTS:
+        cards = held_cards(state["user_id"])
+        if not cards:
+            # Nothing to compute against an empty set — deterministic direct
+            # response, routed straight to END (skips tools and the recommender).
+            state["plan"] = []
+            state["recommendation"] = empty_portfolio_recommendation()
+            state["confidence"] = state["recommendation"]["confidence"]["level"]
+            state["citations"] = []
+            return state
+        raw_plan = inject_card_keys(raw_plan, cards)
+
+    state["plan"] = validate_plan(raw_plan, state["errors"])
     return state

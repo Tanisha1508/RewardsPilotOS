@@ -15,6 +15,10 @@ class Card(BaseModel):
     card_name: str
     network: str
     reward_currency: str
+    # Rule Engine card_key for this card, or None when the engine has no verified
+    # rule file for it. The Planner uses this to drive CompareCards/CalculateEarn
+    # against the card the user actually holds (2026-07-22).
+    card_key: str | None = None
     status: str = "active"
     annual_fee: float | None = None
     renewal_date: str | None = None

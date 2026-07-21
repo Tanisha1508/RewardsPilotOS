@@ -10,7 +10,7 @@ import pytest
 
 from agents.planner.empty_portfolio import (
     empty_portfolio_recommendation,
-    has_no_cards,
+    held_cards,
 )
 from agents.state.schema import initial_state
 from agents.workflows.graph import build_workflow
@@ -62,9 +62,9 @@ def _install_empty():
     set_portfolio_source(InMemoryPortfolioSource(EMPTY_SEED))
 
 
-def test_has_no_cards_true_for_empty_portfolio():
+def test_held_cards_empty_for_empty_portfolio():
     _install_empty()
-    assert has_no_cards("empty_user") is True
+    assert held_cards("empty_user") == []
 
 
 def test_empty_response_is_contract_valid():

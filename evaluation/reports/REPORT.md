@@ -1,6 +1,6 @@
 # Evaluation report
 
-Measured eval results, run on 2026-07-21 against the sprint fixture corpus and seed data (synthetic fixtures clearly labeled; real-issuer numbers ship unverified and are expected to be refused). Product metrics in MASTER_SPEC are targets, not measurements.
+Measured eval results, run on 2026-07-22 against the sprint fixture corpus and seed data (synthetic fixtures clearly labeled; real-issuer numbers ship unverified and are expected to be refused). Product metrics in MASTER_SPEC are targets, not measurements.
 
 | Suite | Size | Metric | Result | Target |
 |---|---|---|---|---|

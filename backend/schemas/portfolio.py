@@ -49,6 +49,7 @@ class CardOut(BaseModel):
     card_name: str
     network: str
     reward_currency: str
+    card_key: str | None = None
     joining_date: date | None = None
     annual_fee: float | None = None
     renewal_date: date | None = None

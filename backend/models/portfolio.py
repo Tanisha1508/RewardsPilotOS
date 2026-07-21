@@ -41,6 +41,10 @@ class Card(Base):
     # the graph, and the graph tools report that gap explicitly rather than
     # returning empty paths.
     reward_currency: Mapped[str] = mapped_column(String(100), nullable=False)
+    # Rule Engine card_key (rules/seed/<card_key>), resolved at creation from
+    # (issuer, card_name). Nullable: a tracked card the engine has no verified
+    # rule file for has NULL here — "tracked, not reasoned about" (2026-07-22).
+    card_key: Mapped[str | None] = mapped_column(String(100))
     joining_date: Mapped[date | None] = mapped_column(Date)
     # Money: Numeric, never float. Annual fees are compared and displayed, and
     # binary floating point cannot represent 12500.00 exactly.
