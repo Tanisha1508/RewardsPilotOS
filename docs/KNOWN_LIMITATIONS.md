@@ -229,3 +229,18 @@ roadmap — none is silently papered over.
     approval are the Rule Verifier's job (BUILD_SPEC §14a, fast follow). Until
     then, a flagged change means "a human re-verifies", and the facts a crawler
     cannot see are re-verified on a schedule regardless.
+
+23. **Crawl cadence is weekly, not daily — reaction to change is delayed up to
+    a week.** BUILD_SPEC §6 specified a daily cron; the MVP runs weekly
+    (`.github/workflows/crawl.yml`, `cron: "0 3 * * 1"`). Reward T&C pages change
+    infrequently — observed directly during verification, where HDFC's SmartBuy
+    5X→3X devaluation and its reversal were weeks apart — so weekly is a better
+    cost/signal ratio for a pre-launch product. The tradeoff is real: a change
+    the crawler *can* see (e.g. a lapsed promotional rate on a crawlable page)
+    may go unnoticed for up to a week rather than a day. Combined with the
+    freshness half-life (item 19, 180 days) this is well within tolerance for
+    T&C-grade data, but it means the crawler is not a same-day alarm. Cadence is
+    a single `cron` value and can move to monthly once the product is stable
+    (the workflow documents the one-line switch); the crawler code is
+    cadence-agnostic and does not change. Manual runs are available any time via
+    `workflow_dispatch`.

@@ -12,6 +12,15 @@
 # corpus or edits rule files — the pages are partial blind spots (JS-rendered
 # tables, PDFs behind the HTML) and the verified data is hand-authored
 # (BUILD_SPEC §14a: detection is not extraction). See ADR-016.
+#
+# Adding a source is a PURE CONFIG CHANGE — append an entry to `sources` below
+# with these fields; no code edit is needed (crawl.py loads every entry
+# generically). As P2 cards get verified, add their official URLs here. Fetch-
+# test each new URL for crawlability first (robots + static-vs-JS content) and
+# set `crawlable` / `blind_spot` to what you actually find, not what you expect.
+#
+# Fields per source: key, doc_id (the corpus doc it corroborates), issuer,
+# program, url, crawlable (bool), blind_spot (string or null).
 
 user_agent: "RewardsPilotOS-crawler/0.1 (+https://github.com/Tanisha1508/RewardsPilotOS)"
 

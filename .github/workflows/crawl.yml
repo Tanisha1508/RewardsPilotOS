@@ -1,6 +1,7 @@
-# Daily crawl (BUILD_SPEC §6, §13). Fetches the official source pages listed in
-# knowledge/crawler/sources.yaml, diffs each against its last-crawl hash in
-# Postgres, and records any change for human re-verification.
+# Weekly crawl (BUILD_SPEC §6 as amended — see the cadence note below). Fetches
+# the official source pages listed in knowledge/crawler/sources.yaml, diffs each
+# against its last-crawl hash in Postgres, and records any change for human
+# re-verification.
 #
 # It does NOT re-ingest or edit verified data — it detects change (ADR-016).
 # A changed source is normal operation and does not fail the job; only a genuine
@@ -8,13 +9,28 @@
 #
 # Requires the DATABASE_URL secret (Supabase). robots-disallowed sources
 # (HDFC, verified 2026-07-21) are skipped by the crawler and logged.
+#
+# ── Crawl cadence ────────────────────────────────────────────────────────────
+# BUILD_SPEC §6 specified daily. Changed to WEEKLY for the pre-launch MVP:
+# reward T&C pages change infrequently (observed during verification — the
+# SmartBuy 5X/3X change and its reversal were weeks apart), so weekly is a
+# better cost/signal ratio. Tradeoff: up to a week's delay noticing a real
+# change, e.g. a lapsed promotional rate (KNOWN_LIMITATIONS item 23).
+#
+# Cadence is the single `cron` value below — changing it is a config edit here,
+# never a crawler code change (crawl.py is cadence-agnostic). To move to monthly
+# once the product is stable, swap the one line:
+#   weekly  (current):  "0 3 * * 1"   # 03:00 UTC every Monday
+#   monthly (later):    "0 3 1 * *"   # 03:00 UTC on the 1st
+#   daily   (spec):     "0 3 * * *"
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: crawl
 
 on:
   schedule:
-    - cron: "0 3 * * *" # daily at 03:00 UTC
-  workflow_dispatch: {} # allow a manual run from the Actions tab
+    - cron: "0 3 * * 1" # WEEKLY — 03:00 UTC every Monday (see cadence note above)
+  workflow_dispatch: {} # allow a manual run from the Actions tab any time
 
 concurrency:
   group: crawl

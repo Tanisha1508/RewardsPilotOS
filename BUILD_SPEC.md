@@ -356,7 +356,7 @@ Tests: pytest, table-driven, one test module per card, plus cap-boundary and exc
 5. Freshness re-rank: multiply fused score by freshness decay on `last_changed` (half-life 180 days), floor 0.5
 6. Return top 5 with metadata; citations flow through to the final response verbatim
 
-**Crawlers (`knowledge/crawler/`):** `sources.yaml` lists official URLs per issuer/program. `crawl.py` fetches, extracts main content, computes hash, diffs against `knowledge_docs.content_hash`. On change: re-ingest chunk set, update `last_changed`, write a change record. `monitor.py` converts change records into `notifications` (opportunity engine input). GitHub Actions cron: daily at 03:00 UTC. Respect robots.txt; skip and log any source that disallows crawling rather than working around it.
+**Crawlers (`knowledge/crawler/`):** `sources.yaml` lists official URLs per issuer/program. `crawl.py` fetches, extracts main content, computes hash, diffs against `knowledge_docs.content_hash`. On change: re-ingest chunk set, update `last_changed`, write a change record. `monitor.py` converts change records into `notifications` (opportunity engine input). GitHub Actions cron: ~~daily~~ **weekly** at 03:00 UTC for the pre-launch MVP (reward T&C pages change infrequently — better cost/signal ratio; tradeoff and how to switch to monthly documented in KNOWN_LIMITATIONS item 23 and `.github/workflows/crawl.yml`). Respect robots.txt; skip and log any source that disallows crawling rather than working around it.
 
 ---
 
