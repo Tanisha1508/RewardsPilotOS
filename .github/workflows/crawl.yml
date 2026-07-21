@@ -1,0 +1,44 @@
+# Daily crawl (BUILD_SPEC §6, §13). Fetches the official source pages listed in
+# knowledge/crawler/sources.yaml, diffs each against its last-crawl hash in
+# Postgres, and records any change for human re-verification.
+#
+# It does NOT re-ingest or edit verified data — it detects change (ADR-016).
+# A changed source is normal operation and does not fail the job; only a genuine
+# fetch/parse error does, so a red run means real breakage.
+#
+# Requires the DATABASE_URL secret (Supabase). robots-disallowed sources
+# (HDFC, verified 2026-07-21) are skipped by the crawler and logged.
+
+name: crawl
+
+on:
+  schedule:
+    - cron: "0 3 * * *" # daily at 03:00 UTC
+  workflow_dispatch: {} # allow a manual run from the Actions tab
+
+concurrency:
+  group: crawl
+  cancel-in-progress: false
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install project
+        run: |
+          uv venv --python 3.11
+          uv pip install -e "."
+
+      - name: Run crawler
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: .venv/bin/python -m knowledge.crawler.crawl

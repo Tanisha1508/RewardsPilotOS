@@ -1,0 +1,54 @@
+# Crawler sources (BUILD_SPEC §6). One entry per official source page the
+# crawler watches for change. Each maps to the corpus doc it corroborates.
+#
+# `crawlable` records what fetch-testing on 2026-07-21 actually found — not an
+# assumption. A source marked `crawlable: false` is skipped by the crawler and
+# logged; its verified facts come from manual review of the underlying T&C, and
+# the crawler cannot detect when it changes. These are documented as crawler
+# blind spots in docs/KNOWN_LIMITATIONS.md.
+#
+# The crawler DETECTS change (page hash differs from last crawl) and records it
+# for human re-verification. It never re-ingests scraped HTML into the verified
+# corpus or edits rule files — the pages are partial blind spots (JS-rendered
+# tables, PDFs behind the HTML) and the verified data is hand-authored
+# (BUILD_SPEC §14a: detection is not extraction). See ADR-016.
+
+user_agent: "RewardsPilotOS-crawler/0.1 (+https://github.com/Tanisha1508/RewardsPilotOS)"
+
+sources:
+  - key: hdfc_infinia
+    doc_id: hdfc_infinia_reward_rules
+    issuer: hdfc
+    program: hdfc_reward_points
+    url: https://www.hdfcbank.com/personal/pay/cards/credit-cards/infinia-credit-card
+    crawlable: false
+    # robots.txt disallows this path (verified 2026-07-21: can_fetch → False).
+    # Per BUILD_SPEC §6 the crawler skips and logs rather than working around it.
+    # Verified facts come from the HDFC Rewards Points T&C PDF, reviewed manually.
+    blind_spot: "robots.txt disallows crawling the Infinia product path"
+
+  - key: axis_atlas
+    doc_id: axis_atlas_reward_rules
+    issuer: axis
+    program: edge_miles
+    url: https://www.axisbank.com/retail/cards/credit-card/axis-bank-atlas-credit-card
+    crawlable: true
+    # Page is fetchable and robots allows it; base-earn and general content are
+    # in static HTML. BUT the Travel EDGE transfer-partner table is JS-rendered
+    # (verified 2026-07-21: of the partner names, only "accor" appears in static
+    # HTML). The crawler detects HTML-level change; it cannot see the partner
+    # ratios, which were hand-verified via browser.
+    blind_spot: "Travel EDGE transfer-partner table is JS-rendered, not in static HTML"
+
+  - key: amex_plat_travel
+    doc_id: amex_plat_travel_reward_rules
+    issuer: amex
+    program: amex_membership_rewards
+    url: https://www.americanexpress.com/in/credit-cards/platinum-travel-credit-card/
+    crawlable: true
+    # Fetchable, robots allows. General content is static, but exact figures
+    # (milestone thresholds like 24,000 MR, Reward Multiplier caps) and the MR
+    # transfer-partner list are NOT in static HTML (verified 2026-07-21). The
+    # crawler detects when the page changes; the numbers came from the official
+    # benefits catalogue, reviewed manually.
+    blind_spot: "exact reward figures and MR transfer-partner list are JS-rendered / in linked catalogue, not static HTML"
