@@ -23,6 +23,11 @@ class Settings(BaseSettings):
     gemini_api_key: str | None = None
     gemini_model: str = "gemini-3.5-flash"
 
+    # Cross-provider LLM fallback (ADR-018). Free tier, open models. Inert until
+    # GROQ_API_KEY is set: with no key the fallback chain is Gemini-only.
+    groq_api_key: str | None = None
+    groq_model: str = "llama-3.3-70b-versatile"
+
     redis_url: str | None = None
     chroma_persist_dir: str = "data/embeddings"
 
