@@ -22,7 +22,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from backend.api import auth, health, portfolio, preferences
+from backend.api import auth, health, knowledge, portfolio, preferences
 from backend.api.responses import HANDLED_EXCEPTIONS, error_response, request_id_of
 from backend.config.settings import get_settings
 from backend.middleware.auth import JWTAuthMiddleware
@@ -46,7 +46,13 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
-    for router in (health.router, auth.router, portfolio.router, preferences.router):
+    for router in (
+        health.router,
+        auth.router,
+        portfolio.router,
+        preferences.router,
+        knowledge.router,
+    ):
         app.include_router(router)
 
     async def handle_domain_error(request: Request, exc: Exception) -> JSONResponse:
