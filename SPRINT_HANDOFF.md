@@ -69,15 +69,63 @@ cd frontend && npm install && npm run dev
 
 ---
 
-## 2. What was tested in this session, and what it found
+## 2. What testing has found (sprint → D4)
 
-Eight realistic end-to-end queries (not the golden set) plus three adversarial
-ones were run through the full LangGraph flow against the verified P1 data.
-The harnesses live in the session scratchpad, not the repo; every defect they
-found is fixed or documented below, and each fix carries a regression test.
+A cumulative log. It began as the sprint's eight-query harness and grew through
+D2–D4; every defect is fixed or documented, and each fix carries a regression
+test. One theme runs through all of it and is worth stating first: **the golden
+suite scripts the LLM, and the sprint fakes mock the infrastructure — so a whole
+class of bugs surfaced only when the code ran against real Gemini, real
+Supabase, and real Postgres.** That is the argument for the live-smoke-test
+carry-on item (KNOWN_LIMITATIONS item 23, and §3 Next steps).
 
-Confidence now varies across the eight queries (high / medium / high / low /
-high / medium / medium / high) rather than reading uniformly high.
+### D2–D4 — what live testing caught that the golden suite could not
+
+Each has full detail in its ADR / commit / KNOWN_LIMITATIONS entry; one line here.
+
+- **The integration suite could have dropped the Supabase tables.** `get_engine`
+  fell back to `DATABASE_URL` after the migration round-trip disposed the engine;
+  a plain `pytest` with a real URL set would have run drop-all against it. Guarded
+  now (ADR-013).
+- **A Supabase `anon` key returned 503, not 401.** A public credential read as a
+  server fault; on a JWT-signing-key project an HS256 token simply is not ours →
+  401 (ADR-014).
+- **`.env` leaked into the test suite.** "No database configured" tests passed
+  only while `DATABASE_URL` happened to be blank; Settings now ignores `.env`
+  under test.
+- **Supabase had migrated to ES256 signing keys.** HS256-only verification would
+  have rejected every real login; added JWKS/ES256 with an HS256 fallback
+  (ADR-014).
+- **"HDFC robots-blocked" was a wrong URL.** The crawler pointed at a Cloudflare
+  mirror whose robots.txt 403s; the canonical host allows crawling. A wrong host,
+  not a parser bug (KNOWN_LIMITATIONS item 20 removed).
+- **Shrinking a corpus doc left orphan chunks.** `upsert` never deleted trailing
+  chunks, so removed content stayed retrievable as current — a freshness bug.
+- **A citation correction did not propagate.** Ingestion hashed the body only, so
+  a `source_url` fix was invisible to the skip logic; the fingerprint now covers
+  citation metadata.
+- **The pinned Gemini model had zero free quota.** `gemini-2.0-flash` returned
+  429 `limit:0` on a current account → pinned to `gemini-3.5-flash` (ADR-015); a
+  later live 503 spike drove the tiered Gemini→Groq fallback (ADR-018).
+- **A real held card produced "unable to determine".** `cards` had no `card_key`
+  linking it to its rule file, and the planner emitted `cards=[]` — which
+  validation rejected *before* injection could fill it. Fixed (migration
+  `cards_card_key`, inject-before-validate); the demo ₹50,000-flight query now
+  computes HDFC Infinia 1665 pts. The first regression test used a non-empty
+  placeholder and masked the bug — it now uses `cards=[]`, the real failure.
+
+Also live-verified working end to end: Supabase migrations + schema match, auth
+(ES256 + HS256), CRUD, `/chat` with persistence and feedback, the Groq failover
+(both Gemini tiers forced down → real Groq answered), and the empty-portfolio
+gate. The one thing not automatable is a *successful* real-LLM recommendation
+(non-deterministic) — hence item 23.
+
+### Sprint session — the eight-query harness
+
+Eight realistic end-to-end queries plus three adversarial ones, run through the
+full LangGraph flow against the verified P1 data with scripted LLMs. Confidence
+varied across the eight (high / medium / high / low / high / medium / medium /
+high) rather than reading uniformly high. The findings below are sprint-era.
 
 ### The pattern behind the two worst bugs
 
@@ -261,7 +309,11 @@ behaviour.
 ### Found, deliberately NOT fixed
 
 These need a product-owner decision because fixing them means changing a
-spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–14.
+spec'd contract. Full detail in `docs/KNOWN_LIMITATIONS.md` items 10–14 (sprint).
+D2–D4 added more deferred items to the same doc: `cap_usage` has no `user_id`
+(16), `goals` has no target fields (18), the three crawler blind spots (20–21),
+weekly crawl cadence (22), and the live-LLM test gap (23). S2 (`cards` had no
+`reward_currency`) and the card_key gap were *closed*, not deferred.
 
 - ~~**Accelerated validity windows are not enforced (item 10).**~~ **Closed
   2026-07-20 by ADR-012** — the product owner approved the schema change. See
