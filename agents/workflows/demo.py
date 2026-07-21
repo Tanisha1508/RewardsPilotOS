@@ -149,7 +149,7 @@ def main() -> dict:
 
         try:
             llm = GeminiClient()
-            print("Using Gemini:", os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"))
+            print("Using Gemini:", os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"))
         except LLMUnavailableError as exc:
             print(f"Gemini unavailable ({exc}); using deterministic scripted LLM")
             llm = ScriptedLLM()

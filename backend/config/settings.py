@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str | None = None
 
     gemini_api_key: str | None = None
-    gemini_model: str = "gemini-2.0-flash"
+    gemini_model: str = "gemini-3.5-flash"
 
     redis_url: str | None = None
     chroma_persist_dir: str = "data/embeddings"

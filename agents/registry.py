@@ -26,7 +26,7 @@ class GeminiClient:
         from google import genai
 
         self._client = genai.Client(api_key=api_key)
-        self._model = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        self._model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
 
     def complete(self, system: str, user: str) -> str:
         from google.genai import types

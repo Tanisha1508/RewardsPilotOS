@@ -13,7 +13,7 @@
 | Frontend | Next.js 14 (App Router), TypeScript, Tailwind, shadcn/ui | Vercel free tier |
 | Backend API | FastAPI (Python 3.11), Pydantic v2 | Render free tier |
 | Orchestration | LangGraph | In backend process |
-| LLM | Gemini (free tier, `gemini-2.0-flash` default; single env var to swap) | Google AI Studio API |
+| LLM | Gemini (free tier, `gemini-3.5-flash` default; single env var to swap — see ADR-015) | Google AI Studio API |
 | Relational DB | PostgreSQL | Supabase free tier |
 | Vector DB | ChromaDB (persistent client, local disk) | Render persistent disk |
 | Cache / queues | Redis | Upstash free tier |
@@ -489,7 +489,7 @@ SUPABASE_URL=
 SUPABASE_ANON_KEY=       # frontend
 SUPABASE_JWT_SECRET=     # backend verification
 GEMINI_API_KEY=
-GEMINI_MODEL=gemini-2.0-flash
+GEMINI_MODEL=gemini-3.5-flash
 REDIS_URL=               # Upstash
 CHROMA_PERSIST_DIR=/data/chroma
 BACKEND_URL=             # for frontend
