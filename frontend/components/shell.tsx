@@ -7,6 +7,8 @@ import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/cards", label: "Cards" },
+  { href: "/chat", label: "Ask" },
+  { href: "/transfer", label: "Transfer" },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {

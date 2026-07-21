@@ -12,6 +12,7 @@ import { Empty, ErrorNotice, Shell } from "@/components/shell";
 export default function DashboardPage() {
   const portfolio = useApi(() => api.getPortfolio());
   const balances = useApi(() => api.listBalances());
+  const recommendations = useApi(() => api.listRecommendations());
 
   return (
     <Shell>
@@ -28,7 +29,11 @@ export default function DashboardPage() {
           label="Tracked balances"
           value={balances.loading ? "…" : String(balances.data?.length ?? 0)}
         />
-        <Stat label="Opportunities" value="—" note="Wired in D5" />
+        <Stat
+          label="Recommendations"
+          value={recommendations.loading ? "…" : String(recommendations.data?.length ?? 0)}
+          note="from Ask"
+        />
       </div>
 
       <section className="mt-8">

@@ -6,11 +6,14 @@ import type {
   CardInput,
   CardPatch,
   Envelope,
+  FeedbackStatus,
   Goal,
   HealthReport,
+  KnowledgeSearchResult,
   LoyaltyAccount,
   Portfolio,
   Preferences,
+  Recommendation,
   RewardBalance,
   User,
 } from "@/types/api";
@@ -120,4 +123,29 @@ export const api = {
     request<Preferences>("/api/v1/preferences", { method: "PUT", body: { values } }),
 
   listGoals: () => request<Goal[]>("/api/v1/goals"),
+
+  // Intelligence: chat runs the workflow and persists a recommendation.
+  chat: (query: string) =>
+    request<Recommendation>("/api/v1/chat", { method: "POST", body: { query } }),
+  listRecommendations: () => request<Recommendation[]>("/api/v1/recommendations"),
+  getRecommendation: (id: string) =>
+    request<Recommendation>(`/api/v1/recommendations/${id}`),
+  sendFeedback: (id: string, status: FeedbackStatus) =>
+    request<Recommendation>(`/api/v1/recommendations/${id}/feedback`, {
+      method: "POST",
+      body: { status },
+    }),
+
+  searchKnowledge: (params: {
+    q: string;
+    issuer?: string;
+    doc_type?: string;
+    k?: number;
+  }) => {
+    const query = new URLSearchParams({ q: params.q });
+    if (params.issuer) query.set("issuer", params.issuer);
+    if (params.doc_type) query.set("doc_type", params.doc_type);
+    if (params.k) query.set("k", String(params.k));
+    return request<KnowledgeSearchResult>(`/api/v1/knowledge/search?${query.toString()}`);
+  },
 };

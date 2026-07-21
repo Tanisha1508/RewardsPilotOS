@@ -97,3 +97,61 @@ export interface HealthReport {
   status: "ok" | "degraded";
   checks: Record<string, string>;
 }
+
+// Mirrors contracts/api/recommendation.py. The structured object the workflow
+// produced — decision on top, deterministic numbers, reasoning, citations.
+export interface Citation {
+  source_url: string;
+  last_changed: string;
+  doc_id: string | null;
+}
+
+export interface Confidence {
+  level: "high" | "medium" | "low";
+  reason: string;
+}
+
+export interface RecommendationBody {
+  decision: string;
+  reasoning: string[];
+  // Calculations are copied verbatim from Rule/Graph Engine results — the LLM
+  // never does arithmetic. Shape varies by tool, so this is left open.
+  calculations: Record<string, unknown>[];
+  citations: Citation[];
+  confidence: Confidence;
+  assumptions: string[];
+  alternatives: string[];
+}
+
+/** Mirrors backend/schemas/chat.py::RecommendationOut. */
+export interface Recommendation {
+  rec_id: string;
+  query: string;
+  recommendation: RecommendationBody;
+  confidence: string | null;
+  citations: Citation[];
+  status: "generated" | "viewed" | "accepted" | "rejected" | "saved";
+  created_at: string;
+}
+
+export type FeedbackStatus = "accepted" | "rejected" | "saved";
+
+/** Mirrors contracts/tools/knowledge_search.py::RetrievedChunk. */
+export interface RetrievedChunk {
+  doc_id: string;
+  chunk_index: number;
+  content: string;
+  score: number;
+  metadata: {
+    doc_id: string;
+    issuer: string;
+    program: string;
+    doc_type: string;
+    source_url: string;
+    last_changed: string;
+  };
+}
+
+export interface KnowledgeSearchResult {
+  chunks: RetrievedChunk[];
+}
