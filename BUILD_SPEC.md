@@ -524,7 +524,7 @@ Each session ends runnable and committed. If a session slips, its remainder move
 
 **D5 (Jul 23–24): Opportunity engine + ship.** monitor.py change records → notifications, opportunities API + UI feed, eval report + CI + eval GitHub Actions, README (problem, architecture diagram, eval results labeled as measured with run date, targets labeled as targets, roadmap, [NEED] register), deploy Supabase → Render → seed + ingest → Vercel, production smoke test on the 10 end-to-end golden queries.
 
-Fast-follow list (post Jul 24, if anything slips): live MCP servers (Email, Calendar, Flight/Hotel Search), Rule Verifier subsystem (see section 14a and ADR-009), additional issuers per VERIFICATION_QUEUE priorities, statement parsing, award availability, email notifications.
+Fast-follow list (post Jul 24, if anything slips): live MCP servers (Email, Calendar, Flight/Hotel Search), Rule Verifier subsystem (see section 14a and ADR-009), admin panel for card management and rule verification (operator UI over the Rule Verifier; needs a new admin role/permission layer — see ADR-017), additional issuers per VERIFICATION_QUEUE priorities, statement parsing, award availability, email notifications.
 
 ## 14a. Fast Follow: Rule Verifier
 
