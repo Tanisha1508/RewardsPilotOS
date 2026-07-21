@@ -2,7 +2,6 @@
 client they use. The only place LLM calls are constructed (no LLM calls
 outside agents/, BUILD_SPEC §3)."""
 
-import os
 import time
 from typing import Protocol
 
@@ -17,16 +16,23 @@ class LLMUnavailableError(Exception):
 
 class GeminiClient:
     """Gemini via GEMINI_API_KEY (google-genai SDK). Model swappable through
-    the single GEMINI_MODEL env var (BUILD_SPEC §1)."""
+    the single GEMINI_MODEL env var (BUILD_SPEC §1, ADR-015).
+
+    Reads config through `Settings`, not `os.environ` directly, so a local
+    `.env` is honoured the same way the rest of the app reads it — otherwise the
+    key would resolve on Render (process env) but be invisible to a local server
+    that only has it in `.env`."""
 
     def __init__(self) -> None:
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
+        from backend.config.settings import get_settings
+
+        settings = get_settings()
+        if not settings.gemini_api_key:
             raise LLMUnavailableError("GEMINI_API_KEY is not set")
         from google import genai
 
-        self._client = genai.Client(api_key=api_key)
-        self._model = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+        self._client = genai.Client(api_key=settings.gemini_api_key)
+        self._model = settings.gemini_model
 
     def complete(self, system: str, user: str) -> str:
         from google.genai import types
