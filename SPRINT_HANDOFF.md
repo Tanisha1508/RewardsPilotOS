@@ -23,7 +23,7 @@ are D2+ and were deliberately out of sprint scope.
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
 | Evaluation (`evaluation/`) | Four golden sets + runners + report generator. |
-| Docs (`docs/`) | ADR-001..016, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
+| Docs (`docs/`) | ADR-001..018, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
 
 **Verification status — P1 fully closed.** All three MVP cards are verified
 end to end: rule file, knowledge doc, and graph edges.
@@ -340,8 +340,28 @@ Still in-memory after D2: knowledge-doc hashes (D3) and opportunities (D5).
 (ADR-009 / BUILD_SPEC §14a) — detection is not extraction; verification stays
 manual-approval by design.
 
-**D4 — product surface.** Next.js 14, strict TypeScript, API types
-hand-written in `lib/types.ts` to match the Pydantic schemas (no codegen).
+**D4 — product surface. Built 2026-07-22.** `/chat` through LangGraph with
+persistence + feedback, recommendation-card chat UI, transfer explorer,
+dashboard wiring, empty-portfolio gate, `cards.card_key` mapping so real
+portfolios compute (ADR-013-adjacent; migration `cards_card_key`), tiered LLM
+fallback (ADR-018: Gemini models → Groq). Verified live against Supabase + real
+Gemini: the demo ₹50,000-flight query computes (HDFC Infinia 1665 pts).
+
+**Carry-on item from D4 — a live-LLM smoke test (open, not built).** The golden
+suite scripts the LLM, so it cannot catch LLM-behaviour regressions; every such
+bug in D4 (planner emitting `cards=[]`, omitting `CompareCards`, malformed
+`month`) was found only by manual live `/chat` testing (KNOWN_LIMITATIONS item
+23). Proposed: a **separate, manually-triggered / nightly smoke suite** (not in
+the fast CI loop) that hits real Gemini for a handful of queries and asserts
+*structural* properties over N runs — e.g. "a spend query with a held verified
+card yields ≥1 computed CompareCards result" (the exact D4 failure), tolerant of
+non-determinism, gated on `GEMINI_API_KEY`. Keep the golden suite as the
+determinism/contract check; this becomes the model-behaviour tripwire. The
+runtime `validate_recommendation` gate stays the production guard regardless.
+Where to put it: `tests/smoke/` or an `evaluation/smoke/` runner + a
+`workflow_dispatch` GitHub Action, skipped by default like the DB integration
+suite. Not urgent, but it is the one gap where a regression currently ships
+silently until someone runs `/chat` by hand.
 
 **D5 — opportunity engine + deploy.**
 

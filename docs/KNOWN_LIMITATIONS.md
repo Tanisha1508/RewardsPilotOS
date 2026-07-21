@@ -244,3 +244,32 @@ roadmap — none is silently papered over.
     (the workflow documents the one-line switch); the crawler code is
     cadence-agnostic and does not change. Manual runs are available any time via
     `workflow_dispatch`.
+
+23. **No automated test exercises the real LLM end to end.** The golden suite
+    tests determinism and contract, not model behaviour. `rules.json`,
+    `graph.json`, and `retrieval.json` touch no LLM (they exercise the
+    deterministic engines directly, which is why they exact-match at 100%).
+    `recommendations.json` runs the full workflow but with a **scripted
+    `EvalLLM`** (`evaluation/metrics/e2e_eval.py`) that emits the golden plan and
+    a deterministic recommendation — it verifies the plumbing and the validation
+    layer (calculations verbatim, citations present, numbers grounded, no
+    fabrication), never what Gemini actually produces. The regression test added
+    for the card_key fix (`tests/integration/test_card_key_mapping.py`) is
+    likewise a scripted LLM: it locks the *fix*, not real-model behaviour.
+
+    Consequence, seen directly in D4: **LLM-behaviour regressions are caught only
+    by manual live testing or by the runtime validation gate**, not by the test
+    suite. Every bug found during live `/chat` testing — the planner emitting
+    `cards=[]`, omitting `CompareCards`, a malformed `month` — was invisible to
+    the golden suite because the plan is scripted there. Real LLM output *is*
+    guarded at runtime by `validate_recommendation` (it rejects non-verbatim
+    calculations, uncited sources, ungrounded prose, over-claimed confidence),
+    but that is production enforcement, not a test.
+
+    Deliberate for now: real-Gemini calls are non-deterministic, cost tokens, and
+    flake on 503s (observed). The measured planner reliability after the D4 prompt
+    strengthening (CompareCards present 6/6 runs) was a **manual terminal
+    measurement, not committed as a test** — nothing automated re-checks it. See
+    "Next steps" in SPRINT_HANDOFF for the proposed fix (a separate,
+    manually-triggered live smoke suite asserting structural properties over N
+    runs, tolerant of non-determinism) — a D5/hardening item, not built.
