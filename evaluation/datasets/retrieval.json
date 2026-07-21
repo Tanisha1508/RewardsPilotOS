@@ -1,5 +1,5 @@
 {
-  "description": "20 retrieval queries over the fixture corpus. expected_doc_ids are the relevant documents (doc level). Metrics: precision@3, recall@5, MRR.",
+  "description": "24 retrieval queries over the corpus (fixtures + verified P1 production docs). expected_doc_ids are the relevant documents (doc level). r21-r24 (D3) exercise the P1 transfer_rules docs split out from reward_rules. Metrics: precision@3, recall@5, MRR.",
   "queries": [
     { "id": "r01", "query": "How many Voyager Points do I earn per 100 INR spent?", "expected_doc_ids": ["demo_bank_voyager_reward_rules"] },
     { "id": "r02", "query": "Voyager portal flights 5x bonus monthly cap", "expected_doc_ids": ["demo_bank_voyager_reward_rules"] },
@@ -20,6 +20,10 @@
     { "id": "r17", "query": "Trailblazer festive double miles online shopping offer", "expected_doc_ids": ["sample_bank_trailblazer_promotions"] },
     { "id": "r18", "query": "HDFC Infinia SmartBuy accelerated earning", "expected_doc_ids": ["hdfc_infinia_reward_rules"] },
     { "id": "r19", "query": "Axis Atlas EDGE Miles annual milestones", "expected_doc_ids": ["axis_atlas_reward_rules"] },
-    { "id": "r20", "query": "Amex Platinum Travel Membership Rewards milestone bonus", "expected_doc_ids": ["amex_plat_travel_reward_rules"] }
+    { "id": "r20", "query": "Amex Platinum Travel Membership Rewards milestone bonus", "expected_doc_ids": ["amex_plat_travel_reward_rules"] },
+    { "id": "r21", "query": "transfer HDFC Reward Points to Singapore Airlines KrisFlyer ratio", "expected_doc_ids": ["hdfc_infinia_transfer_rules"] },
+    { "id": "r22", "query": "Axis Atlas EDGE Miles transfer partner groups and annual caps", "expected_doc_ids": ["axis_atlas_transfer_rules"] },
+    { "id": "r23", "query": "which programs were removed as Axis Atlas transfer partners", "expected_doc_ids": ["axis_atlas_transfer_rules"] },
+    { "id": "r24", "query": "Amex Membership Rewards airline transfer partners in India", "expected_doc_ids": ["amex_plat_travel_transfer_rules"] }
   ]
 }

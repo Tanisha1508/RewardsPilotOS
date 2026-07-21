@@ -42,9 +42,7 @@ def chunk_id(doc_id: str, index: int) -> str:
     return f"{doc_id}::{index}"
 
 
-def _ingest_doc(
-    doc: SourceDoc, client: chromadb.ClientAPI, report: IngestReport
-) -> int:
+def _ingest_doc(doc: SourceDoc, client: chromadb.ClientAPI, report: IngestReport) -> int:
     body, excluded = strip_unverified_facts(doc.doc_id, doc.body)
     report.excluded_facts.extend(excluded)
     if not body:
@@ -73,7 +71,27 @@ def _ingest_doc(
             for i in range(len(chunks))
         ],
     )
+    _delete_orphan_chunks(collection, doc.doc_id, len(chunks))
     return len(chunks)
+
+
+def _delete_orphan_chunks(collection, doc_id: str, chunk_count: int) -> None:
+    """Remove chunks left behind when a document shrinks.
+
+    upsert overwrites chunks 0..n-1 but never deletes a chunk that used to exist
+    past the new end. Without this, editing a doc to remove a section leaves the
+    removed content in ChromaDB, still retrievable — stale content served as
+    current, which is a freshness bug, not just wasted space. Found 2026-07-21
+    when splitting transfer sections out of the P1 reward_rules docs.
+    """
+    collection.delete(
+        where={
+            "$and": [
+                {"doc_id": {"$eq": doc_id}},
+                {"chunk_index": {"$gte": chunk_count}},
+            ]
+        }
+    )
 
 
 def ingest_sources(

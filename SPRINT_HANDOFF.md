@@ -23,7 +23,7 @@ are D2+ and were deliberately out of sprint scope.
 | Agents (`agents/`, `tools/`) | Complete. LangGraph planner → tools → recommender, 15-tool registry. |
 | MCP (`mcp/`) | Stubs and interface-only clients, per spec. |
 | Evaluation (`evaluation/`) | Four golden sets + runners + report generator. |
-| Docs (`docs/`) | ADR-001..014, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
+| Docs (`docs/`) | ADR-001..016, VERIFICATION_QUEUE, KNOWN_LIMITATIONS. |
 
 **Verification status — P1 fully closed.** All three MVP cards are verified
 end to end: rule file, knowledge doc, and graph edges.
@@ -41,14 +41,17 @@ empty — no unverified transfer candidates outstanding.
 
 Run `python -m infra.scripts.need_register` to reprint it.
 
-**Current numbers.** 355 tests pass, including 31 against real Postgres. Without
-a database those 31 skip and are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10 —
-unchanged by the D2 wiring, which is the point. Retrieval reports precision@3
-0.2833, recall@5 1.0000, MRR 0.5200 — reported honestly rather than tuned to a
-target.
+**Current numbers.** 378 tests pass, including 42 against real Postgres. Without
+a database those 42 skip and are *not* counted as coverage. Rules 25/25, graph 10/10, end-to-end 10/10.
+Retrieval (D3, 24 queries over the expanded corpus) reports precision@3 0.2916,
+recall@5 1.0000, MRR 0.6000 — reported honestly. Recall@5 of 1.0 is the
+meaningful signal (every relevant doc within 5); precision@3 is capped by the
+metric (3 slots, usually 1 expected doc → 0.333 ceiling). MRR rose from the
+sprint's 0.52 because the D3 corpus split gave transfer queries a dedicated
+transfer_rules doc that ranks first.
 
 ```
-.venv/bin/python -m pytest                      # 355 passed (31 need TEST_DATABASE_URL)
+.venv/bin/python -m pytest                      # 378 passed (42 need TEST_DATABASE_URL)
 .venv/bin/python -m evaluation.metrics.report   # writes evaluation/reports/REPORT.md
 .venv/bin/python -m agents.workflows.demo       # one query end to end
 

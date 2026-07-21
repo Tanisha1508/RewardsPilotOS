@@ -7,7 +7,8 @@ from knowledge.storage.collections import COLLECTIONS, get_collection
 
 
 def test_ingest_covers_fixture_corpus(ingest_report):
-    assert ingest_report.docs_ingested == 21  # 13 original + 7 skeletons + amex benefits
+    # 13 original + 7 P2 skeletons + amex benefits + 3 P1 transfer_rules (D3 split)
+    assert ingest_report.docs_ingested == 24
     assert ingest_report.docs_skipped_empty == 0
     assert ingest_report.chunks_ingested >= ingest_report.docs_ingested
 
@@ -33,7 +34,7 @@ def test_chunks_keyed_on_doc_id_and_index(chroma_client):
 def test_reingest_unchanged_docs_skipped(chroma_client, docs_store, ingest_report):
     second = ingest_sources(chroma_client, docs_store=docs_store)
     assert second.docs_ingested == 0
-    assert second.docs_unchanged == 21
+    assert second.docs_unchanged == 24
 
 
 def test_metadata_carries_citation_fields(chroma_client):

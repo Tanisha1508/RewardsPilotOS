@@ -41,10 +41,3 @@ Membership Rewards points never expire while the card is active and in good stan
 
 Statement credit via "Select & Redeem — Cover Your Card Charges": INR 0.25 per point, the general Amex India rate (two independent India-specific sources agreeing). The card-specific Platinum Travel Collection catalogue offers preferential tiered rates: Air India vouchers at INR 0.30 per point (20,000 points = INR 6,000; 40,000 points = INR 12,000), Taj Hotels and Resorts at INR 0.40 per point (12,500 points = INR 5,000; 25,000 points = INR 10,000), and The Postcard Hotels at INR 0.50 per point (20,000 points = INR 10,000) — exact figures from the official catalogue page, retrieved 2026-07-20. Transfer redemption value is not a fixed figure and varies by partner.
 
-# Amex Membership Rewards transfer partners (India)
-
-Airline partners, all at 2:1 (2 MR = 1 partner mile): Singapore Airlines KrisFlyer (minimum 800 MR), Emirates Skywards (800), Cathay Pacific Asia Miles (800), British Airways Avios (1,200), Qatar Airways Avios (500), and Virgin Atlantic (800). Hotel partners: Marriott Bonvoy at 1:1 (minimum 100 MR) and Hilton Honors at 1:0.90 (minimum 1,000 MR). A maximum of 9,00,000 MR points can be transferred per redemption transaction or per calendar year. Source: India-specific convergence across CardTrail, Rivo, and CardInsider; the official India transfer portal is login-gated, and Amex's UK/EU International Currency Card pages were explicitly excluded as a different product and market.
-
-# Amex Platinum Travel and Air India
-
-There is NO direct transfer partner for Air India: Club Vistara was removed following the Vistara/Air India merger and no replacement was added. Membership Rewards points cannot be transferred to Air India Flying Returns, directly or via a workaround.
