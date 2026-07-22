@@ -124,7 +124,27 @@ confidence ceiling. No longer a correctness risk, but still a **research
 item**: from 2026-08-01 the card is understated if the program was in fact
 renewed. On renewal, ship a new rule version extending `valid_until` (with
 the renewed multiplier if it changed); if the program genuinely ended, no
-edit is needed. (2) Transfer-partner and
+edit is needed.
+
+> **Checked 2026-07-22 — no change.** Live fetch of
+> `americanexpress.com/in/benefits/rewards-program/terms-conditions.html`:
+> stated validity remains "January 1, 2021 – July 31, 2026", unchanged, with
+> no renewal or extension announced. **No rule edit made** — per CLAUDE.md
+> hard rule 1 there is no official confirmation of renewal to write, and
+> writing a speculative extended `valid_until` would be fabricated data.
+> `rules/seed/amex_plat_travel/v3.json` is unchanged and correct as it stands.
+>
+> **Follow-up trigger: re-check on or after 2026-08-01.** That is the earliest
+> date a renewal could actually be confirmed — an issuer typically publishes
+> the successor window at or after the old one lapses, so any check before
+> 2026-07-31 can only re-read the same unexpired text. Until then, ADR-012's
+> fallback (base earn + `expiry_note` + medium confidence ceiling) fires
+> automatically on 2026-08-01 and is the intended behaviour, not a defect to
+> chase. Three outcomes on re-check: renewed unchanged → new rule version
+> extending `valid_until`; renewed at a different multiplier → new version
+> with both fields; genuinely ended → no edit, close this flag.
+
+(2) Transfer-partner and
 statement-credit confidences carry a 0.7–0.75 ceiling reflecting the genuine
 absence of an accessible India-specific official transfer portal (login-
 gated) — same pattern as the toughest HDFC Infinia and Axis Atlas fields,
@@ -178,6 +198,29 @@ Per-card open items (all `[NEED: verify from issuer docs]`): reward program
 identity, base earn rate + block, accelerated categories/multipliers/caps,
 milestones, exclusions, transfer partners + ratios, per-channel point
 values, annual fee + waiver.
+
+**Source already in hand for cards 3 and 4 (noted 2026-07-22).** The official
+Reward Multiplier T&C page fetched for the Platinum Travel expiry re-check —
+`americanexpress.com/in/benefits/rewards-program/terms-conditions.html` — is a
+single page carrying the *complete* Reward Multiplier tier table and eligible-
+card list, which covers **Amex Platinum Reserve** (reported at the same 3X tier
+as Platinum Travel) and the **Amex Membership Rewards Credit Card** (reported
+at the 2X base tier). This is recorded as a **research lead, not a
+verification**: those multipliers are unverified until read field-by-field in
+their own verification round, and nothing has been written to
+`rules/seed/amex_plat_reserve/` or `rules/seed/amex_membership_rewards/` —
+they remain all-null skeletons that refuse to compute. The value here is
+purely that one fetch can serve three cards, saving a research round when the
+queue reaches #3 and #4. Queue order is unchanged; do not pre-populate.
+
+Two cautions when that round arrives, both from the Platinum Travel work:
+the base-earn source note warns **never to merge data across Amex products**
+(Platinum Travel 1/₹50 vs Platinum Charge 1/₹40 vs Gold vs Reserve vs MR Card
+vs SmartEarn all differ), so a shared Reward Multiplier tier does not imply a
+shared anything else. And the same page carries the 2026-07-31 validity
+window, so whatever is verified for Reserve and MR Card inherits that expiry
+and needs `valid_from`/`valid_until` recorded per ADR-012 — plus a
+`test_validity.py` case dated after it, per the card-onboarding checklist.
 
 ## P3 (roadmap)
 
