@@ -21,15 +21,40 @@
 # No database: the suite installs the in-memory fixture portfolio itself. One
 # real dependency at a time — a failure here means the LLM, never Supabase.
 
+# ── Rotation (KNOWN_LIMITATIONS 26) ──────────────────────────────────────────
+# The Gemini free tier is 20 requests/day/model and a full 4-query N=3 run
+# costs 24+, so the queries run as two fixed pairs on alternating days:
+# ~12 calls/day, every query covered every other day. The runner picks the pair
+# from the day-of-month parity, so nothing here needs to track state.
+#
+# This adds a daily SCHEDULE, which the first version of this workflow
+# deliberately did not have. The posture change is intentional and bounded: a
+# rotation only delivers regular coverage if it actually runs, and 12 calls/day
+# is inside quota. It is still not in the fast CI loop — it never gates a PR.
+#
+# N is NOT reduced to fit. N=3 exists to catch *intermittent* planner failures
+# (the D4 CompareCards omission presented as 3/6, not 0/6); N=1 would fit the
+# quota while being blind to the exact bug class this suite was built for.
+# Nor is Groq made primary: ADR-018 makes Gemini primary, so a Groq-primary
+# suite would validate a path real users rarely take. If Gemini's quota does
+# run out mid-run, default_llm() falls through to Groq exactly as production
+# would — the quota shapes coverage frequency, not suite correctness.
+
 name: smoke
 
 on:
+  schedule:
+    - cron: "23 4 * * *" # daily, 04:23 UTC — off the :00 mark on purpose
   workflow_dispatch:
     inputs:
       runs:
         description: "Runs per query (N). Higher N costs more quota."
         required: false
         default: "3"
+      group:
+        description: "Query group: a, b, or all (blank = today's rotation)."
+        required: false
+        default: ""
 
 concurrency:
   group: smoke
@@ -57,5 +82,8 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          SMOKE_RUNS: ${{ inputs.runs }}
+          # Blank on a scheduled run, so the runner falls back to the
+          # day-parity rotation; set explicitly for a manual dispatch.
+          SMOKE_RUNS: ${{ inputs.runs || '3' }}
+          SMOKE_GROUP: ${{ inputs.group }}
         run: .venv/bin/python -m evaluation.smoke.run

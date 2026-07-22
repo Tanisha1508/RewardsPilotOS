@@ -47,8 +47,14 @@ Design decisions worth not relearning
   is never ambiguous.
 
 Run:
-    .venv/bin/python -m evaluation.smoke.run          # N=3 (default)
+    .venv/bin/python -m evaluation.smoke.run              # today's rotation pair
+    SMOKE_GROUP=all .venv/bin/python -m evaluation.smoke.run   # all 4 queries
+    SMOKE_GROUP=b .venv/bin/python -m evaluation.smoke.run     # force a pair
     SMOKE_RUNS=5 .venv/bin/python -m evaluation.smoke.run
+
+Queries run in two fixed pairs on alternating days to fit the Gemini free-tier
+daily quota without shrinking N — see the rotation note below and
+KNOWN_LIMITATIONS 26.
 
 Exit codes: 0 all checks N/N · 1 a structural check failed · 2 could not run.
 """
@@ -57,6 +63,7 @@ import json
 import os
 import re
 import sys
+from datetime import date
 
 from agents.planner.planner import _parse_payload
 from agents.registry import LLM, LLMUnavailableError, default_llm
@@ -81,6 +88,7 @@ QUERIES = [
         "query": "I'm booking a ₹50,000 flight. Which of my cards should I use?",
         "expect_comparison": True,
         "note": "the exact D4 live-/chat failure: planner emitted cards=[]",
+        "group": "a",
     },
     {
         "id": "s02_portal_hotel_comparison",
@@ -90,6 +98,7 @@ QUERIES = [
         ),
         "expect_comparison": True,
         "note": "cross-issuer channel vocabulary (ADR-011)",
+        "group": "a",
     },
     {
         "id": "s03_capped_category_comparison",
@@ -99,6 +108,7 @@ QUERIES = [
         ),
         "expect_comparison": True,
         "note": "exercises month args and CheckCap pairing",
+        "group": "b",
     },
     {
         "id": "s04_transfer",
@@ -108,8 +118,55 @@ QUERIES = [
         ),
         "expect_comparison": False,
         "note": "graph path; no CompareCards expected",
+        "group": "b",
     },
 ]
+
+
+# ── Rotation ─────────────────────────────────────────────────────────────────
+# The Gemini free tier allows 20 requests/day/model
+# (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`), while a full
+# 4-query × N=3 run costs 24+ calls (KNOWN_LIMITATIONS 26). Rather than shrink
+# N or switch provider, the queries run in two fixed pairs on alternating days:
+# ~12 calls/day, comfortably inside quota, and every query is exercised every
+# other day rather than starved indefinitely.
+#
+# Why not the alternatives:
+# - `SMOKE_RUNS=1` fits, but defeats the point. N=3 exists to catch
+#   *intermittent* planner failures — the D4 CompareCards omission presented as
+#   3/6, not 0/6. A single run is blind to precisely the bug class this suite
+#   was built for.
+# - Groq-as-primary fits, but tests the wrong system. ADR-018 makes Gemini
+#   primary and Groq the last resort, so a Groq-primary suite would validate a
+#   path real users rarely take.
+#
+# Note what the rotation does *not* compromise: `default_llm()` still runs the
+# full ADR-018 chain, so if Gemini's quota is exhausted mid-run the suite does
+# not fail — it falls through to Groq exactly as production would. The quota
+# shapes how often each query is covered, not whether the suite is correct.
+GROUPS = ("a", "b")
+
+
+def todays_group(today: date | None = None) -> str:
+    """Group "a" on odd days of the month, "b" on even.
+
+    Day-of-month parity, not an alternating counter, so the choice is stateless
+    and reproducible: any machine, any run, same day → same pair. The 31st
+    followed by the 1st repeats group "a"; that costs one day of group "b"
+    latency seven times a year and is not worth carrying state to avoid.
+    """
+    return "a" if (today or date.today()).day % 2 else "b"
+
+
+def select_queries(group: str | None = None) -> list[dict]:
+    """The queries to run. `group` of "all" runs everything — for a deliberate
+    manual full-coverage run, accepting the Groq fall-through that implies."""
+    group = group or os.environ.get("SMOKE_GROUP") or todays_group()
+    if group == "all":
+        return list(QUERIES)
+    if group not in GROUPS:
+        raise SystemExit(f"SMOKE_GROUP must be one of {GROUPS + ('all',)}, got {group!r}")
+    return [query for query in QUERIES if query["group"] == group]
 
 
 class RecordingLLM:
@@ -237,23 +294,38 @@ def run_query(item: dict, user_id: str, runs: int) -> dict:
     }
 
 
-def run(runs: int = DEFAULT_RUNS) -> dict:
-    """Install the seeded fakes, then run every query. Mirrors
+def run(runs: int = DEFAULT_RUNS, group: str | None = None) -> dict:
+    """Install the seeded fakes, then run today's queries. Mirrors
     `e2e_eval.run` — the smoke suite deliberately does not inherit
     `tests/conftest.py`, so it installs sources itself."""
+    selected = select_queries(group)
     seed = load_seed()
     set_portfolio_source(InMemoryPortfolioSource(seed))
     set_memory_source(InMemoryMemorySource(seed))
     try:
         with acting_as(seed["user_id"]):
-            return {"runs": runs, "queries": [run_query(q, seed["user_id"], runs) for q in QUERIES]}
+            return {
+                "runs": runs,
+                "group": group or os.environ.get("SMOKE_GROUP") or todays_group(),
+                "queries": [run_query(q, seed["user_id"], runs) for q in selected],
+            }
     finally:
         set_portfolio_source(None)
         set_memory_source(None)
 
 
 def _print_report(report: dict) -> None:
-    print(f"\n=== Live-LLM smoke suite — N={report['runs']} per query ===\n")
+    covered = ", ".join(result["id"] for result in report["queries"])
+    print(
+        f"\n=== Live-LLM smoke suite — group {report['group']}, "
+        f"N={report['runs']} per query ===\n"
+    )
+    # Name what was NOT run. A rotation that silently reports only its own half
+    # would read as full coverage — the same "skipped proves nothing" trap the
+    # suite is built to avoid, one level up.
+    skipped = [q["id"] for q in QUERIES if q["id"] not in covered]
+    if skipped:
+        print(f"Not run today (rotation, KNOWN_LIMITATIONS 26): {', '.join(skipped)}\n")
     for result in report["queries"]:
         print(f"{result['id']}  ({result['note']})")
         if not result["checks"]:

@@ -426,9 +426,37 @@ roadmap — none is silently papered over.
 
     Groq is unaffected and was verified working during the same window
     (`llama-3.3-70b-versatile` answered normally after both Gemini tiers
-    429'd), so the ADR-018 chain does still have a live last resort. Options,
-    none yet chosen: run the suite with `SMOKE_RUNS=1` (8 calls, fits), point it
-    at Groq as primary, or split the queries across days. Raising N — the thing
-    that makes an intermittent planner bug visible — is the direct casualty, so
-    this is a real constraint on the suite's sensitivity and not just an
-    operational annoyance.
+    429'd), so the ADR-018 chain does still have a live last resort.
+
+    **Resolved 2026-07-22 by a two-day rotation, not by shrinking the suite.**
+    The four queries run as two fixed pairs on alternating days —
+    `s01`+`s02` on odd days of the month, `s03`+`s04` on even — at N=3, for
+    ~12 calls/day, comfortably inside quota. Every query is exercised every
+    other day rather than starved by an unbounded split. The pair is chosen
+    from day-of-month parity, so it is stateless and reproducible: same day,
+    same pair, on any machine. `SMOKE_GROUP=all` forces full coverage for a
+    deliberate manual run. `.github/workflows/smoke.yml` now carries a daily
+    schedule as well as `workflow_dispatch` — a rotation only delivers regular
+    coverage if it actually runs — while still never gating a PR.
+
+    Two alternatives were rejected, and the reasons are the point:
+
+    - **`SMOKE_RUNS=1`** fits the quota but defeats the suite's purpose. N=3
+      exists to catch *intermittent* planner failures; the D4 CompareCards
+      omission presented as 3/6, not 0/6. N=1 would have shipped a suite blind
+      to the exact bug class it was built to catch — a green run proving
+      nothing, which is this document's recurring theme.
+    - **Groq as primary** fits the quota but validates the wrong system.
+      ADR-018 makes Gemini primary and Groq the last resort, so a Groq-primary
+      suite would exercise a path real users rarely hit while leaving the
+      common one untested.
+
+    What the rotation does *not* compromise: `default_llm()` still runs the
+    full ADR-018 chain, so if Gemini's daily budget is spent mid-run the suite
+    does not fail — it falls through to Groq exactly as production would. **The
+    quota shapes how often each query is covered, not whether the suite is
+    correct.** `tests/agent/test_smoke_rotation.py` asserts the property the
+    arrangement rests on: the groups partition the queries, both are non-empty
+    and balanced, and two consecutive days cover all four. The report also
+    names the queries it did *not* run, so a rotation half can never be read as
+    full coverage — the "a skipped test proves nothing" trap, one level up.
