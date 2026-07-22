@@ -53,14 +53,19 @@ class RuleEngine:
         amount: float,
         category: str,
         channel: str | None,
-        month: str = "1970-01",
+        month: str,
     ) -> list[EarnResult]:
         """Evaluate each card and sort: computed (highest points first), then
         unknown, then excluded. Missing cards yield unknown results — graceful
         degradation, never a crash mid-comparison.
 
-        Pass `month`: since ADR-012 it also selects which accelerated programs
-        are in force, and the epoch default predates every one of them."""
+        `month` is required and has no default, deliberately. It previously
+        defaulted to "1970-01", which predates every `valid_from` in every rule
+        file — so since ADR-012 any caller that omitted it would have had every
+        accelerated rate silently fall back to base earn, with no error and a
+        plausible-looking answer. Absent-means-now is resolved once, at the tool
+        boundary (`tools/rule_engine/tools.py`); the engine stays a pure
+        function of its arguments and cannot be handed a month by accident."""
         results: list[EarnResult] = []
         for card_key in cards:
             try:

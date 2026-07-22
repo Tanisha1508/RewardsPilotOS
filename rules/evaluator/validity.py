@@ -17,7 +17,27 @@ still verified) and attaches a note naming the expiry date and asking for
 re-verification. Falling back to unknown would discard a base rate we do know.
 """
 
+from datetime import date
+
 from rules.parser.models import AcceleratedEarn
+
+
+def current_month() -> str:
+    """The month the engine treats as "now", as "YYYY-MM".
+
+    Lives here because this module already owns the engine's month resolution.
+    Used to resolve an *absent* month at the tool boundary: most real queries
+    ("which card for a ₹50,000 flight?") carry no period, and a required month
+    the Planner has no basis to fill is an arg the LLM can only invent — which
+    it cannot legitimately do, so the invocation was rejected and the
+    computation silently lost (KNOWN_LIMITATIONS 24).
+
+    Deliberately not a default on any engine or DTO field. A wrong month is not
+    inert since ADR-012 — it selects which accelerated programs are in force —
+    so "now" is resolved once, explicitly, at the boundary where the request
+    enters, and never sits in a signature where it can be picked up silently.
+    """
+    return date.today().strftime("%Y-%m")
 
 
 def _month_of(iso_date: str) -> str:

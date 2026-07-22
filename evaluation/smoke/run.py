@@ -134,7 +134,16 @@ class RecordingLLM:
 
 
 def _raw_month_args(planner_raw: list[str]) -> list[str]:
-    """Every `month` value the model emitted, before validation dropped any."""
+    """Every month value the model actually committed to, before validation
+    dropped any.
+
+    `null` and absent are deliberately NOT collected. Since the item-24 fix
+    they are legitimate — they mean "the current month", resolved at the tool
+    boundary — and the model emits `"month": null` routinely now that the
+    prompt no longer forces it to invent one. Counting `null` as malformed
+    would fail this check on correct behaviour, which is how a smoke suite
+    trains people to ignore it.
+    """
     months: list[str] = []
     for raw in planner_raw:
         try:
@@ -145,9 +154,25 @@ def _raw_month_args(planner_raw: list[str]) -> list[str]:
             if not isinstance(entry, dict):
                 continue
             args = entry.get("args")
-            if isinstance(args, dict) and "month" in args:
+            if isinstance(args, dict) and args.get("month") is not None:
                 months.append(str(args["month"]))
     return months
+
+
+# The planner and recommender nodes catch `LLMUnavailableError` themselves and
+# append it to `state["errors"]`, so an exhausted quota or a 503 spike reaches
+# this runner looking exactly like a structural failure: empty plan, no
+# recommendation, no exception. Detecting it here keeps exit 1 (the model
+# regressed) distinct from exit 2 (we never really called the model) — the
+# distinction the suite is built around, which the first version missed
+# because it only caught the error when it escaped the workflow.
+_UNAVAILABLE_MARKERS = ("llm failed after retry", "all models failed")
+
+
+def llm_was_unavailable(final: dict) -> bool:
+    return any(
+        marker in error.lower() for error in final["errors"] for marker in _UNAVAILABLE_MARKERS
+    )
 
 
 def check_run(final: dict, planner_raw: list[str], expect_comparison: bool) -> dict[str, bool]:
@@ -192,6 +217,12 @@ def run_query(item: dict, user_id: str, runs: int) -> dict:
             # Infrastructure, not a regression — surfaced separately so an
             # exhausted quota never reads as a structural failure.
             errors.append(f"run {attempt + 1}: {exc}")
+            continue
+        if llm_was_unavailable(final):
+            # Same thing, but swallowed by a node's own error handling rather
+            # than raised. Discard the run instead of scoring it: a quota blip
+            # would otherwise present as every structural check failing at once.
+            errors.append(f"run {attempt + 1}: LLM unavailable (from state errors)")
             continue
         for name, passed in check_run(
             final, recorder.planner_raw, item["expect_comparison"]

@@ -12,19 +12,30 @@ from pydantic import BaseModel, Field
 
 from contracts.api.verified_value import VerifiedValue
 
+# Absent means "the current month", resolved at the tool boundary
+# (`tools/rule_engine/tools.py`) — never defaulted here, and never defaulted in
+# an engine signature. Most real queries carry no period ("which card for a
+# ₹50,000 flight?"), so a *required* month is an argument the Planner can only
+# invent; it correctly declines, the invocation is rejected by validation, and
+# the computation is silently lost (KNOWN_LIMITATIONS 24, found by the first
+# live smoke run). The pattern still applies whenever a month IS supplied, so a
+# malformed value is rejected exactly as before — absent and malformed are
+# different states and stay that way.
+_MONTH = Field(default=None, pattern=r"^\d{4}-\d{2}$")
+
 
 class CalculateEarnInput(BaseModel):
     card_key: str
     amount: float = Field(gt=0)
     category: str
     channel: str | None = None
-    month: str = Field(pattern=r"^\d{4}-\d{2}$")
+    month: str | None = _MONTH
 
 
 class CheckCapInput(BaseModel):
     card_key: str
     cap_scope: str
-    month: str = Field(pattern=r"^\d{4}-\d{2}$")
+    month: str | None = _MONTH
 
 
 class CompareCardsInput(BaseModel):
@@ -32,7 +43,7 @@ class CompareCardsInput(BaseModel):
     amount: float = Field(gt=0)
     category: str
     channel: str | None = None
-    month: str = Field(pattern=r"^\d{4}-\d{2}$")
+    month: str | None = _MONTH
 
 
 class EarnResult(BaseModel):
