@@ -1,0 +1,61 @@
+# Live-LLM smoke suite (KNOWN_LIMITATIONS 23) — the model-behaviour tripwire.
+#
+# Deliberately NOT part of the fast CI loop and NOT on a schedule by default:
+# it spends real free-tier quota and is non-deterministic, so it is triggered
+# manually from the Actions tab when a prompt, model pin, or planner change
+# lands. The golden suite stays the fast determinism/contract check; this
+# catches what it is structurally blind to — a real model emitting a
+# well-formed but wrong-shaped plan (the D4 /chat failures).
+#
+# Requires the GEMINI_API_KEY secret. GROQ_API_KEY is optional and only adds
+# the ADR-018 last-resort tier; without it the chain is Gemini-only.
+#
+# Exit codes are meaningful and the job surfaces them as-is:
+#   0 — every structural check held on every run
+#   1 — a structural check came in below N/N (a real regression)
+#   2 — could not run (no key, or a query completed zero runs)
+# A red run therefore distinguishes "the model regressed" from "we never
+# actually called the model", which is the whole point of not letting this
+# suite skip quietly.
+#
+# No database: the suite installs the in-memory fixture portfolio itself. One
+# real dependency at a time — a failure here means the LLM, never Supabase.
+
+name: smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      runs:
+        description: "Runs per query (N). Higher N costs more quota."
+        required: false
+        default: "3"
+
+concurrency:
+  group: smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python 3.11
+        run: uv python install 3.11
+
+      - name: Install project
+        run: |
+          uv venv --python 3.11
+          uv pip install -e "."
+
+      - name: Run live-LLM smoke suite
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SMOKE_RUNS: ${{ inputs.runs }}
+        run: .venv/bin/python -m evaluation.smoke.run

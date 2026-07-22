@@ -269,7 +269,79 @@ roadmap — none is silently papered over.
     Deliberate for now: real-Gemini calls are non-deterministic, cost tokens, and
     flake on 503s (observed). The measured planner reliability after the D4 prompt
     strengthening (CompareCards present 6/6 runs) was a **manual terminal
-    measurement, not committed as a test** — nothing automated re-checks it. See
-    "Next steps" in SPRINT_HANDOFF for the proposed fix (a separate,
-    manually-triggered live smoke suite asserting structural properties over N
-    runs, tolerant of non-determinism) — a D5/hardening item, not built.
+    measurement, not committed as a test** — nothing automated re-checks it.
+
+    **CLOSED 2026-07-22 by `evaluation/smoke/run.py`.** A manually-triggered
+    live-LLM smoke suite now exists: 4 queries × N=3 runs against the real
+    ADR-018 fallback chain, asserting four *structural* properties only —
+    a recommendation is reached, the plan contains `CompareCards` on a
+    comparison intent, at least one `CompareCards` result reaches
+    `status: computed`, and every `month` arg the model emits matches
+    `^\d{4}-\d{2}$`. It asserts no number, no winning card, and no wording;
+    those stay the golden set's job and would flake here. Triggered from the
+    Actions tab (`.github/workflows/smoke.yml`, `workflow_dispatch`), never in
+    the fast CI loop.
+
+    Two design points that are load-bearing rather than incidental:
+
+    - It lives in `evaluation/`, **not `tests/`**, because
+      `tests/conftest.py` blanks `Settings.env_file` suite-wide (the D2 `.env`
+      leak fix) while `GeminiClient` reads its key through `get_settings()` —
+      under pytest the key would resolve empty, the client would raise, and the
+      suite would *skip*, reporting green having never called the model. Exactly
+      the failure it exists to prevent, and the same "a skipped test proves
+      nothing" trap as the DB integration suite.
+    - A check below N/N **fails the run**. Tolerating non-determinism means not
+      asserting on content, not tolerating a structural invariant that holds 2
+      times in 3 — the D4 planner bug presented precisely as an intermittent
+      rate. Infrastructure failure exits 2, distinct from a regression's exit 1,
+      so a red run never conflates "the model regressed" with "we never called
+      the model".
+
+24. **`CompareCards.month` is required, so an undated comparison query loses its
+    computation — OPEN, found 2026-07-22 by the first live smoke run.**
+    `CompareCardsInput.month` (`contracts/tools/rule_engine.py`) is a required
+    `str` with pattern `^\d{4}-\d{2}$` and no default. Most real comparison
+    queries carry no month ("which card for a ₹50,000 flight?"), so the model
+    has nothing to supply it from and either omits the field or emits `null`.
+    Either way `validate_plan` rejects the whole invocation, `CompareCards`
+    never runs, and the answer ships with **zero computed numbers**.
+
+    Measured on the first run (N=3): `s02_portal_hotel_comparison` failed
+    `plan_has_compare_cards` and `compare_cards_computed` **0/3**;
+    `s01_flight_comparison` failed both **2/3**. `s03`, which mentions "a month"
+    in the query text and so gives the model something to ground a date in,
+    passed 3/3 — which is the tell that this is about the arg being
+    unsatisfiable, not about prompt quality.
+
+    This is the **same bug class as the D4 `cards=[]` failure, one argument
+    further along**: `inject_card_keys` now correctly fills `cards` before
+    validation (visible in the rejection payload,
+    `input_value={'cards': ['hdfc_infinia'...`), and the very next required arg
+    the model cannot legitimately invent takes its place. The generalizable rule
+    the D4 fix implied but did not act on: *a required tool arg the model has no
+    basis to supply must be injected deterministically, not demanded of the
+    LLM.*
+
+    Not fixed in this pass — deliberately, so the suite's first finding is
+    recorded before it is acted on. Two candidate fixes, both needing a
+    product-owner call because they change a spec'd contract (BUILD_SPEC §8
+    tool schema): default `month` to the current month at injection time
+    alongside `cards`, or make it `str | None` and let the Rule Engine treat
+    absent as current. The first keeps the engine contract unchanged; the second
+    is honest that "no month specified" is a real state. Neither invents reward
+    data, so hard rule 1 is not implicated.
+
+    Note what did *not* go wrong: nothing fabricated. On `s01` the Recommender
+    tried to state "50,000" with no tool result behind it and
+    `validate_recommendation` rejected it as ungrounded prose — the runtime gate
+    held. The failure mode is a degraded answer, not a wrong one.
+
+25. **`agents/workflows/demo.py` bypasses the ADR-018 fallback chain — OPEN,
+    minor.** `demo.py:151` constructs a bare `GeminiClient()` rather than
+    calling `default_llm()`, so the demo runs the primary Gemini model only and
+    gets none of the tiered fallback (second Gemini model → Groq) that
+    production and the smoke suite use. Consequence is narrow — a transient 503
+    fails the demo where the real app would recover — but it also means the demo
+    is not exercising the path it appears to demonstrate. One-line fix; flagged
+    rather than fixed to keep the smoke-suite change reviewable on its own.
