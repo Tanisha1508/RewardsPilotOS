@@ -64,7 +64,9 @@ def _install_empty():
 
 def test_held_cards_empty_for_empty_portfolio():
     _install_empty()
-    assert held_cards("empty_user") == []
+    # No user argument: identity is ambient (KNOWN_LIMITATIONS 24, Class C).
+    # The session-wide `acting_as` from tests/conftest.py supplies it.
+    assert held_cards() == []
 
 
 def test_empty_response_is_contract_valid():

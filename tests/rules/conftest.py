@@ -93,9 +93,7 @@ VOYAGER_V1 = make_rule(
         {"scope": "unverified_cap", "period": "month", "cap_points": vv()},
     ],
     exclusions=["fuel"],
-    point_value_reference_inr=nested_point_value(
-        voucher=verified(0.5), travel=verified(0.5)
-    ),
+    point_value_reference_inr=nested_point_value(voucher=verified(0.5), travel=verified(0.5)),
 )
 
 VOYAGER_V2 = {

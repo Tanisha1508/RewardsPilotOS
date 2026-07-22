@@ -53,7 +53,7 @@ def test_graceful_degradation_on_failing_tool():
     state = initial_state("q", "fixture_user")
     state["plan"] = [
         {"tool": "CheckCap", "args": {"card_key": "ghost", "cap_scope": "s", "month": "2026-07"}},
-        {"tool": "GetCards", "args": {"user_id": "fixture_user"}},
+        {"tool": "GetCards", "args": {}},
     ]
     state = run_tools(state)
     assert any("CheckCap" in error for error in state["errors"])

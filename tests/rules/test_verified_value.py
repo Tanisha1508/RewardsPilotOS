@@ -70,8 +70,7 @@ def test_point_value_reference_channels():
 def test_point_value_reference_unknown_factory():
     reference = PointValueReference.unknown()
     assert all(
-        not reference.for_channel(channel).is_usable
-        for channel in PointValueReference.CHANNELS
+        not reference.for_channel(channel).is_usable for channel in PointValueReference.CHANNELS
     )
 
 

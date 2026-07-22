@@ -23,9 +23,7 @@ EARN_TABLE = [
 ]
 
 
-@pytest.mark.parametrize(
-    "amount,category,channel,status,points,applied,cap_applied", EARN_TABLE
-)
+@pytest.mark.parametrize("amount,category,channel,status,points,applied,cap_applied", EARN_TABLE)
 def test_earn_table(engine, amount, category, channel, status, points, applied, cap_applied):
     result = engine.calculate_earn("test_voyager", amount, category, channel, "2026-07")
     assert result.status == status
@@ -79,9 +77,7 @@ def test_compare_cards_sorting(engine):
 
 
 def test_compare_cards_excluded_sorts_last(engine):
-    results = engine.compare_cards(
-        ["test_ghost", "test_voyager"], 10_000, "fuel", None, "2026-07"
-    )
+    results = engine.compare_cards(["test_ghost", "test_voyager"], 10_000, "fuel", None, "2026-07")
     assert [r.status for r in results] == ["unknown", "excluded"]
 
 

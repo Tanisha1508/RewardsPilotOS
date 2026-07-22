@@ -10,7 +10,7 @@ def test_valid_plan_accepted():
         planner_payload={
             "intent": "spend",
             "plan": [
-                {"tool": "GetCards", "args": {"user_id": "fixture_user"}},
+                {"tool": "GetCards", "args": {}},
                 {
                     "tool": "CalculateEarn",
                     "args": {
@@ -38,9 +38,7 @@ def test_unknown_tool_rejected():
 
 def test_malformed_args_rejected():
     errors: list[str] = []
-    result = validate_plan(
-        [{"tool": "CalculateEarn", "args": {"card_key": "x"}}], errors
-    )
+    result = validate_plan([{"tool": "CalculateEarn", "args": {"card_key": "x"}}], errors)
     assert result == []
     assert "invalid args" in errors[0]
 

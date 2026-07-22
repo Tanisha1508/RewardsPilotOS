@@ -144,9 +144,10 @@ def test_another_users_recommendation_is_not_reachable(client, jwt_secret, synce
     # Reported as 404, never 403 — do not confirm the row exists.
     got = client.get(f"/api/v1/recommendations/{rec_id}", headers=auth(intruder, jwt_secret))
     assert got.status_code == 404
-    assert client.get(
-        "/api/v1/recommendations", headers=auth(intruder, jwt_secret)
-    ).json()["data"] == []
+    assert (
+        client.get("/api/v1/recommendations", headers=auth(intruder, jwt_secret)).json()["data"]
+        == []
+    )
 
 
 def test_empty_query_is_rejected(client, jwt_secret, synced):

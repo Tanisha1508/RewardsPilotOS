@@ -67,8 +67,12 @@ def run() -> dict:
         actual = _run_scenario(scenario)
         passed = actual == scenario["expected"]
         per_scenario.append(
-            {"id": scenario["id"], "passed": passed, "expected": scenario["expected"],
-             "actual": actual}
+            {
+                "id": scenario["id"],
+                "passed": passed,
+                "expected": scenario["expected"],
+                "actual": actual,
+            }
         )
     passed_count = sum(1 for s in per_scenario if s["passed"])
     return {

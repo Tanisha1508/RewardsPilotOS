@@ -1,6 +1,7 @@
 """Opportunity Engine tool: GetOpportunities (fixture notifications for the
 sprint; D5 wires monitor.py change records into the notifications table)."""
 
+from tools.portfolio.source import current_user
 from contracts.tools.opportunity import (
     GetOpportunitiesInput,
     GetOpportunitiesOutput,
@@ -33,4 +34,10 @@ _FIXTURE_OPPORTUNITIES = [
 
 
 def get_opportunities(args: GetOpportunitiesInput) -> GetOpportunitiesOutput:
+    # Identity comes from the ambient context, never from model output
+    # (KNOWN_LIMITATIONS 24, Class C). The fixture set is not yet
+    # user-scoped, so the resolved id is unused here — but the call still
+    # runs, so a missing caller fails loudly now rather than at D5 when
+    # real per-user notifications land.
+    current_user()
     return GetOpportunitiesOutput(opportunities=_FIXTURE_OPPORTUNITIES[: args.limit])

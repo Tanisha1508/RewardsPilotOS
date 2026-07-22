@@ -6,7 +6,8 @@ from pydantic import BaseModel, Field
 
 
 class GetOpportunitiesInput(BaseModel):
-    user_id: str
+    # No user_id — resolved from the ambient `acting_as` context
+    # (KNOWN_LIMITATIONS 24, Class C).
     limit: int = Field(default=10, ge=1, le=50)
 
 

@@ -58,8 +58,9 @@ def fixture_graph():
         node("u_air", "airline"),
     ]
     edges = [
-        transfer("a_direct", "a_points", "target_air", 0.8, min_transfer=1000,
-                 last_verified="2026-03-01"),
+        transfer(
+            "a_direct", "a_points", "target_air", 0.8, min_transfer=1000, last_verified="2026-03-01"
+        ),
         transfer("a_to_b", "a_points", "b_points", 0.5, min_transfer=2000),
         transfer("b_to_t", "b_points", "target_air", 2.0),
     ]

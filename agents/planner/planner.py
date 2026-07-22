@@ -65,7 +65,10 @@ def validate_plan(plan_entries: list, errors: list[str]) -> list[ToolInvocation]
 
 def plan(state: AgentState, llm: LLM) -> AgentState:
     system = PROMPT_PATH.read_text().replace("{TOOL_CATALOG}", tool_catalog())
-    user = json.dumps({"query": state["query"], "user_id": state["user_id"]})
+    # Only the query. The model is deliberately not told the user id: no tool
+    # accepts one any more (KNOWN_LIMITATIONS 24, Class C), and handing it an
+    # identity it cannot legitimately use invites it back into plan args.
+    user = json.dumps({"query": state["query"]})
     try:
         raw = complete_with_retry(llm, system, user)
         payload = _parse_payload(raw)
@@ -86,7 +89,7 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
     # in first, or the computation is lost entirely (the exact D4 live-/chat
     # failure, and its Class B recurrence on the single-card tools).
     if state["intent"] in CARD_DEPENDENT_INTENTS:
-        cards = held_cards(state["user_id"])
+        cards = held_cards()
         if not cards:
             # Nothing to compute against an empty set — deterministic direct
             # response, routed straight to END (skips tools and the recommender).

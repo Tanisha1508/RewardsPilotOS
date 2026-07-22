@@ -5,6 +5,12 @@ signatures, same output schemas, different storage. So these tests call the
 tools exactly as the Tool Registry does and validate against the contract
 models — if a query returns something the contract cannot represent, the
 Planner and Recommender would be the ones to find out.
+
+Since 2026-07-22 these tools take no `user_id` (KNOWN_LIMITATIONS 24, Class C):
+the caller is the ambient `acting_as` user, so each test establishes the
+identity it means to read as, exactly as `backend/application/chat.py` does
+from the verified JWT. That is also why the isolation test below is stronger
+than it was — it now proves the *context* scopes the read, not an argument.
 """
 
 import uuid
@@ -19,7 +25,7 @@ from contracts.tools.portfolio import UserScopedInput
 from memory.episodic.store import record_event
 from rules.engine.cap_store import PostgresCapUsageStore
 from tools.memory.tools import recall_memory, store_preference
-from tools.portfolio.source import UnknownUserError
+from tools.portfolio.source import UnknownUserError, acting_as
 from tools.portfolio.tools import (
     get_cards,
     get_portfolio,
@@ -45,15 +51,17 @@ def seeded_user(user_id):
 
 
 def test_get_portfolio_returns_contract_shape(seeded_user):
-    output = get_portfolio(UserScopedInput(user_id=str(seeded_user)))
+    with acting_as(str(seeded_user)):
+        output = get_portfolio(UserScopedInput())
     assert output.user_id == str(seeded_user)
     assert [c.card_name for c in output.cards] == ["HDFC Infinia"]
     assert output.cards[0].annual_fee == 12500.0
 
 
 def test_get_cards_and_balances_agree_on_card_ids(seeded_user):
-    cards = get_cards(UserScopedInput(user_id=str(seeded_user))).cards
-    balances = get_reward_balances(UserScopedInput(user_id=str(seeded_user))).balances
+    with acting_as(str(seeded_user)):
+        cards = get_cards(UserScopedInput()).cards
+        balances = get_reward_balances(UserScopedInput()).balances
     assert {b.card_id for b in balances} <= {c.card_id for c in cards}
     assert balances[0].current_balance == 48000
 
@@ -62,7 +70,8 @@ def test_travel_goals_surface_unknown_rather_than_guessing(seeded_user):
     """`goals` has no target_program or required_points column (BUILD_SPEC §4).
     Parsing them out of the description would be inventing data; the contract
     fields stay None until the schema carries them."""
-    goals = get_travel_goals(UserScopedInput(user_id=str(seeded_user))).goals
+    with acting_as(str(seeded_user)):
+        goals = get_travel_goals(UserScopedInput()).goals
     assert len(goals) == 1
     assert goals[0].target_program is None
     assert goals[0].required_points is None
@@ -70,7 +79,8 @@ def test_travel_goals_surface_unknown_rather_than_guessing(seeded_user):
 
 def test_reward_currency_comes_from_the_card_row(seeded_user):
     """No per-issuer mapping in code: whatever was stored is what is returned."""
-    cards = get_cards(UserScopedInput(user_id=str(seeded_user))).cards
+    with acting_as(str(seeded_user)):
+        cards = get_cards(UserScopedInput()).cards
     assert cards[0].reward_currency == "hdfc_reward_points"
 
 
@@ -86,7 +96,8 @@ def test_a_new_issuer_needs_no_code_change(user_id):
         network="rupay",
         reward_currency="newbank_altitude_miles",
     )
-    cards = get_cards(UserScopedInput(user_id=str(user_id))).cards
+    with acting_as(str(user_id)):
+        cards = get_cards(UserScopedInput()).cards
     assert cards[0].reward_currency == "newbank_altitude_miles"
 
 
@@ -121,42 +132,49 @@ def test_card_whose_currency_is_not_in_the_graph_reports_missing_data(user_id):
 def test_unknown_user_raises_rather_than_returning_an_empty_portfolio(user_id):
     """An empty portfolio and an unknown user are different answers. Conflating
     them would let a recommendation be built for nobody."""
-    with pytest.raises(UnknownUserError):
-        get_portfolio(UserScopedInput(user_id=str(user_id)))
+    with pytest.raises(UnknownUserError), acting_as(str(user_id)):
+        get_portfolio(UserScopedInput())
 
 
 def test_non_uuid_user_id_is_rejected():
-    with pytest.raises(UnknownUserError):
-        get_cards(UserScopedInput(user_id="fixture_user"))
+    with pytest.raises(UnknownUserError), acting_as("fixture_user"):
+        get_cards(UserScopedInput())
+
+
+def test_a_missing_caller_context_raises_rather_than_guessing():
+    """With no ambient user there is nobody to read as. Failing loudly is the
+    only honest option — returning an empty portfolio would be indistinguishable
+    from a real user who holds no cards."""
+    from tools.portfolio.source import _current_user
+
+    token = _current_user.set(None)
+    try:
+        with pytest.raises(UnknownUserError):
+            get_cards(UserScopedInput())
+    finally:
+        _current_user.reset(token)
 
 
 def test_preferences_round_trip_through_the_tools(seeded_user):
-    store_preference(
-        StorePreferenceInput(user_id=str(seeded_user), key="home_airport", value="DEL")
-    )
-    recalled = recall_memory(
-        RecallMemoryInput(user_id=str(seeded_user), intent="transfer", query="airport")
-    )
+    with acting_as(str(seeded_user)):
+        store_preference(StorePreferenceInput(key="home_airport", value="DEL"))
+        recalled = recall_memory(RecallMemoryInput(intent="transfer", query="airport"))
     assert recalled.preferences["home_airport"] == "DEL"
 
 
 def test_store_preference_updates_rather_than_duplicating(seeded_user):
-    for value in ("DEL", "BOM"):
-        store_preference(
-            StorePreferenceInput(user_id=str(seeded_user), key="home_airport", value=value)
-        )
-    recalled = recall_memory(
-        RecallMemoryInput(user_id=str(seeded_user), intent="transfer", query="airport")
-    )
+    with acting_as(str(seeded_user)):
+        for value in ("DEL", "BOM"):
+            store_preference(StorePreferenceInput(key="home_airport", value=value))
+        recalled = recall_memory(RecallMemoryInput(intent="transfer", query="airport"))
     assert recalled.preferences == {"home_airport": "BOM"}
 
 
 def test_episodic_recall_is_most_recent_first_and_limited(seeded_user):
     for index in range(4):
         record_event(seeded_user, "search", {"query": f"q{index}"})
-    recalled = recall_memory(
-        RecallMemoryInput(user_id=str(seeded_user), intent="history", query="", limit=2)
-    )
+    with acting_as(str(seeded_user)):
+        recalled = recall_memory(RecallMemoryInput(intent="history", query="", limit=2))
     assert len(recalled.episodic) == 2
     assert recalled.episodic[0].payload["query"] == "q3"
 
@@ -193,5 +211,7 @@ def test_rule_engine_reads_cap_usage_from_postgres():
 def test_uuid_users_are_isolated_from_each_other(seeded_user):
     other = uuid.uuid4()
     sync_user(other, "other@example.test", "Other")
-    assert get_cards(UserScopedInput(user_id=str(other))).cards == []
-    assert len(get_cards(UserScopedInput(user_id=str(seeded_user))).cards) == 1
+    with acting_as(str(other)):
+        assert get_cards(UserScopedInput()).cards == []
+    with acting_as(str(seeded_user)):
+        assert len(get_cards(UserScopedInput()).cards) == 1

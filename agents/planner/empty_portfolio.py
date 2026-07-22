@@ -26,11 +26,16 @@ from tools.portfolio.tools import get_cards
 CARD_DEPENDENT_INTENTS = ("spend", "transfer", "redeem", "portfolio")
 
 
-def held_cards(user_id: str) -> list[Card]:
-    """The user's cards, or [] if they have no portfolio at all. Fetched once so
-    the empty-check and card-key injection share a single read."""
+def held_cards() -> list[Card]:
+    """The caller's cards, or [] if they have no portfolio at all. Fetched once
+    so the empty-check and card-key resolution share a single read.
+
+    Takes no user: identity comes from the ambient `acting_as` context, like
+    every other tool that loads the caller's own data. A missing context raises
+    UnknownUserError, which is caught below — the empty-portfolio gate then
+    answers honestly rather than reading someone else's cards."""
     try:
-        return get_cards(UserScopedInput(user_id=user_id)).cards
+        return get_cards(UserScopedInput()).cards
     except Exception:
         return []  # UnknownUserError etc. → no cards to reason about
 

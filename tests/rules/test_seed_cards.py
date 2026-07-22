@@ -141,7 +141,9 @@ AMEX_TABLE = [
 
 
 @pytest.mark.parametrize("category,channel,status,points,applied,cap_applied", AMEX_TABLE)
-def test_amex_plat_travel_v2_computes(engine, category, channel, status, points, applied, cap_applied):
+def test_amex_plat_travel_v2_computes(
+    engine, category, channel, status, points, applied, cap_applied
+):
     result = engine.calculate_earn("amex_plat_travel", 10_000, category, channel, "2026-07")
     assert result.status == status
     assert result.points == points
@@ -173,9 +175,7 @@ def test_amex_structures_parsed(engine):
 
 def test_hdfc_voucher_cap_clips(engine):
     # ₹100,000 vouchers: 666 blocks * 5 * 5 = 16650 > 3000 voucher cap
-    result = engine.calculate_earn(
-        "hdfc_infinia", 100_000, "brand_vouchers", "smartbuy", "2026-07"
-    )
+    result = engine.calculate_earn("hdfc_infinia", 100_000, "brand_vouchers", "smartbuy", "2026-07")
     assert result.points == 3000.0
     assert result.cap_applied is True
     assert result.cap_scope == "smartbuy_voucher"

@@ -8,9 +8,7 @@
       "plan": [
         {
           "tool": "GetRewardBalances",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "BestTransferPaths",
@@ -34,9 +32,7 @@
       "plan": [
         {
           "tool": "GetCards",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "CompareCards",
@@ -87,9 +83,7 @@
       "plan": [
         {
           "tool": "GetTravelGoals",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "RedemptionOptions",
@@ -119,9 +113,7 @@
         },
         {
           "tool": "GetOpportunities",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "SearchKnowledge",
@@ -139,21 +131,15 @@
       "plan": [
         {
           "tool": "GetPortfolio",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "GetRewardBalances",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "GetTravelGoals",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "SearchKnowledge",
@@ -197,9 +183,7 @@
       "plan": [
         {
           "tool": "GetRewardBalances",
-          "args": {
-            "user_id": "fixture_user"
-          }
+          "args": {}
         },
         {
           "tool": "SearchKnowledge",
@@ -240,7 +224,6 @@
         {
           "tool": "StorePreference",
           "args": {
-            "user_id": "fixture_user",
             "key": "preferred_airline_program",
             "value": "skyhigh_airways"
           }
@@ -248,7 +231,6 @@
         {
           "tool": "RecallMemory",
           "args": {
-            "user_id": "fixture_user",
             "intent": "general",
             "query": "airline preference"
           }

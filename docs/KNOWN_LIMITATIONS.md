@@ -298,9 +298,10 @@ roadmap — none is silently papered over.
       so a red run never conflates "the model regressed" with "we never called
       the model".
 
-24. **Required tool args the Planner cannot legitimately supply — Class A
-    CLOSED, Class B partly closed, remainder OPEN. Found 2026-07-22 by the
-    first live smoke run, then generalised by a full 15-tool audit.**
+24. **Required tool args the Planner cannot legitimately supply — Classes A and
+    C CLOSED, Class B closed except its genuinely ambiguous members. Found
+    2026-07-22 by the first live smoke run, then generalised by a full 15-tool
+    audit and closed out 2026-07-23.**
 
     The audit (2026-07-22) found **13 of 15 tools** exposed in three classes.
     Only `SearchKnowledge` and `GetPromotions` are clean. The organising rule:
@@ -316,15 +317,28 @@ roadmap — none is silently papered over.
       `agents/planner/portfolio_args.py`). Unconstrained, so these were
       *accepted* by validation and degraded silently — worse than Class A.
       The ambiguous members remain open; see below.
-    - **Class C — runtime value the model is allowed to launder. OPEN.**
-      `user_id` is required on 7 tools and the tools trust the model's copy
-      (`tools/portfolio/tools.py:23`) even though the authenticated value is
-      already in context via `acting_as` (`backend/application/chat.py:41`).
-      `tools/graph_engine/tools.py:42` already does it correctly with
-      `current_user()`, so this is an inconsistency, not a design choice.
-      Not exploitable trivially — Postgres needs a valid UUID of an existing
-      user — but it is an authorization boundary mediated by LLM output.
-      Needs a product-owner call: it changes a BUILD_SPEC §8 contract.
+    - **Class C — runtime value the model is allowed to launder. CLOSED
+      2026-07-23.** `user_id` was required on 7 tools and the tools trusted the
+      model's copy even though the authenticated value was already in context
+      via `acting_as` (`backend/application/chat.py:41`), and
+      `tools/graph_engine/tools.py:42` had always resolved it correctly with
+      `current_user()` — an inconsistency, not a design choice. The field is
+      **removed from the input contracts**, not ignored-if-present: an argument
+      that still exists is an argument something can still rely on, the same
+      reasoning that deleted the `1970-01` engine default rather than leaving it
+      as a bypassable fallback. All seven now resolve the caller from the
+      ambient context, and the Planner is no longer told the user id at all —
+      the generated tool catalogue advertises no `user_id` on any tool, so the
+      model is not invited to supply one. Regression cover in
+      `tests/agent/test_caller_identity.py` (schema, registry, handler, and
+      missing-context paths) plus the rewritten Postgres isolation test.
+
+      **What this did and did not fix.** It removes an authorization boundary
+      from LLM output — real but not trivially exploitable, since Postgres
+      required a valid UUID of an existing user, so a hallucinated id failed
+      loudly with `UnknownUserError` rather than reading a stranger's data. The
+      value is structural: identity is now unreachable from model output by
+      construction rather than by the model behaving well.
 
     **Class B, still open — deliberately not defaulted.** These have no
     mechanical resolution, and guessing one would silently reinterpret the

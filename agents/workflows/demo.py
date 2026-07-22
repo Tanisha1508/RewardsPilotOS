@@ -36,12 +36,11 @@ class ScriptedLLM:
                         "target_program": "skyhigh_airways",
                     },
                     "plan": [
-                        {"tool": "GetPortfolio", "args": {"user_id": "fixture_user"}},
-                        {"tool": "GetRewardBalances", "args": {"user_id": "fixture_user"}},
+                        {"tool": "GetPortfolio", "args": {}},
+                        {"tool": "GetRewardBalances", "args": {}},
                         {
                             "tool": "RecallMemory",
                             "args": {
-                                "user_id": "fixture_user",
                                 "intent": "transfer",
                                 "query": "skyhigh transfer",
                             },
