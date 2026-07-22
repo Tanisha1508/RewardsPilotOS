@@ -298,9 +298,58 @@ roadmap — none is silently papered over.
       so a red run never conflates "the model regressed" with "we never called
       the model".
 
-24. **`CompareCards.month` is required, so an undated comparison query loses its
-    computation — OPEN, found 2026-07-22 by the first live smoke run.**
-    `CompareCardsInput.month` (`contracts/tools/rule_engine.py`) is a required
+24. **Required tool args the Planner cannot legitimately supply — Class A
+    CLOSED, Class B partly closed, remainder OPEN. Found 2026-07-22 by the
+    first live smoke run, then generalised by a full 15-tool audit.**
+
+    The audit (2026-07-22) found **13 of 15 tools** exposed in three classes.
+    Only `SearchKnowledge` and `GetPromotions` are clean. The organising rule:
+    *a required tool arg has three possible sources — the user's words, the
+    user's data, or the runtime. Only the first belongs in the LLM's output.*
+
+    - **Class A — runtime value demanded of the model. CLOSED** (`month` on
+      `CalculateEarn`, `CheckCap`, `CompareCards`). Pattern-constrained, so a
+      missing value was hard-rejected by `validate_plan`. Fixed schema-level:
+      `str | None`, absent resolved to the current month at the tool boundary.
+    - **Class B — portfolio data demanded of the model. PARTLY CLOSED**
+      (`card_key` on `CalculateEarn`/`CheckCap` now resolved by
+      `agents/planner/portfolio_args.py`). Unconstrained, so these were
+      *accepted* by validation and degraded silently — worse than Class A.
+      The ambiguous members remain open; see below.
+    - **Class C — runtime value the model is allowed to launder. OPEN.**
+      `user_id` is required on 7 tools and the tools trust the model's copy
+      (`tools/portfolio/tools.py:23`) even though the authenticated value is
+      already in context via `acting_as` (`backend/application/chat.py:41`).
+      `tools/graph_engine/tools.py:42` already does it correctly with
+      `current_user()`, so this is an inconsistency, not a design choice.
+      Not exploitable trivially — Postgres needs a valid UUID of an existing
+      user — but it is an authorization boundary mediated by LLM output.
+      Needs a product-owner call: it changes a BUILD_SPEC §8 contract.
+
+    **Class B, still open — deliberately not defaulted.** These have no
+    mechanical resolution, and guessing one would silently reinterpret the
+    question rather than answer it:
+
+    - `GetTransferRatios.currency`, `BestTransferPaths.currency` — the user may
+      hold several reward currencies; "which balance did they mean?" has no
+      portfolio-derived answer.
+    - `BestTransferPaths.target_program`, `RedemptionOptions.goal.target_program`
+      — a destination is not portfolio data at all; inventing one manufactures
+      an intent the user never expressed.
+    - `CheckCap.cap_scope` — rule-file vocabulary (`reward_multiplier_bonus`)
+      with no portfolio source.
+
+    All of these fail *silently*: an unrecognised value returns
+    `status: success` with an empty or unknown payload, which reads as "checked,
+    nothing there" rather than "asked the wrong question" — collapsing the
+    unknown/not-applicable distinction that SPRINT_HANDOFF §4 requires be kept.
+    Confirmed live 2026-07-22: the planner emitted `BestTransferPaths` with
+    `currency: null` and the invocation was dropped.
+
+    ---
+
+    **Original Class A report (closed 2026-07-22, commit `880ec56`):**
+    `CompareCardsInput.month` (`contracts/tools/rule_engine.py`) was a required
     `str` with pattern `^\d{4}-\d{2}$` and no default. Most real comparison
     queries carry no month ("which card for a ₹50,000 flight?"), so the model
     has nothing to supply it from and either omits the field or emits `null`.
@@ -323,14 +372,28 @@ roadmap — none is silently papered over.
     basis to supply must be injected deterministically, not demanded of the
     LLM.*
 
-    Not fixed in this pass — deliberately, so the suite's first finding is
-    recorded before it is acted on. Two candidate fixes, both needing a
-    product-owner call because they change a spec'd contract (BUILD_SPEC §8
-    tool schema): default `month` to the current month at injection time
-    alongside `cards`, or make it `str | None` and let the Rule Engine treat
-    absent as current. The first keeps the engine contract unchanged; the second
-    is honest that "no month specified" is a real state. Neither invents reward
-    data, so hard rule 1 is not implicated.
+    **Fixed schema-level** (commit `880ec56`): one shared field definition
+    across all three inputs, `str | None`, pattern retained so a *malformed*
+    month is still rejected — absent and malformed are different states. Absent
+    resolves to the current month at the tool boundary
+    (`tools/rule_engine/tools.py`), not in the DTO and not in an engine
+    signature: since ADR-012 the month selects which accelerated programs are in
+    force, so "now" enters at one readable place and the engine stays a pure
+    function of its arguments. The rejected alternative was injecting `month` at
+    plan time alongside `cards`, which would have put clock knowledge in the
+    Planner and needed repeating per tool.
+
+    Removed in the same pass: `RuleEngine.compare_cards` defaulted `month` to
+    `"1970-01"`, which predates every `valid_from` in every rule file — so any
+    caller omitting it would have had **every accelerated rate silently fall
+    back to base earn**, with no error and a plausible-looking answer. A latent
+    instance of the very bug being fixed. `tests/rules/test_month_defaulting.py`
+    asserts no engine entry point defaults `month`, so it cannot be re-armed.
+
+    Verified live: `s01_flight_comparison` went **2/3 → 3/3** on both
+    `plan_has_compare_cards` and `compare_cards_computed`. `s02`–`s04` are
+    unverified rather than failing — the Gemini free tier exhausted mid-run (see
+    item 26).
 
     Note what did *not* go wrong: nothing fabricated. On `s01` the Recommender
     tried to state "50,000" with no tool result behind it and
@@ -345,3 +408,27 @@ roadmap — none is silently papered over.
     fails the demo where the real app would recover — but it also means the demo
     is not exercising the path it appears to demonstrate. One-line fix; flagged
     rather than fixed to keep the smoke-suite change reviewable on its own.
+
+26. **The live smoke suite cannot complete a full N=3 run on the Gemini free
+    tier — OPEN, measured 2026-07-22.** The quota is
+    `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, **limit 20 requests per
+    day per model**. One smoke run is 4 queries × N=3 × ≥2 LLM calls (planner +
+    recommender) = **24 calls minimum**, before the single retry in
+    `complete_with_retry` or any ADR-018 fall-through. So the primary model's
+    daily budget is spent partway through a single run, and the second Gemini
+    model's shortly after.
+
+    Observed exactly that: the 2026-07-22 verification run completed `s01`
+    (4/4 checks) and then reported `LLM unavailable` for every remaining
+    attempt, exiting 2. The suite reported this correctly — it did not present
+    a partial run as a pass — but the practical effect is that a *full*
+    four-query confirmation cannot be obtained in one day on Gemini alone.
+
+    Groq is unaffected and was verified working during the same window
+    (`llama-3.3-70b-versatile` answered normally after both Gemini tiers
+    429'd), so the ADR-018 chain does still have a live last resort. Options,
+    none yet chosen: run the suite with `SMOKE_RUNS=1` (8 calls, fits), point it
+    at Groq as primary, or split the queries across days. Raising N — the thing
+    that makes an intermittent planner bug visible — is the direct casualty, so
+    this is a real constraint on the suite's sensitivity and not just an
+    operational annoyance.

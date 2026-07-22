@@ -9,13 +9,9 @@ before any LLM-driven recommendation logic:
    is nothing to compute, the answer is fixed not generated, and it cannot
    hallucinate a card the user does not hold.
 
-2. **Card-key injection.** CompareCards needs the Rule Engine card_keys of the
-   held cards. The LLM cannot know those at plan time — they come from the
-   portfolio, which is fetched by a tool that runs *after* planning. So the
-   Planner fills them in deterministically from the held cards' `card_key`
-   field, rather than letting the model guess a key from issuer/card_name
-   (found during D4 live /chat testing: a real HDFC Infinia produced "unable to
-   determine" because the model could not map it to `hdfc_infinia`).
+2. **Card-key injection** — moved to `agents/planner/portfolio_args.py`, which
+   generalises it beyond CompareCards to every tool taking a card argument.
+   This module keeps the gate and the shared `held_cards` read.
 
 Only card-dependent intents are gated. A cardless user asking a general
 knowledge question ("how do transfer partners work?") is still answered from the
@@ -37,27 +33,6 @@ def held_cards(user_id: str) -> list[Card]:
         return get_cards(UserScopedInput(user_id=user_id)).cards
     except Exception:
         return []  # UnknownUserError etc. → no cards to reason about
-
-
-def inject_card_keys(plan: list, cards: list[Card]) -> list:
-    """Fill each CompareCards invocation with the held cards' resolved card_keys.
-
-    Runs on the *raw* plan (before schema validation), because a model that
-    correctly declines to guess keys leaves `cards` empty, which validation would
-    reject. A card with no card_key (synthetic, or not in the verified catalogue)
-    is omitted — it cannot be computed. If no held card resolves, a CompareCards
-    invocation is dropped entirely: there is nothing to compare, and the
-    recommender degrades honestly rather than comparing on invented keys.
-    """
-    keys = [card.card_key for card in cards if card.card_key]
-    result = []
-    for invocation in plan:
-        if isinstance(invocation, dict) and invocation.get("tool") == "CompareCards":
-            if not keys:
-                continue
-            invocation = {**invocation, "args": {**(invocation.get("args") or {}), "cards": keys}}
-        result.append(invocation)
-    return result
 
 
 def empty_portfolio_recommendation() -> dict:

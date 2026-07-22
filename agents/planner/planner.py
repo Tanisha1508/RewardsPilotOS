@@ -12,8 +12,8 @@ from agents.planner.empty_portfolio import (
     CARD_DEPENDENT_INTENTS,
     empty_portfolio_recommendation,
     held_cards,
-    inject_card_keys,
 )
+from agents.planner.portfolio_args import resolve_portfolio_args
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState, ToolInvocation
 from tools.registry import REGISTRY, ToolInputError, ToolNotFoundError, validate_args
@@ -79,11 +79,12 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
     raw_plan = payload.get("plan") or []
 
     # Card-dependent intents need the held cards (D4): fetched once, used for both
-    # the empty gate and card-key injection. Injection happens BEFORE validation:
-    # a model that correctly declines to guess card_keys emits CompareCards with
-    # an empty `cards` list, which validation would reject (min_length=1) — so
-    # the keys must be filled in first, or the comparison is lost entirely (the
-    # exact D4 live-/chat failure).
+    # the empty gate and portfolio-derived arg resolution. Resolution happens
+    # BEFORE validation: a model that correctly declines to guess card_keys emits
+    # CompareCards with an empty `cards` list (and CalculateEarn/CheckCap with no
+    # card_key at all), which validation would reject — so the keys must be filled
+    # in first, or the computation is lost entirely (the exact D4 live-/chat
+    # failure, and its Class B recurrence on the single-card tools).
     if state["intent"] in CARD_DEPENDENT_INTENTS:
         cards = held_cards(state["user_id"])
         if not cards:
@@ -94,7 +95,7 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
             state["confidence"] = state["recommendation"]["confidence"]["level"]
             state["citations"] = []
             return state
-        raw_plan = inject_card_keys(raw_plan, cards)
+        raw_plan = resolve_portfolio_args(raw_plan, cards)
 
     state["plan"] = validate_plan(raw_plan, state["errors"])
     return state
