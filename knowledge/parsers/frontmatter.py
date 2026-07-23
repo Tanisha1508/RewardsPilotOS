@@ -52,9 +52,7 @@ def parse_source_file(path: Path) -> SourceDoc:
     if missing:
         raise SourceDocError(f"{path}: missing frontmatter keys {missing}")
     if meta["doc_type"] not in VALID_DOC_TYPES:
-        raise SourceDocError(
-            f"{path}: doc_type '{meta['doc_type']}' not in {VALID_DOC_TYPES}"
-        )
+        raise SourceDocError(f"{path}: doc_type '{meta['doc_type']}' not in {VALID_DOC_TYPES}")
     return SourceDoc(
         doc_id=str(meta["doc_id"]),
         issuer=str(meta["issuer"]),

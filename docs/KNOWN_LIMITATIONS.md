@@ -540,22 +540,24 @@ roadmap — none is silently papered over.
     value — and should compete for time on its own merits, not ride in on an
     audit close. Filed here so it is not lost.
 
-28. **Knowledge corpus is not ingested in the deployed backend — DEFERRED at
-    launch, 2026-07-23 (D5 deploy).** The production backend deploys to a free
-    Hugging Face Space, whose disk is **ephemeral** (persistent `/data` is a paid
-    add-on), so ChromaDB at `CHROMA_PERSIST_DIR` does not survive a rebuild or
-    restart. Ingestion (`knowledge.pipeline.run`) is therefore **not run** at
-    launch, and the deployed corpus is empty.
+28. **Knowledge corpus re-ingests lazily on every fresh disk — measured
+    2026-07-23 (D5 deploy); the original "deferred = empty corpus" claim was
+    wrong.** The production backend deploys to a free host with **ephemeral**
+    disk, so ChromaDB at `CHROMA_PERSIST_DIR` does not survive a rebuild or
+    restart, and `knowledge.pipeline.run` is not run at deploy time.
 
-    Why this is safe to defer, not a correctness gap: the core goal —
-    `/chat` returning a *computed* recommendation — is served by the **Rule
-    Engine** and **Graph Engine**, which need no corpus. A comparison query
-    (e.g. "which card for a ₹50,000 flight?") computes from `CompareCards`. When
-    the Planner includes `SearchKnowledge` against an empty/missing collection,
-    the tool **degrades gracefully** (the workflow continues; the recommendation
-    still computes), the only effect being **sparser citations** and the
-    `/api/v1/knowledge/search` "sources" panel returning nothing. No fabrication,
-    no wrong numbers — the no-corpus state is honest.
+    **Correction (same day, by measurement):** this does *not* leave the
+    deployed corpus empty. `tools/knowledge_search/service.get_retriever()`
+    **self-ingests the seed corpus on first search** when the collections are
+    empty (in-memory docs store, no Postgres needed) — verified by running the
+    real `/chat` flight flow against a fresh empty dir: 5 chunks retrieved, no
+    errors. So the deployed behaviour is: full corpus, populated lazily. The
+    real costs are (a) the **first chat after every cold start pays the
+    ingest** — embeds the whole corpus, slower first response — and (b) the
+    corresponding memory spike, which is what made torch untenable on free
+    tiers (683 MB peak; ~432 MB after the 2026-07-23 fastembed/ONNX swap).
+    Either way — empty or self-ingested — nothing fabricates: the Rule and
+    Graph engines need no corpus, and `SearchKnowledge` degrades gracefully.
 
     Post-launch options, none chosen (each has a real cost):
     - **Startup ingestion** via a container entrypoint — populates the corpus on

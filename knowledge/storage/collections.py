@@ -17,9 +17,7 @@ COLLECTIONS = (
     "issuer_policies",
 )
 
-DEFAULT_PERSIST_DIR = Path(
-    os.environ.get("CHROMA_PERSIST_DIR", "data/embeddings")
-)
+DEFAULT_PERSIST_DIR = Path(os.environ.get("CHROMA_PERSIST_DIR", "data/embeddings"))
 
 
 def get_client(persist_dir: Path | None = None) -> chromadb.ClientAPI:

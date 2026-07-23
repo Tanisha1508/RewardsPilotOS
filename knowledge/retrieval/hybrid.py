@@ -54,9 +54,7 @@ class HybridRetriever:
         for name in COLLECTIONS:
             collection = get_collection(client, name)
             data = collection.get(include=["documents", "metadatas"])
-            for cid, document, metadata in zip(
-                data["ids"], data["documents"], data["metadatas"]
-            ):
+            for cid, document, metadata in zip(data["ids"], data["documents"], data["metadatas"]):
                 self._documents[cid] = document
                 self._metadata[cid] = metadata
         self._bm25_ids = list(self._documents)
@@ -103,8 +101,7 @@ class HybridRetriever:
             (
                 (score, cid)
                 for score, cid in zip(scores, self._bm25_ids)
-                if score > 0
-                and _metadata_matches(self._metadata[cid], issuer, program, doc_type)
+                if score > 0 and _metadata_matches(self._metadata[cid], issuer, program, doc_type)
             ),
             key=lambda pair: -pair[0],
         )
