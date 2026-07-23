@@ -52,5 +52,7 @@ RUN python -c "from fastembed import TextEmbedding; TextEmbedding(model_name='se
 
 EXPOSE 7860
 
-# HF probes the port; the app's own health route is /api/v1/health.
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
+# Bind the platform's port: Render injects $PORT; HF Spaces expects 7860, so
+# that is the fallback. Shell form on purpose — exec-form CMD cannot expand
+# env vars. The app's own health route is /api/v1/health.
+CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860}
