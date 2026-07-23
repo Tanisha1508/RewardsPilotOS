@@ -50,6 +50,7 @@ Run:
     .venv/bin/python -m evaluation.smoke.run              # today's rotation pair
     SMOKE_GROUP=all .venv/bin/python -m evaluation.smoke.run   # all 4 queries
     SMOKE_GROUP=b .venv/bin/python -m evaluation.smoke.run     # force a pair
+    SMOKE_GROUP=s02,s04 .venv/bin/python -m evaluation.smoke.run  # arbitrary pair by id prefix
     SMOKE_RUNS=5 .venv/bin/python -m evaluation.smoke.run
 
 Queries run in two fixed pairs on alternating days to fit the Gemini free-tier
@@ -163,14 +164,34 @@ def todays_group(today: date | None = None) -> str:
 
 
 def select_queries(group: str | None = None) -> list[dict]:
-    """The queries to run. `group` of "all" runs everything — for a deliberate
-    manual full-coverage run, accepting the Groq fall-through that implies."""
+    """The queries to run.
+
+    - `"all"` runs everything — a deliberate manual full-coverage run.
+    - `"a"`/`"b"` run a rotation group (what the scheduled Mon/Thu run uses).
+    - anything else is treated as a comma-separated list of query-id prefixes
+      (e.g. `"s02,s04"`) — a manual/workflow_dispatch escape hatch for
+      re-running exactly the queries a given day's quota did not reach.
+      Arbitrary pairs do NOT map to day-of-month parity, so they are never what
+      the schedule picks; they only appear when a value is passed explicitly.
+
+    A token matching no query is a hard error, so a typo like `s2` cannot
+    silently run zero queries — the same failure-visible principle as the rest
+    of the suite.
+    """
     group = group or os.environ.get("SMOKE_GROUP") or todays_group()
     if group == "all":
         return list(QUERIES)
-    if group not in GROUPS:
-        raise SystemExit(f"SMOKE_GROUP must be one of {GROUPS + ('all',)}, got {group!r}")
-    return [query for query in QUERIES if query["group"] == group]
+    if group in GROUPS:
+        return [query for query in QUERIES if query["group"] == group]
+    tokens = [token.strip() for token in group.split(",") if token.strip()]
+    unmatched = [token for token in tokens if not any(q["id"].startswith(token) for q in QUERIES)]
+    if not tokens or unmatched:
+        raise SystemExit(
+            f"SMOKE_GROUP must be 'a', 'b', 'all', or a comma-separated list of "
+            f"query-id prefixes; got {group!r}"
+            + (f" (no query matches: {', '.join(unmatched)})" if unmatched else "")
+        )
+    return [query for query in QUERIES if any(query["id"].startswith(token) for token in tokens)]
 
 
 class RecordingLLM:
