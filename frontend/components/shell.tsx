@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
@@ -15,9 +16,51 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
 
+  // Auth guard. Every protected page wraps in Shell (and /login does not), so
+  // this is the single choke point for "no session → /login". It must be
+  // client-side: the Supabase session lives in localStorage, which a server
+  // middleware never sees. Until the session is confirmed we render a quiet
+  // placeholder rather than the shell — the pre-guard behaviour (page chrome
+  // plus per-widget "not signed in" errors) read as a broken app.
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured()) {
+      // The login page owns the "Supabase not configured" explanation.
+      router.replace("/login");
+      return;
+    }
+    const supabase = getSupabase();
+    let cancelled = false;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (cancelled) return;
+      if (data.session) setReady(true);
+      else router.replace("/login");
+    });
+
+    // Covers sign-out from another tab and session expiry mid-use, not just
+    // the button below.
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") router.replace("/login");
+    });
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
+  }, [router]);
+
   async function signOut() {
     if (isSupabaseConfigured()) await getSupabase().auth.signOut();
     router.push("/login");
+  }
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-neutral-500">Checking session…</p>
+      </div>
+    );
   }
 
   return (
