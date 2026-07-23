@@ -56,7 +56,11 @@ Queries run in two fixed pairs on alternating days to fit the Gemini free-tier
 daily quota without shrinking N — see the rotation note below and
 KNOWN_LIMITATIONS 26.
 
-Exit codes: 0 all checks N/N · 1 a structural check failed · 2 could not run.
+Exit codes (0 is the ONLY green — see `classify`):
+  0  every query ran all N attempts and every check held N/N
+  1  a structural check came in below the runs that completed (a regression)
+  2  did not get a clean N-run result — no keys, zero runs, OR any attempt
+     errored (partial coverage is never reported as a pass)
 """
 
 import json
@@ -338,6 +342,41 @@ def _print_report(report: dict) -> None:
         print()
 
 
+def classify(report: dict) -> tuple[int, list]:
+    """Pure exit-decision, separated from I/O so it can be unit-tested without
+    calling a model.
+
+    Exactly one outcome is a pass, and it is the strict one:
+
+    - 1 — a structural check came in below the runs that DID complete: a real
+      regression among the attempts we have (highest priority; a genuine bug
+      outranks any infra noise).
+    - 2 — the suite did not achieve a clean full-N confirmation: a query
+      completed zero runs, OR any attempt errored (partial coverage). This is
+      NOT a pass. A run that quietly drops from N=3 to N=1 because two attempts
+      hit quota has lost exactly the intermittent-failure sensitivity the suite
+      exists for, so reporting it green would be the "degraded looks like
+      passing" failure — the same trap, one level in.
+    - 0 — every query ran all N attempts and every check held N/N. Only this.
+    """
+    failed = [
+        (result["id"], name)
+        for result in report["queries"]
+        for name, (passed, total) in result["checks"].items()
+        if passed != total
+    ]
+    if failed:
+        return 1, failed
+    # `checks` empty → zero runs; `errors` non-empty → some attempt did not
+    # complete. Either means we do not have a clean N-run result for that query.
+    incomplete = [
+        result["id"] for result in report["queries"] if not result["checks"] or result["errors"]
+    ]
+    if incomplete:
+        return 2, incomplete
+    return 0, []
+
+
 def main() -> int:
     # Resolve the key the same way the client does — through `Settings`, which
     # honours `.env` outside pytest. Gating on `os.environ` instead would skip
@@ -363,28 +402,25 @@ def main() -> int:
     report = run(runs)
     _print_report(report)
 
-    had_error = any(result["errors"] for result in report["queries"])
-    no_runs = any(not result["checks"] for result in report["queries"])
-    failed = [
-        (result["id"], name)
-        for result in report["queries"]
-        for name, (passed, total) in result["checks"].items()
-        if passed != total
-    ]
-
-    if failed:
-        print(f"FAILED: {len(failed)} structural check(s) below N/N:", file=sys.stderr)
-        for query_id, name in failed:
+    code, detail = classify(report)
+    if code == 1:
+        print(
+            f"FAILED: {len(detail)} structural check(s) below the runs that completed:",
+            file=sys.stderr,
+        )
+        for query_id, name in detail:
             print(f"  {query_id}.{name}", file=sys.stderr)
-        return 1
-    if no_runs:
-        print("COULD NOT RUN: a query completed zero runs.", file=sys.stderr)
-        return 2
-    if had_error:
-        print("PASSED, with infrastructure errors on some runs (see above).", file=sys.stderr)
-        return 0
-    print("PASSED: every structural check held on every run.")
-    return 0
+    elif code == 2:
+        # Never green. Partial or zero coverage is not a confirmation.
+        print(
+            "INCOMPLETE: did not get a clean N-run result for: "
+            + ", ".join(detail)
+            + "\nThis is not a pass — some attempts did not complete (see [ERROR] lines above).",
+            file=sys.stderr,
+        )
+    else:
+        print("PASSED: every query ran all N attempts and every structural check held.")
+    return code
 
 
 if __name__ == "__main__":
