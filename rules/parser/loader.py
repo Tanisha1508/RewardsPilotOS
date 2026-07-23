@@ -33,9 +33,7 @@ def list_versions(card_key: str, seed_dir: Path | None = None) -> dict[int, Path
     return versions
 
 
-def load_rule(
-    card_key: str, version: int | None = None, seed_dir: Path | None = None
-) -> RuleFile:
+def load_rule(card_key: str, version: int | None = None, seed_dir: Path | None = None) -> RuleFile:
     versions = list_versions(card_key, seed_dir)
     chosen = version if version is not None else max(versions)
     if chosen not in versions:
@@ -43,7 +41,5 @@ def load_rule(
     raw = json.loads(versions[chosen].read_text())
     violations = validate_rule_dict(raw)
     if violations:
-        raise RuleValidationError(
-            f"rule file {versions[chosen]} invalid: " + "; ".join(violations)
-        )
+        raise RuleValidationError(f"rule file {versions[chosen]} invalid: " + "; ".join(violations))
     return RuleFile.model_validate(raw)

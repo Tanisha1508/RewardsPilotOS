@@ -8,6 +8,7 @@ values. Rules of the queue:
   graph edges is either verified (value + official source URL + date) or
   explicitly confirmed as not applicable.
 - Verification means reading the official issuer page/T&C (via crawler or
+
   Browser MCP once wired), recording the source URL and verification date,
   and flipping `status` to `verified` with confidence set.
 - Every change lands as a new rule file version (`v<N+1>.json`), a corpus

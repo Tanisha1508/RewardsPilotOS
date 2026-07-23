@@ -16,7 +16,7 @@ from contracts.api.verified_value import VerifiedValue
 from contracts.tools.rule_engine import CapStatus, EarnResult
 from rules.evaluator.categories import category_matches
 from rules.evaluator.channels import channel_matches
-from rules.evaluator.validity import is_active, lapse_note
+from rules.evaluator.validity import boundary_note, is_active, lapse_note, month_status
 from rules.parser.models import AcceleratedEarn, RuleFile
 
 
@@ -51,9 +51,25 @@ def find_accelerated(
 def find_lapsed(
     rule: RuleFile, category: str, channel: str | None, month: str
 ) -> AcceleratedEarn | None:
-    """The entry that would have matched but is outside its validity window."""
+    """The entry that would have matched but is CLEANLY outside its validity
+    window (ended before the month, or starts after it). A boundary month —
+    where the window ends or starts mid-month — is deliberately excluded here
+    and handled by `find_boundary`: lapsing falls back to base earn, but a
+    boundary month is unknown, and the two must not be conflated."""
     entry = _matching(rule, category, channel)
-    if entry is None or is_active(entry, month):
+    if entry is None or month_status(entry, month) != "inactive":
+        return None
+    return entry
+
+
+def find_boundary(
+    rule: RuleFile, category: str, channel: str | None, month: str
+) -> AcceleratedEarn | None:
+    """The matching entry whose validity window covers `month` only partly
+    (starts or ends mid-month). Such a month cannot be computed at month
+    granularity, so the evaluator returns unknown (KNOWN_LIMITATIONS 10)."""
+    entry = _matching(rule, category, channel)
+    if entry is None or month_status(entry, month) != "boundary":
         return None
     return entry
 
@@ -125,7 +141,24 @@ def evaluate_earn(
         return base
 
     accelerated = find_accelerated(rule, category, channel, month)
-    lapsed = find_lapsed(rule, category, channel, month) if accelerated is None else None
+    # A boundary month (window starts/ends mid-month) is unknown, not base:
+    # applying either rate to a partly-covered month would guess. Checked before
+    # base earn is computed so the result stays unknown rather than being
+    # quietly downgraded to base (KNOWN_LIMITATIONS 10).
+    boundary = find_boundary(rule, category, channel, month) if accelerated is None else None
+    if boundary is not None:
+        base.status = "unknown"
+        base.applied = "accelerated"
+        base.multiplier = boundary.multiplier
+        base.rate = rule.base_earn.rate
+        base.unknown_reasons.append(boundary_note(boundary, month))
+        return base
+
+    lapsed = (
+        find_lapsed(rule, category, channel, month)
+        if accelerated is None and boundary is None
+        else None
+    )
     if lapsed is not None:
         base.expiry_note = lapse_note(lapsed, month)
     rate = rule.base_earn.rate

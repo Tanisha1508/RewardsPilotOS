@@ -95,6 +95,54 @@ def _check_validity_window(entry: dict[str, Any], path: str) -> list[str]:
     return problems
 
 
+def _window_bound(value: Any, default: str) -> str | None:
+    """An ISO date, `default` for an open side (None), or None if malformed.
+    A malformed date is reported by `_check_validity_window`; the overlap check
+    skips such entries rather than comparing garbage as a string."""
+    if value is None:
+        return default
+    if isinstance(value, str) and _ISO_DATE.match(value):
+        return value
+    return None
+
+
+def _check_accelerated_overlaps(entries: list[dict[str, Any]]) -> list[str]:
+    """No two accelerated entries sharing a channel/category may have
+    overlapping validity windows (KNOWN_LIMITATIONS 10).
+
+    The evaluator matches on channel+category and applies the first entry whose
+    window is in force, so two overlapping windows on the same channel/category
+    would silently resolve to whichever is listed first — a rate change must be
+    expressed as adjacent, non-overlapping windows, and this makes the ambiguity
+    a load-time error instead of a silent wrong answer. Adjacent windows
+    (…-06-30 then 2026-07-01-…) do NOT overlap and are allowed; a same-day
+    boundary shared by both windows does.
+    """
+    problems: list[str] = []
+    groups: dict[tuple, list[int]] = {}
+    for i, entry in enumerate(entries):
+        key = (entry.get("channel"), entry.get("category"))
+        groups.setdefault(key, []).append(i)
+    for (channel, category), indices in groups.items():
+        for a in range(len(indices)):
+            for b in range(a + 1, len(indices)):
+                ia, ib = indices[a], indices[b]
+                start_a = _window_bound(entries[ia].get("valid_from"), "0000-01-01")
+                end_a = _window_bound(entries[ia].get("valid_until"), "9999-12-31")
+                start_b = _window_bound(entries[ib].get("valid_from"), "0000-01-01")
+                end_b = _window_bound(entries[ib].get("valid_until"), "9999-12-31")
+                if None in (start_a, end_a, start_b, end_b):
+                    continue  # malformed date already reported per-entry
+                if max(start_a, start_b) <= min(end_a, end_b):
+                    problems.append(
+                        f"accelerated[{ia}] and accelerated[{ib}] share channel/category "
+                        f"({channel}/{category}) with overlapping validity windows; the "
+                        f"evaluator would silently apply whichever is listed first. Use "
+                        f"adjacent, non-overlapping windows for a mid-window rate change."
+                    )
+    return problems
+
+
 def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
     """Return a list of violations; empty list means the file is valid."""
     problems: list[str] = []
@@ -120,6 +168,7 @@ def validate_rule_dict(raw: dict[str, Any]) -> list[str]:
         if "multiplier" not in entry:
             problems.append(f"accelerated[{i}].multiplier: required verified-value field missing")
         problems.extend(_check_validity_window(entry, f"accelerated[{i}]"))
+    problems.extend(_check_accelerated_overlaps(raw.get("accelerated") or []))
     for i, entry in enumerate(raw.get("caps") or []):
         problems.extend(_check_verified_value(entry.get("cap_points"), f"caps[{i}].cap_points"))
     for i, entry in enumerate(raw.get("milestones") or []):

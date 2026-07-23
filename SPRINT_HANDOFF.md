@@ -317,9 +317,12 @@ weekly crawl cadence (22), and the live-LLM test gap (23). S2 (`cards` had no
 
 - ~~**Accelerated validity windows are not enforced (item 10).**~~ **Closed
   2026-07-20 by ADR-012** — the product owner approved the schema change. See
-  bug 7 above. What remains under item 10 is narrower: one entry carries one
-  multiplier, so a mid-window rate change needs two adjacent entries, and
-  overlapping windows are not validated.
+  bug 7 above. The two residuals under item 10 are now **also closed
+  (2026-07-23):** overlapping windows on the same channel/category are a
+  load-time validation error, and a mid-month window boundary returns unknown
+  rather than over-applying the accelerated rate to the whole month. A
+  mid-window rate change is still expressed as two adjacent entries — now
+  enforced to be non-overlapping.
 - **Milestone/tier data is verified but unreachable (item 11).** No tool in the
   BUILD_SPEC §8 registry exposes `milestones`/`tiers`, so "how much more to hit
   Platinum?" answers from retrieved prose at low confidence while verified

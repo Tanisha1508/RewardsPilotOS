@@ -143,17 +143,24 @@ class ScriptedLLM:
 
 
 def main() -> dict:
-    if os.environ.get("GEMINI_API_KEY"):
-        from agents.registry import GeminiClient
+    # Use the same tiered fallback chain production runs (ADR-018): Gemini
+    # primary -> second Gemini model -> Groq. `default_llm()` reads keys through
+    # Settings (honouring .env), and raises LLMUnavailableError if no Gemini key
+    # is configured — caught here to fall back to the deterministic scripted LLM
+    # so the demo still exercises the full workflow offline. (Previously this
+    # built a bare GeminiClient(), which got none of the fallback — a transient
+    # 503 failed the demo where the real app would recover; KNOWN_LIMITATIONS 25.)
+    from agents.registry import default_llm
 
-        try:
-            llm = GeminiClient()
-            print("Using Gemini:", os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"))
-        except LLMUnavailableError as exc:
-            print(f"Gemini unavailable ({exc}); using deterministic scripted LLM")
-            llm = ScriptedLLM()
-    else:
-        print("GEMINI_API_KEY not set; using deterministic scripted LLM fallback")
+    try:
+        llm = default_llm()
+        print(
+            "Using LLM fallback chain (ADR-018):",
+            os.environ.get("GEMINI_MODEL", "gemini-3.5-flash"),
+            "-> ... -> Groq",
+        )
+    except LLMUnavailableError as exc:
+        print(f"No LLM configured ({exc}); using deterministic scripted LLM")
         llm = ScriptedLLM()
 
     workflow = build_workflow(llm)

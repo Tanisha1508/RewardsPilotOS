@@ -15,8 +15,8 @@ import pytest
 from agents.recommendation.calibration import confidence_basis
 from contracts.api.verified_value import VerifiedValue
 from rules.engine.engine import RuleEngine
-from rules.evaluator.validity import is_active, lapse_note
-from rules.parser.models import AcceleratedEarn
+from rules.evaluator.validity import boundary_note, is_active, lapse_note, month_status
+from rules.parser.models import AcceleratedEarn, RuleFile
 from rules.validators.schema import _check_validity_window, validate_rule_dict
 
 
@@ -60,6 +60,41 @@ def test_month_before_start_is_inactive():
 def test_open_ended_sides_are_unbounded():
     assert is_active(entry(valid_from="2021-01-01"), "2099-01")
     assert is_active(entry(valid_until="2026-07-31"), "1999-01")
+
+
+# --- mid-month boundary (KNOWN_LIMITATIONS 10) ------------------------
+
+
+def test_a_clean_month_end_is_active_not_boundary():
+    """A window ending on the last day of the month covers the whole month —
+    the Amex case (2026-07-31) must stay 'active', not regress to boundary."""
+    assert month_status(entry(valid_until="2026-07-31"), "2026-07") == "active"
+
+
+def test_expiry_partway_through_a_month_is_a_boundary_not_active():
+    """The fix: a window ending mid-month only partly covers it, so applying the
+    accelerated rate to the whole month would over-credit. That month is a
+    boundary (→ unknown), never active."""
+    e = entry(valid_until="2026-07-15")
+    assert month_status(e, "2026-07") == "boundary"
+    assert not is_active(e, "2026-07")
+    assert month_status(e, "2026-06") == "active"  # fully-covered month before
+    assert month_status(e, "2026-08") == "inactive"  # cleanly past
+
+
+def test_start_partway_through_a_month_is_a_boundary_too():
+    e = entry(valid_from="2026-07-16")
+    assert month_status(e, "2026-07") == "boundary"
+    assert month_status(e, "2026-08") == "active"
+
+
+def test_boundary_note_names_the_partial_date_and_says_unknown():
+    note = boundary_note(entry(valid_until="2026-07-15"), "2026-07")
+    assert "2026-07-15" in note
+    assert "2026-07" in note
+    assert "unknown" in note
+    # and it is None on a cleanly-covered month
+    assert boundary_note(entry(valid_until="2026-07-31"), "2026-07") is None
 
 
 def test_lapse_note_names_the_expiry_date_and_asks_for_reverification():
@@ -221,3 +256,141 @@ def test_lapsed_rate_caps_reported_confidence(engine):
 
     assert basis["ceiling"] == "medium"
     assert "lapsed" in basis["reason"]
+
+
+# --- the dated mid-month regression (KNOWN_LIMITATIONS 10) -------------
+
+
+def _rule_with_window(valid_from=None, valid_until=None) -> RuleFile:
+    """A minimal, self-contained rule: 1 pt / ₹100 base, a 3X accelerated entry
+    on the given window. Synthetic — no seed file needed, and dated so the test
+    can move the clock past a mid-month boundary."""
+
+    def verified(v):
+        return VerifiedValue(value=v, status="verified", source="t&c", confidence=0.95)
+
+    return RuleFile(
+        card_key="synthetic_boundary_card",
+        version=1,
+        effective_date="2021-01-01",
+        reward_currency="synthetic_points",
+        base_earn={"rate": verified(1), "per_amount": 100, "currency": "INR"},
+        accelerated=[
+            AcceleratedEarn(
+                channel="reward_multiplier",
+                category="all",
+                multiplier=verified(3),
+                valid_from=valid_from,
+                valid_until=valid_until,
+            )
+        ],
+    )
+
+
+def test_mid_month_expiry_returns_unknown_not_over_applied():
+    """The core fix. The window ends 2026-07-15, partway through July. The
+    engine works at month granularity and cannot split the month, so it must
+    return UNKNOWN for July — never the whole-month 3X figure, which would
+    over-credit spend made after the 15th (the wrong error direction)."""
+    from rules.evaluator.evaluator import evaluate_earn
+
+    rule = _rule_with_window(valid_from="2021-01-01", valid_until="2026-07-15")
+    result = evaluate_earn(rule, 50_000, "shopping", "reward_multiplier", "2026-07")
+
+    assert result.status == "unknown"
+    assert result.points is None  # emphatically NOT 3000 (the over-applied figure)
+    assert any("2026-07-15" in reason for reason in result.unknown_reasons)
+    assert any("unknown" in reason for reason in result.unknown_reasons)
+
+
+def test_month_fully_inside_the_window_still_applies_the_rate():
+    """June is fully covered by a window ending 2026-07-15, so it computes 3X
+    normally — the fix must not make covered months unknown."""
+    from rules.evaluator.evaluator import evaluate_earn
+
+    rule = _rule_with_window(valid_from="2021-01-01", valid_until="2026-07-15")
+    result = evaluate_earn(rule, 50_000, "shopping", "reward_multiplier", "2026-06")
+
+    assert result.status == "computed"
+    assert result.applied == "accelerated"
+    assert result.points == 1500.0  # floor(50000/100)=500 blocks * 1 * 3
+
+
+def test_month_after_a_mid_month_expiry_falls_to_base_cleanly():
+    """August is entirely past the 2026-07-15 window: cleanly lapsed, so it is
+    base earn with an expiry note — the ADR-012 path, not the boundary path."""
+    from rules.evaluator.evaluator import evaluate_earn
+
+    rule = _rule_with_window(valid_from="2021-01-01", valid_until="2026-07-15")
+    result = evaluate_earn(rule, 50_000, "shopping", "reward_multiplier", "2026-08")
+
+    assert result.status == "computed"
+    assert result.applied == "base"
+    assert result.points == 500.0
+    assert result.expiry_note is not None
+
+
+# --- overlapping-window validation (KNOWN_LIMITATIONS 10) --------------
+
+
+def _accel(channel, category, valid_from=None, valid_until=None) -> dict:
+    node = {
+        "channel": channel,
+        "category": category,
+        "multiplier": {"value": 3, "status": "verified", "source": "t&c", "confidence": 0.95},
+    }
+    if valid_from:
+        node["valid_from"] = valid_from
+    if valid_until:
+        node["valid_until"] = valid_until
+    return node
+
+
+def test_overlapping_windows_same_channel_category_are_rejected():
+    """Two entries on the same channel/category whose windows overlap would
+    resolve to whichever is listed first — a load-time error, not a silent
+    first-wins."""
+    raw = {
+        "accelerated": [
+            _accel("reward_multiplier", "all", "2021-01-01", "2026-07-31"),
+            _accel("reward_multiplier", "all", "2026-07-01", None),  # overlaps July
+        ]
+    }
+    problems = validate_rule_dict(raw)
+    assert any("overlapping validity windows" in p for p in problems)
+
+
+def test_two_undated_entries_on_the_same_key_are_rejected():
+    """Both 'always active' on the same channel/category is an unresolvable
+    authoring error."""
+    raw = {
+        "accelerated": [
+            _accel("reward_multiplier", "all"),
+            _accel("reward_multiplier", "all"),
+        ]
+    }
+    assert any("overlapping validity windows" in p for p in validate_rule_dict(raw))
+
+
+def test_adjacent_windows_for_a_rate_change_are_allowed():
+    """The intended use: a mid-window rate change expressed as two adjacent,
+    non-overlapping windows must pass — the whole point of the schema support."""
+    raw = {
+        "accelerated": [
+            _accel("reward_multiplier", "all", "2021-01-01", "2026-06-30"),
+            _accel("reward_multiplier", "all", "2026-07-01", None),
+        ]
+    }
+    assert not any("overlapping" in p for p in validate_rule_dict(raw))
+
+
+def test_overlap_across_different_categories_is_fine():
+    """Different category (or channel) → different rule → no conflict, even with
+    identical windows."""
+    raw = {
+        "accelerated": [
+            _accel("smartbuy", "flights", "2021-01-01", None),
+            _accel("smartbuy", "hotels", "2021-01-01", None),
+        ]
+    }
+    assert not any("overlapping" in p for p in validate_rule_dict(raw))

@@ -65,27 +65,36 @@ roadmap — none is silently papered over.
    spec update (evaluator docstring, found 2026-07-20 during demo-query
    testing).
 
-10. **Mid-window accelerated rate changes are not modeled.** *(Superseded: the
-    original item — validity windows not enforced at all — was closed
-    2026-07-20 by ADR-012, which added `valid_from`/`valid_until` to
-    `AcceleratedEarn`. The Amex Reward Multiplier's 2026-07-31 expiry is now
-    engine-enforced: from 2026-08 it falls back to base earn with an expiry
-    note and a medium confidence ceiling.)* What remains: one accelerated
-    entry carries one multiplier, so a program that changed its rate inside
-    its validity window must be expressed as two entries with adjacent
-    windows. The schema supports this; no seed data uses it, and nothing
-    validates that windows on entries matching the same channel/category do
-    not overlap — overlapping entries would resolve to whichever is listed
-    first.
+10. **Mid-window accelerated rate changes — the two residuals are now CLOSED
+    (2026-07-23).** *(History: the original item — validity windows not enforced
+    at all — was closed 2026-07-20 by ADR-012, which added
+    `valid_from`/`valid_until` to `AcceleratedEarn`; the Amex Reward Multiplier's
+    2026-07-31 expiry is engine-enforced, falling back to base earn with an
+    expiry note and a medium confidence ceiling from 2026-08.)*
 
-    Also: **validity is checked at month granularity**, matching the rest of
-    the card model (monthly caps, `cap_usage` keyed by month). A window
-    boundary falling mid-month is therefore approximated — a `valid_until` of
-    the 15th applies the rate for the whole month and over-credits spend after
-    it, which is the wrong error direction. Latent, not live: Amex's end date
-    is a month boundary and no other entry declares dates. A real mid-month
-    window should be treated as unknown for the partial month rather than
-    guessed.
+    - **Overlapping windows are now a load-time error.** A program that changes
+      its rate mid-validity must be expressed as two entries with adjacent,
+      non-overlapping windows (the schema supports this). `validate_rule_dict`
+      now rejects two accelerated entries sharing a channel/category whose
+      windows overlap (`_check_accelerated_overlaps`) — previously the evaluator
+      would silently apply whichever was listed first. Adjacent windows
+      (`…-06-30` then `2026-07-01-…`) are allowed; a shared boundary day is not.
+      Cover in `tests/rules/test_validity.py`.
+
+    - **Mid-month boundaries return unknown, not an over-applied rate.** Validity
+      is resolved at month granularity (matching monthly caps and `cap_usage`).
+      Previously a `valid_until` of the 15th applied the accelerated rate to the
+      *whole* month, over-crediting spend after the 15th — the wrong error
+      direction. `month_status` now distinguishes `active` (window covers the
+      whole month) / `inactive` (cleanly lapsed → base earn) / `boundary`
+      (starts or ends mid-month). A boundary month returns **unknown** with a
+      dated note, rather than guessing either the accelerated or the base figure
+      — the same unknown-over-incorrect principle as ADR-012. Still latent on
+      real data (Amex's date is a clean month boundary; no other entry declares
+      dates), but now correct if a mid-month window is ever added. Regression
+      cover: a synthetic card with a 2026-07-15 expiry proves July returns
+      unknown (not the whole-month 3X), June still computes, and August falls to
+      base.
 
 11. **Milestone and tier data is verified but unreachable by the engines.**
     Rule files carry fully verified `milestones` and `tiers` (e.g. Atlas
@@ -432,14 +441,15 @@ roadmap — none is silently papered over.
     `validate_recommendation` rejected it as ungrounded prose — the runtime gate
     held. The failure mode is a degraded answer, not a wrong one.
 
-25. **`agents/workflows/demo.py` bypasses the ADR-018 fallback chain — OPEN,
-    minor.** `demo.py:151` constructs a bare `GeminiClient()` rather than
-    calling `default_llm()`, so the demo runs the primary Gemini model only and
-    gets none of the tiered fallback (second Gemini model → Groq) that
-    production and the smoke suite use. Consequence is narrow — a transient 503
-    fails the demo where the real app would recover — but it also means the demo
-    is not exercising the path it appears to demonstrate. One-line fix; flagged
-    rather than fixed to keep the smoke-suite change reviewable on its own.
+25. **~~`agents/workflows/demo.py` bypasses the ADR-018 fallback chain.~~
+    CLOSED 2026-07-23.** `demo.py` built a bare `GeminiClient()`, so the demo
+    ran the primary Gemini model only and got none of the tiered fallback
+    (second Gemini model → Groq) that production and the smoke suite use — a
+    transient 503 failed the demo where the real app would recover, and the demo
+    was not exercising the path it appeared to demonstrate. Now calls
+    `default_llm()` (the full ADR-018 chain), resolving keys through `Settings`
+    (honouring `.env`) and falling back to the deterministic scripted LLM only
+    when no Gemini key is configured.
 
 26. **The live smoke suite cannot complete a full N=3 run on the Gemini free
     tier — OPEN, measured 2026-07-22.** The quota is
