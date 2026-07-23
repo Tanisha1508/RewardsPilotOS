@@ -27,10 +27,25 @@
 # ~12 calls/day, every query covered every other day. The runner picks the pair
 # from the day-of-month parity, so nothing here needs to track state.
 #
-# This adds a daily SCHEDULE, which the first version of this workflow
-# deliberately did not have. The posture change is intentional and bounded: a
-# rotation only delivers regular coverage if it actually runs, and 12 calls/day
-# is inside quota. It is still not in the fast CI loop — it never gates a PR.
+# Schedule: Mon & Thu at 08:20 UTC (posture: manual-primary, this Action is the
+# low-contention backup — see KNOWN_LIMITATIONS 26). Twice-weekly, not daily,
+# because CI and local runs share ONE free-tier budget (the quota is per Google
+# project = per API key, not per machine), so a daily Action would collide with
+# hand runs. It never gates a PR.
+#
+# Why 08:20 UTC specifically: the free-tier daily quota resets at 00:05 Pacific,
+# which is 07:05 UTC in PDT and 08:05 UTC in PST. A fixed-UTC cron must clear the
+# *later* of the two to stay after the reset year-round, so 08:20 UTC sits just
+# past the PST reset and ~75 min past the PDT one — never before. (04:23 UTC, the
+# previous value, fired ~3h BEFORE even the PDT reset and would 429 on contact.)
+#
+# Why Mon/Thu covers both rotation groups: the runner picks the pair by
+# day-of-month parity (odd→a s01+s02, even→b s03+s04). Mon and Thu are 3 days
+# apart — always opposite parity — so within a week one lands on group a and the
+# other on group b, covering all four queries weekly. A month-boundary week can
+# put both on the same parity (the 31st→1st repeat); that skips one group for a
+# week, matching the documented parity edge, and is not worth carrying state to
+# avoid.
 #
 # N is NOT reduced to fit. N=3 exists to catch *intermittent* planner failures
 # (the D4 CompareCards omission presented as 3/6, not 0/6); N=1 would fit the
@@ -44,7 +59,7 @@ name: smoke
 
 on:
   schedule:
-    - cron: "23 4 * * *" # daily, 04:23 UTC — off the :00 mark on purpose
+    - cron: "20 8 * * 1,4" # Mon & Thu 08:20 UTC — after the 00:05 PT quota reset (see note above)
   workflow_dispatch:
     inputs:
       runs:
