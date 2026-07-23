@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
+
+// The password flow awaits `/auth/sync` before redirecting, but an OAuth
+// sign-in (Google) navigates away from /login, so its first landing here must
+// create the local user row or every backend call fails with "no portfolio for
+// user". Sync is idempotent; once per browser session is enough. The flag is
+// cleared on sign-out so a different fresh user in the same tab still syncs.
+const SYNCED_FLAG = "rp_synced";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
@@ -35,14 +43,28 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
-      if (data.session) setReady(true);
-      else router.replace("/login");
+      if (data.session) {
+        if (!sessionStorage.getItem(SYNCED_FLAG)) {
+          // Fire-and-forget: a failed sync must not brick the page — the
+          // per-widget errors already say what went wrong in that case.
+          api
+            .syncUser()
+            .then(() => sessionStorage.setItem(SYNCED_FLAG, "1"))
+            .catch(() => {});
+        }
+        setReady(true);
+      } else {
+        router.replace("/login");
+      }
     });
 
     // Covers sign-out from another tab and session expiry mid-use, not just
     // the button below.
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT") router.replace("/login");
+      if (event === "SIGNED_OUT") {
+        sessionStorage.removeItem(SYNCED_FLAG);
+        router.replace("/login");
+      }
     });
     return () => {
       cancelled = true;

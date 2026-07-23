@@ -53,6 +53,26 @@ export default function LoginPage() {
     }
   }
 
+  async function signInWithGoogle() {
+    setError(null);
+    setNotice(null);
+    setBusy(true);
+    try {
+      // Supabase drives the OAuth dance and redirects back to the app with a
+      // session. `/auth/sync` cannot run here — the browser leaves this page —
+      // so Shell's guard performs it on arrival (idempotent by design).
+      const { error: authError } = await getSupabase().auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/dashboard` },
+      });
+      if (authError) throw new Error(authError.message);
+      // On success the browser navigates away; nothing more to do here.
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Google sign-in failed.");
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
       <h1 className="text-xl font-semibold tracking-tight">
@@ -96,6 +116,20 @@ export default function LoginPage() {
           {busy ? "Working…" : mode === "sign-in" ? "Sign in" : "Sign up"}
         </button>
       </form>
+
+      <div className="mt-4 flex items-center gap-3 text-xs text-neutral-600">
+        <div className="h-px flex-1 bg-neutral-800" />
+        or
+        <div className="h-px flex-1 bg-neutral-800" />
+      </div>
+
+      <button
+        onClick={signInWithGoogle}
+        disabled={busy || !configured}
+        className="mt-4 w-full rounded border border-neutral-700 px-3 py-2 text-sm font-medium text-neutral-200 hover:border-neutral-500 disabled:opacity-50"
+      >
+        Continue with Google
+      </button>
 
       {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
       {notice ? <p className="mt-3 text-sm text-neutral-300">{notice}</p> : null}
