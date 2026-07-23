@@ -1,0 +1,34 @@
+# Keep the build context lean and the image small. The backend image does not
+# need the frontend (that ships to Vercel), the venv, tests, or scratch data.
+
+# The whole frontend deploys separately to Vercel
+frontend/
+
+# Local virtualenv and node — never ship these
+.venv/
+**/node_modules/
+
+# Python caches / build artifacts
+__pycache__/
+**/*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+
+# Runtime/generated data — ephemeral on HF anyway; rebuilt/ingested at runtime
+data/
+evaluation/reports/
+
+# Not needed at runtime
+tests/
+notebooks/
+.github/
+.git/
+.gitignore
+
+# Secrets must never enter the image — they come from HF Space secrets at runtime
+.env
+.env.*
+!.env.example
