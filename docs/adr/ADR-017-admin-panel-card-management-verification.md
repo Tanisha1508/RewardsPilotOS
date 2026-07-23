@@ -64,6 +64,10 @@ for machinery that already exists, not a second verification system. Scope:
   shape). Approval re-runs Rule Engine, Graph Engine, and eval benchmarks, per
   ADR-009. Nothing is applied to rule files automatically — the panel is the
   approval gate, not an auto-apply path.
+- **A manual "trigger smoke suite run" action** — the live-LLM smoke suite
+  (`evaluation/smoke/run.py`), the same run the Mon/Thu Action does, invoked on
+  demand; `workflow_dispatch` already exposes it at the workflow level, this
+  surfaces it in-product (KNOWN_LIMITATIONS 23–26).
 - **Blind-spot visibility per card** — surface which cards carry crawler blind
   spots (KNOWN_LIMITATIONS 20–21: Axis JS-rendered partner table, Amex
   JS-rendered figures) so an operator can tell at a glance which cards need
