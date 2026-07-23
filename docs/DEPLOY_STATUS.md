@@ -55,7 +55,27 @@ Verified live, in order, on 2026-07-23 evening IST:
    432 MB on the chat+ingest path; the free instance is 512 MB. Surviving the
    ingest (no 502/restart) is the pass signal.
 
-## Not started yet (the remaining D5 deploy plan)
+## COMPLETE — frontend deployed and full-stack gate passed (2026-07-23 ~23:45 IST)
+
+**Frontend: https://rewards-pilot-os.vercel.app** (Vercel, Root Directory
+`frontend/`). CORS verified from outside (preflight 200, exact-origin echo —
+after fixing a trailing slash in Render's `FRONTEND_URL`, the classic break).
+Full gate driven through the real browser UI:
+
+- Signup -> session -> dashboard redirect (demo account
+  `demo@rewardspilotos.test`; password held by the owner, not recorded here).
+- Dashboard: 3 seeded P1 cards + balances render.
+- Chat, Rs 50,000 flight: "Use your Axis Bank Atlas card" at HIGH confidence,
+  NUMBERS USED table (three CompareCards rows), SOURCES panel with three
+  freshness-dated official links, Accept/Save/Reject feedback.
+- Transfer explorer: verified partner data with ratios, caps, dates, sources.
+
+Frontend UX note (known, deferred): pages render as shells without a login —
+data is guarded client-side (api.ts refuses without a session) and by the
+backend's 401s, so nothing leaks; a redirect-to-login guard is a small
+fast-follow.
+
+## Superseded planning section (kept for context)
 
 - **Frontend → Vercel.** Import repo, **Root Directory = `frontend/`**, env
   vars: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
