@@ -70,10 +70,11 @@ Full gate driven through the real browser UI:
   freshness-dated official links, Accept/Save/Reject feedback.
 - Transfer explorer: verified partner data with ratios, caps, dates, sources.
 
-Frontend UX note (known, deferred): pages render as shells without a login —
-data is guarded client-side (api.ts refuses without a session) and by the
-backend's 401s, so nothing leaks; a redirect-to-login guard is a small
-fast-follow.
+Frontend UX note — FIXED same night (commit `405b133`): Shell now guards all
+protected pages client-side (the Supabase session lives in localStorage, so a
+server middleware cannot see it) — no session redirects to /login, SIGNED_OUT
+events redirect too, and a signed-out direct hit on /dashboard was verified
+live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
 
 ## Superseded planning section (kept for context)
 
