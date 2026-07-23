@@ -539,3 +539,36 @@ roadmap — none is silently papered over.
     or an explicit mode, a category→programs map for "an airline", ranking by
     value — and should compete for time on its own merits, not ride in on an
     audit close. Filed here so it is not lost.
+
+28. **Knowledge corpus is not ingested in the deployed backend — DEFERRED at
+    launch, 2026-07-23 (D5 deploy).** The production backend deploys to a free
+    Hugging Face Space, whose disk is **ephemeral** (persistent `/data` is a paid
+    add-on), so ChromaDB at `CHROMA_PERSIST_DIR` does not survive a rebuild or
+    restart. Ingestion (`knowledge.pipeline.run`) is therefore **not run** at
+    launch, and the deployed corpus is empty.
+
+    Why this is safe to defer, not a correctness gap: the core goal —
+    `/chat` returning a *computed* recommendation — is served by the **Rule
+    Engine** and **Graph Engine**, which need no corpus. A comparison query
+    (e.g. "which card for a ₹50,000 flight?") computes from `CompareCards`. When
+    the Planner includes `SearchKnowledge` against an empty/missing collection,
+    the tool **degrades gracefully** (the workflow continues; the recommendation
+    still computes), the only effect being **sparser citations** and the
+    `/api/v1/knowledge/search` "sources" panel returning nothing. No fabrication,
+    no wrong numbers — the no-corpus state is honest.
+
+    Post-launch options, none chosen (each has a real cost):
+    - **Startup ingestion** via a container entrypoint — populates the corpus on
+      boot, but re-runs every cold start (ephemeral) and adds ~30–90 s. **Caveat
+      to verify before relying on it:** ingestion idempotency is keyed on
+      Postgres doc-hashes, so after an ephemeral Chroma wipe a re-run may see
+      "hash unchanged, skip" and leave the fresh Chroma empty. Needs a
+      Chroma-presence check, not just a hash check.
+    - **Paid HF persistent storage** (`/data`, ~\$5/mo) + one-time ingestion —
+      removes the ephemerality entirely; simplest if the budget allows.
+    - **Commit a prebuilt Chroma index** into the image — fast cold start, but
+      binary bloat and staleness; the index must be rebuilt on every corpus
+      change.
+
+    Recommended: ship empty at launch (this item), then evaluate paid persistent
+    storage vs. verified startup ingestion as the first post-launch task.
