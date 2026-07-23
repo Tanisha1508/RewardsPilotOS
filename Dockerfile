@@ -44,6 +44,13 @@ RUN pip install --no-cache-dir \
 COPY --chown=user:user . .
 RUN pip install --no-cache-dir -e .
 
+# WORKDIR created /home/user/app as root, and COPY --chown only chowns the
+# copied contents — so the app dir itself is root-owned and uid 1000 could not
+# mkdir data/ at runtime (Chroma's persist dir; .dockerignore excludes data/
+# from the context). Found live: SearchKnowledge failed with PermissionError on
+# the first deploy. Create it with the right owner at build time instead.
+RUN mkdir -p /home/user/app/data/embeddings && chown -R user:user /home/user/app/data
+
 USER user
 
 # Pre-download the ONNX embedder into the image as the runtime user, so it
