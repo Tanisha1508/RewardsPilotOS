@@ -493,6 +493,23 @@ roadmap — none is silently papered over.
     names the queries it did *not* run, so a rotation half can never be read as
     full coverage — the "a skipped test proves nothing" trap, one level up.
 
+    **Refinement 2026-07-23 — `SMOKE_GROUP=all` is not a reliable way to get
+    full coverage, and the reason sharpens why the rotation is right.** A
+    forced full run that day confirmed `s01` 4/4 on all three runs, then
+    reported *all models failed* for `s02`–`s04` — including Groq. Probing the
+    tiers immediately after: both Gemini models 429 (daily budget spent on
+    `s01`), but **Groq answered fine in isolation**. So Groq did not fail
+    because it was exhausted; it failed because once Gemini died, every
+    remaining call fell through to Groq in rapid succession and hit Groq's
+    *per-minute* limit. The ADR-018 fall-through covers *occasional* Gemini
+    unavailability, not a whole run's worth of it bursting through at once.
+    That is exactly the case the two-day rotation avoids by construction — 2
+    queries/day keeps Gemini within budget so fall-through stays rare — and
+    exactly the case `SMOKE_GROUP=all` forces when Gemini is low. **Takeaway:
+    get full coverage from two consecutive *rotation* days, not from one forced
+    full run.** The suite still reported honestly throughout (exit 2, `s02`–`s04`
+    marked NO RUNS COMPLETED, never a partial pass).
+
 27. **No "where can my points go?" discovery affordance — ENHANCEMENT, logged
     2026-07-23.** `target_program` is genuinely query-derived: a transfer
     destination is not portfolio data, so when the user names none (or names a
