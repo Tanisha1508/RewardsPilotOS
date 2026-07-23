@@ -17,9 +17,9 @@ Verified live, in order, on 2026-07-23 evening IST:
 | Supabase signup API | **OPEN — issues instant session tokens** (see security to-dos) |
 | Seeded portfolio via live CRUD | 3 P1 cards added through real HTTP endpoints |
 | Authenticated `/chat`, ₹50,000 flight query | **HTTP 200 in 63 s, computed**: axis_atlas **2500** (accelerated) > hdfc_infinia 1665 (base) > amex_plat_travel 1000 (base) — the ADR-010 canonical query answered correctly in production, no OOM (fastembed image; torch would not have fit) |
-| `/chat` citations | **0 — the one open defect** (below) |
+| `/chat` citations | **CLOSED 2026-07-23 ~23:10 IST** — after the `de47dca` chown fix deployed (manual deploy; Auto-Deploy was broken by a missing GitHub App install, since fixed): **2 citations** with freshness dates, confidence **high** (weakest source 0.9, no tool failure), same correct computation, first-boot ingest wrote Chroma to disk with no OOM (2m16s one-time cost) |
 
-## The ONE open item: citations empty (SearchKnowledge PermissionError)
+## RESOLVED: citations empty (SearchKnowledge PermissionError) — fixed & verified live
 
 - **Symptom:** `SearchKnowledge` fails with `PermissionError`; recommendation
   still computes (graceful degradation worked as designed); confidence honestly
