@@ -92,15 +92,77 @@ def test_compare_cards_behaviour_is_unchanged():
     assert resolve_portfolio_args(plan, [SYNTHETIC]) == []
 
 
-def test_unrelated_tools_pass_through_untouched():
-    """The resolver must not reinterpret args it has no portfolio basis for —
-    currency and target_program are deliberately left open."""
+def test_currency_fans_out_over_held_reward_currencies():
+    """currency is portfolio-derived like card_key, one level out: it is the
+    reward currency of a held card, not something the user names. An unresolved
+    one fans out over every held reward currency, including a synthetic one
+    with no card_key (the graph decides what is registered)."""
+    plan = [{"tool": "BestTransferPaths", "args": {"currency": None, "target_program": "aeroplan"}}]
+    resolved = resolve_portfolio_args(plan, HELD)
+    assert [a["currency"] for a in _args(resolved, "BestTransferPaths")] == [
+        "hdfc_reward_points",
+        "edge_miles",
+        "voyager_points",
+    ]
+    # target_program is untouched — it is genuinely query-derived.
+    assert all(a["target_program"] == "aeroplan" for a in _args(resolved, "BestTransferPaths"))
+
+
+def test_get_transfer_ratios_currency_fans_out_too():
+    plan = [{"tool": "GetTransferRatios", "args": {}}]
+    resolved = resolve_portfolio_args(plan, HELD)
+    assert [a["currency"] for a in _args(resolved, "GetTransferRatios")] == [
+        "hdfc_reward_points",
+        "edge_miles",
+        "voyager_points",
+    ]
+
+
+def test_an_explicit_currency_is_never_overridden():
+    """ "my HDFC points" is a real signal from the query."""
+    plan = [{"tool": "GetTransferRatios", "args": {"currency": "hdfc_reward_points"}}]
+    resolved = resolve_portfolio_args(plan, HELD)
+    assert [a["currency"] for a in _args(resolved, "GetTransferRatios")] == ["hdfc_reward_points"]
+
+
+def test_duplicate_reward_currencies_fan_out_once():
+    """Two cards on the same currency should not double the invocations."""
+    plan = [{"tool": "GetTransferRatios", "args": {}}]
+    twins = [VERIFIED, SECOND, VERIFIED]
+    resolved = resolve_portfolio_args(plan, twins)
+    assert [a["currency"] for a in _args(resolved, "GetTransferRatios")] == [
+        "hdfc_reward_points",
+        "edge_miles",
+    ]
+
+
+def test_no_held_currency_drops_the_currency_invocation():
+    """Nothing to query; dropped rather than guessed. A card carrying no reward
+    currency at all contributes nothing."""
+    bare = Card(
+        card_id="c9",
+        issuer="x",
+        card_name="Bare",
+        network="visa",
+        reward_currency="",
+        card_key=None,
+        status="active",
+    )
+    plan = [{"tool": "BestTransferPaths", "args": {"currency": None, "target_program": "aeroplan"}}]
+    assert resolve_portfolio_args(plan, [bare]) == []
+
+
+def test_target_program_is_left_open():
+    """target_program is genuinely query-derived, not portfolio data — the
+    resolver must not invent one. SearchKnowledge is untouched entirely."""
     plan = [
-        {"tool": "BestTransferPaths", "args": {"currency": None, "target_program": "airline"}},
-        {"tool": "GetTransferRatios", "args": {"currency": None}},
+        {"tool": "BestTransferPaths", "args": {"currency": "hdfc_reward_points"}},
         {"tool": "SearchKnowledge", "args": {"query": "transfer partners"}},
     ]
-    assert resolve_portfolio_args(plan, HELD) == plan
+    resolved = resolve_portfolio_args(plan, HELD)
+    # currency was explicit, so no fan-out; target_program still absent (open).
+    assert _args(resolved, "BestTransferPaths") == [{"currency": "hdfc_reward_points"}]
+    assert {"tool": "SearchKnowledge", "args": {"query": "transfer partners"}} in resolved
 
 
 def test_cap_scope_is_left_alone():

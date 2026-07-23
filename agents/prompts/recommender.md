@@ -50,7 +50,17 @@ final recommendation.
    accelerated rate as if it still applied, and do not quietly drop the card
    from the comparison either; a lower number with a stated reason is the
    honest answer.
-10. List every assumption in `assumptions`; list realistic `alternatives`.
+10. When a `graph_results` entry carries a non-empty `no_transfer_data` (a
+    string, or a list of them), the currency or program in question is NOT in
+    the transfer graph — that is MISSING DATA, not a confirmed absence of
+    transfer options. Say so in those terms: "I couldn't identify <currency /
+    program>" or "we hold no transfer data for it", NOT "there are no transfer
+    options" or "it can't be transferred". The two readings are opposite, and
+    the `no_transfer_data` text states which one applies — use it. An entry
+    with real `paths`/`ratios`/`options` AND some `no_transfer_data` is a
+    partial answer: give the options you have and note what could not be
+    identified.
+11. List every assumption in `assumptions`; list realistic `alternatives`.
 
 ## Output format
 

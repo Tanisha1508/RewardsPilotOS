@@ -25,6 +25,10 @@ def run_tools(state: AgentState) -> AgentState:
         if result.status == "failed":
             state["errors"].append(f"{invocation['tool']}: {result.error}")
             continue
+        # `unresolved_input` is deliberately NOT skipped: the payload is valid
+        # and carries the `no_transfer_data` reason the Recommender needs to say
+        # "I couldn't identify that program" rather than "no options". It flows
+        # into graph_results exactly like a success (KNOWN_LIMITATIONS 24).
         payload = result.result or {}
         name = invocation["tool"]
         if name in ("CalculateEarn", "CheckCap"):

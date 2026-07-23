@@ -76,7 +76,16 @@ class ToolSpec:
 
 @dataclass
 class ToolResult:
-    status: str  # success | failed
+    # success          — ran, produced a usable answer (possibly with caveats)
+    # unresolved_input — ran correctly, but could not resolve its input to
+    #                    anything the graph knows about; the payload carries the
+    #                    reason (`no_transfer_data`). Structurally distinct from
+    #                    success-with-empty so the unknown-vs-not-applicable
+    #                    distinction never depends on the reader inferring it
+    #                    (KNOWN_LIMITATIONS 24, Class B). NOT a failure: the
+    #                    payload is valid and flows to the Recommender.
+    # failed           — the tool raised, or its args were rejected.
+    status: str  # success | unresolved_input | failed
     tool: str
     result: dict | None
     error: str | None
@@ -236,7 +245,15 @@ def execute(name: str, args: dict) -> ToolResult:
     try:
         output = spec.handler(parsed)
         validated = spec.output_model.model_validate(output.model_dump())
-        return ToolResult("success", name, validated.model_dump(), None, _ms(started))
+        # A tool whose output declares itself unresolved (an unregistered
+        # currency/program) ran correctly but has no answer to give — only a
+        # data gap. Surfacing that as a distinct status makes the distinction
+        # structural, not something the Recommender has to read out of an empty
+        # list. The payload is still returned in full, so the reason travels.
+        status = (
+            "unresolved_input" if getattr(validated, "is_unresolved_input", False) else "success"
+        )
+        return ToolResult(status, name, validated.model_dump(), None, _ms(started))
     except Exception as exc:  # deterministic tools: no retry, structured error
         return ToolResult("failed", name, None, f"{type(exc).__name__}: {exc}", _ms(started))
 

@@ -41,6 +41,15 @@ class BestTransferPathsOutput(BaseModel):
     # like a card with no transfer options.
     no_transfer_data: str | None = None
 
+    @property
+    def is_unresolved_input(self) -> bool:
+        """True when the currency or the target program is not in the graph, so
+        the tool could not resolve its input and produced no paths. Lifted to a
+        distinct `unresolved_input` status by the Tool Registry, so "I couldn't
+        identify that program" never has to be inferred from empty `paths`
+        (KNOWN_LIMITATIONS 24, Class B)."""
+        return self.no_transfer_data is not None and not self.paths
+
 
 class RedemptionGoal(BaseModel):
     target_program: str
@@ -84,3 +93,12 @@ class RedemptionOptionsOutput(BaseModel):
     # unregistered cards returns zero options and reads as "nothing to
     # recommend" rather than "we have no data on your cards".
     no_transfer_data: list[str] = Field(default_factory=list)
+
+    @property
+    def is_unresolved_input(self) -> bool:
+        """True only when there are *no* options AND the reason is unresolved
+        input (an unregistered target program, or every held currency absent
+        from the graph). A partial result — some currencies resolved, some not —
+        is a real answer with caveats, so it stays `success` with the
+        `no_transfer_data` entries riding along (KNOWN_LIMITATIONS 24, Class B)."""
+        return bool(self.no_transfer_data) and not self.options

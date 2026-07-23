@@ -27,3 +27,12 @@ class GetTransferRatiosOutput(BaseModel):
     # missing data rather than an absence of partners (spec update 2026-07-20;
     # see BestTransferPathsOutput.no_transfer_data for the full reasoning).
     no_transfer_data: str | None = None
+
+    @property
+    def is_unresolved_input(self) -> bool:
+        """True when the tool ran correctly but could not resolve its input —
+        the currency is not in the graph, so there is no answer to give, only a
+        data gap to report. The Tool Registry lifts this to a distinct
+        `unresolved_input` status so the caller never has to infer it from an
+        empty `ratios` list (KNOWN_LIMITATIONS 24, Class B)."""
+        return self.no_transfer_data is not None and not self.ratios

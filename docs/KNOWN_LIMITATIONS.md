@@ -312,11 +312,18 @@ roadmap — none is silently papered over.
       `CalculateEarn`, `CheckCap`, `CompareCards`). Pattern-constrained, so a
       missing value was hard-rejected by `validate_plan`. Fixed schema-level:
       `str | None`, absent resolved to the current month at the tool boundary.
-    - **Class B — portfolio data demanded of the model. PARTLY CLOSED**
-      (`card_key` on `CalculateEarn`/`CheckCap` now resolved by
-      `agents/planner/portfolio_args.py`). Unconstrained, so these were
-      *accepted* by validation and degraded silently — worse than Class A.
-      The ambiguous members remain open; see below.
+    - **Class B — portfolio data demanded of the model. CLOSED except its one
+      genuinely query-derived member.** `card_key` (`CalculateEarn`/`CheckCap`)
+      and `currency` (`GetTransferRatios`/`BestTransferPaths`) are both resolved
+      from held cards by `agents/planner/portfolio_args.py`: `currency` is a
+      reward currency the user holds, not a word they say, so an unresolved one
+      fans out over held reward currencies exactly as `card_key` fans out over
+      held cards (closed 2026-07-23). What remains is `target_program`, which is
+      genuinely query-derived — a destination is not in the portfolio — and
+      `CheckCap.cap_scope`, which is rule-file vocabulary. Both now surface a
+      distinct `unresolved_input` tool status rather than silent empty success
+      (see the Part 1 note below), so the safety gap is closed even where the
+      arg cannot be auto-resolved.
     - **Class C — runtime value the model is allowed to launder. CLOSED
       2026-07-23.** `user_id` was required on 7 tools and the tools trusted the
       model's copy even though the authenticated value was already in context
@@ -340,25 +347,36 @@ roadmap — none is silently papered over.
       value is structural: identity is now unreachable from model output by
       construction rather than by the model behaving well.
 
-    **Class B, still open — deliberately not defaulted.** These have no
-    mechanical resolution, and guessing one would silently reinterpret the
-    question rather than answer it:
+    **Class B residue — investigated and resolved 2026-07-23.** The earlier
+    claim that these "fail *silently* with `status: success` and an empty
+    payload" was **wrong for the graph tools** and is corrected here. The
+    2026-07-20 spec update (item 17) had already given all three graph tools a
+    `no_transfer_data` field, set for every unregistered currency/program, and
+    it already reached the Recommender via the state digest — the distinction
+    existed, I missed it in the 2026-07-22 audit. (What I actually saw was
+    `currency: null` being *dropped by validation* — a rejected invocation, a
+    different failure — and over-generalised it.) The genuinely-silent member
+    was only `CheckCap.cap_scope`.
 
-    - `GetTransferRatios.currency`, `BestTransferPaths.currency` — the user may
-      hold several reward currencies; "which balance did they mean?" has no
-      portfolio-derived answer.
-    - `BestTransferPaths.target_program`, `RedemptionOptions.goal.target_program`
-      — a destination is not portfolio data at all; inventing one manufactures
-      an intent the user never expressed.
-    - `CheckCap.cap_scope` — rule-file vocabulary (`reward_multiplier_bonus`)
-      with no portfolio source.
+    Two changes hardened it anyway:
 
-    All of these fail *silently*: an unrecognised value returns
-    `status: success` with an empty or unknown payload, which reads as "checked,
-    nothing there" rather than "asked the wrong question" — collapsing the
-    unknown/not-applicable distinction that SPRINT_HANDOFF §4 requires be kept.
-    Confirmed live 2026-07-22: the planner emitted `BestTransferPaths` with
-    `currency: null` and the invocation was dropped.
+    - **`currency` is mechanically resolvable** — verified that held cards'
+      `reward_currency` values match graph currency nodes exactly — so it moved
+      to `resolve_portfolio_args` (fan-out over held currencies). No longer open.
+    - **The unknown/not-applicable distinction is now structural, not a field**
+      the reader must inspect. `execute()` returns a distinct `unresolved_input`
+      status (alongside `success`/`failed`) whenever a graph tool ran correctly
+      but could not resolve its input — driven by an `is_unresolved_input`
+      property on the three output models. The payload still flows to the
+      Recommender in full (it is not a failure), and a matching recommender
+      prompt rule (recommender.md rule 10) renders it as "I couldn't identify
+      that program" rather than "no options". Belt (status) and braces (prompt),
+      per the decision that the distinction must not depend on model behaviour.
+      Cover: `tests/agent/test_unresolved_input_status.py`.
+
+    What stays open is only `target_program` (genuinely query-derived; the
+    `unresolved_input` floor is the honest answer, and enumerate-destinations is
+    logged as item 27) and `CheckCap.cap_scope`.
 
     ---
 
@@ -474,3 +492,23 @@ roadmap — none is silently papered over.
     and balanced, and two consecutive days cover all four. The report also
     names the queries it did *not* run, so a rotation half can never be read as
     full coverage — the "a skipped test proves nothing" trap, one level up.
+
+27. **No "where can my points go?" discovery affordance — ENHANCEMENT, logged
+    2026-07-23.** `target_program` is genuinely query-derived: a transfer
+    destination is not portfolio data, so when the user names none (or names a
+    *category* like "an airline" rather than a specific program), there is
+    nothing to resolve it from. The honest floor is in place — the tool returns
+    `unresolved_input` and the Recommender says it could not identify a
+    destination (item 24, Class B) — so there is **no safety or correctness
+    gap** here. What is missing is a *useful* answer to "where can I transfer?":
+    the graph can enumerate the 27 reachable destination programs from the
+    user's held currencies, which would turn a dead-end into "your points can go
+    to Turkish Miles, KrisFlyer, …".
+
+    Deliberately NOT built into `BestTransferPaths`/`RedemptionOptions`: that
+    would turn a *query* tool (given a destination, find paths) into a
+    *discovery* tool (given no destination, list them), changing the contract
+    and semantics. It is a real feature with its own design surface — a new tool
+    or an explicit mode, a category→programs map for "an airline", ranking by
+    value — and should compete for time on its own merits, not ride in on an
+    audit close. Filed here so it is not lost.
