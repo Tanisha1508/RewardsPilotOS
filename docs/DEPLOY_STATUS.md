@@ -113,3 +113,46 @@ live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
 - **Migrations:** run from a local machine against the **direct** Supabase URL
   (IPv6; works from home networks) — never through the transaction pooler.
   Schema is current: 16 public tables, verified through the pooler.
+
+## NEXT SESSION — pending items (recorded 2026-07-24, session end)
+
+All code is committed and pushed (this commit is the tip). Live URLs:
+frontend https://rewards-pilot-os.vercel.app, backend
+https://rewardspilotos.onrender.com. Demo account
+`demo@rewardspilotos.test` (password held by owner).
+
+**Asked for explicitly by the owner:**
+1. **UI polish round** — known items: a recommendations *history* page
+   (`api.listRecommendations()` already exists in lib/api.ts; only the page is
+   missing — the dashboard shows just a count and the chat page shows only the
+   just-asked answer), plus whatever else a UI walkthrough surfaces.
+2. **Execution/memory walkthrough** — owner-facing explanation of the full
+   call chain from query to answer: POST /chat -> run_chat (acting_as) ->
+   LangGraph planner (prompt + tool catalog) -> resolve_portfolio_args ->
+   validate_plan -> run_tools (Rule/Graph/Knowledge tools) -> recommender
+   (state digest, calibration ceiling, margin caveat) ->
+   validate_recommendation -> persistence (recommendations +
+   interaction_events) -> RecallMemory reading those events back on later
+   queries. Goal: the owner can narrate every hop, e.g. in an interview.
+
+**Security (still open):**
+- Decide the signups policy: Google sign-in creates new users, so Supabase's
+  "allow new signups" toggle gates it too — open (quota exposure; no per-user
+  rate limiting exists) vs closed (only existing users can Google-sign-in).
+- Delete the two `deploygate.*` throwaway accounts (Supabase -> Auth -> Users).
+- Rotate the HF token (passed through a working transcript; unused by the app).
+- Remove the Google OAuth client secret line from `.env` (the app never reads
+  it; it belongs only in Supabase's provider config) and consider regenerating.
+- Optionally rotate the demo account password (it passed through a transcript).
+
+**Verification still pending:**
+- Google sign-in end-to-end (dashboard config done per owner; the OAuth dance
+  itself not yet exercised — owner clicks "Continue with Google").
+- Live smoke suite `s02` (odd-day rotation or manual `SMOKE_GROUP=s02` after a
+  quota reset). The Mon/Thu 08:20 UTC Action now has auto-deploy + secrets.
+- Amex Reward Multiplier re-check on/after **2026-08-01** (VERIFICATION_QUEUE).
+
+**Roadmap (unchanged):** opportunity engine (deferred half of D5), per-user
+rate limiting, persistent Chroma decision (KNOWN_LIMITATIONS 28), P2 card
+verification when sources arrive, KL items 9/11/12/18/27 awaiting product
+decisions.
