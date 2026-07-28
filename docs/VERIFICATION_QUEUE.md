@@ -284,3 +284,51 @@ changed.
 5. **Point value.** The page states "1 EDGE Mile is equal to ₹1/-". Relevant to
    `point_value_reference_inr`, which is per-channel; a blanket ₹1 does not map
    cleanly onto cashback/voucher/travel. Not applied.
+
+### Axis Atlas — COMPLETED against the authoritative PDF, 2026-07-29
+
+The earlier entry (same day) verified only the marketing HTML page and left four
+items open. All are now closed by reading the source the rule file actually
+cites.
+
+**Document:** `Atlas Credit Card Features T&Cs`, 8 pages —
+`https://www.axis.bank.in/docs/default-source/default-document-library/credit-cards/terms-and-conditions-of-features-of-axis-bank-atlas-credit-card.pdf`
+(linked from the Atlas product page as "ATLAS credit card features & benefits
+T&C"). A second, different PDF sits behind the page's "click here" link:
+`terms-and-conditions-atlas-credit-card.pdf` — the general card T&C, not the
+features document. The rule file's source note refers to the former.
+
+| Field | Rule file `v2.json` | PDF wording | Verdict |
+|---|---|---|---|
+| Base earn | 2 per ₹100 | "2 EDGE Miles per INR 100 spent" | ✅ |
+| Accelerated | 2.5x (= 5 per ₹100) | "5 EDGE Miles per INR 100 spent" | ✅ |
+| Qualifying channels | `travel_edge`/all + `direct`/travel | "Travel EDGE Portal, direct airline and direct hotel spends… identified by MCC" | ✅ |
+| Monthly cap | 10,000 EDGE Miles, **derived** | "capped at 2 lakh spends per month" → ₹2,00,000 × 5/100 = 10,000 | ✅ derivation confirmed exact |
+| Cap scope | cumulative `travel_accelerated` | "cumulative transactions of Rs. 2,00,000 per month on Travel EDGE, airline and hotel merchants" | ✅ |
+| OTA / travel agents | base only (note) | "bookings made through any travel agents… eligible for only 2 Miles for every INR 100" | ✅ |
+| Exclusions (8) | fuel, gold_jewellery, government_payments, insurance, rent, telecom, utilities, wallet_loads | "gold/jewellery, rent, wallet, government institution, insurance, fuel, utilities and Telecom" | ✅ all 8 |
+| Milestones | 3L→2500, 7.5L→+2500, 15L→+5000 | identical table | ✅ |
+| Tiers | Silver / Gold ₹7.5L / Platinum ₹15L | identical | ✅ |
+| Welcome bonus | 2500, 1 txn, 37 days, from 2024-04-20 (+2 historical variants) | identical | ✅ |
+| Point value | 1.0 across all three channels | "1 EDGE Mile is equal to INR 1" | ✅ |
+
+**No rule-file value required correction.** The 2026-07-19 verification round
+holds in full.
+
+**One confirmed modelling gap (pre-existing, documented, safe direction):**
+above the ₹2,00,000/month accelerated cap the PDF says spend continues to earn
+**base** 2/₹100 — "Earn 2 EDGE Mile per INR 100 spent on cumulative transactions
+above Rs. 2,00,000 per month". The evaluator clips at the cap instead and awards
+nothing on the excess (`rules/evaluator/evaluator.py` cap semantics; the rule
+file's own note says "base fallback on excess not modeled — entry cap clips").
+
+So a month with >₹2,00,000 of travel spend **under-reports**. Under-reporting is
+the safe direction under "unknown over incorrect", and it needs a spec update to
+change, so it stays as-is — but it is now confirmed against the source rather
+than assumed. Logged for the next spec round.
+
+**Still not re-verified:** transfer partner ratios (the JS-rendered blind spot;
+the PDF defers to "the detailed Miles Transfer program terms and conditions",
+a separate document). The PDF *does* confirm the transfer caps already recorded:
+1,50,000 EDGE Miles/calendar year per customer ID, Group A 30,000, Group B
+1,20,000.
