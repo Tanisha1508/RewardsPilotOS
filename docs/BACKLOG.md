@@ -17,7 +17,7 @@ These block work below. Everything else I can proceed on.
 
 | # | Decision | Why it matters |
 |---|---|---|
-| D-1 | **Keep or drop loyalty accounts?** | Endpoints exist; *no tool reads them*. Adding UI to something nothing consumes makes dead weight visible rather than useful. Either wire it into redemption reasoning or delete the endpoints |
+| D-1 | **Build loyalty properly now, or caveat redemption until you do?** | Not "keep or drop" — see 2.7. Loyalty is the missing half of redemption, and its absence makes `RedemptionOptions` overstate shortfalls. The cheap interim is a stated caveat; the real fix is one piece of work (UI + tool + wiring) |
 | D-2 | **Signups: open or closed?** | Open = anyone can burn the shared 20/day Gemini quota. Closed = only existing users. Gates sharing the URL at all |
 | D-3 | **Should Ask become multi-turn?** | The honest fix for the channel problem is to *ask* "booking direct or through a portal?". Today it answers with a caveat instead. This is a contract change, not an implementation detail (KNOWN_LIMITATIONS 29) |
 | D-4 | **Pay ~$5/mo for persistent Chroma?** | Removes the ~120 s re-embed after every restart permanently. The free alternatives all have real costs (KNOWN_LIMITATIONS 28) |
@@ -46,7 +46,7 @@ Your principle, applied. Ordered by how much invisible behaviour each removes.
 | 1.2 | FN·UX | **Goals UI** | `GetTravelGoals` is a registered tool the planner is told to use, backed by real Postgres, and it always returns empty. Redemption reasoning has no target to aim at. Needs: create/list/delete, target date |
 | 1.3 | FN·UX | **Card editing** | `api.updateCard` exists; UI is add/remove only. Fixing a typo means deleting and re-adding, which loses the balance |
 | 1.4 | UX | **Stop making users type internal identifiers** | The card form asks for `hdfc_reward_points` and `hdfc` as free text. A typo silently produces a card that resolves to no rule file. Should be selects driven by known issuers/currencies, with free text only as a deliberate "other" |
-| 1.5 | FN | **Loyalty** — resolve D-1 | Wire it into redemption, or remove it |
+*(Loyalty moved to 2.7 — it is a redemption-engine item, not a form.)*
 
 ## Tier 2 — depth (the product gets meaningfully better)
 
@@ -58,6 +58,40 @@ Your principle, applied. Ordered by how much invisible behaviour each removes.
 | 2.4 | UX | **Dashboard is thin** | Three counts and an empty table. Should answer "what should I do next?" — expiring points, unused accelerated categories, fees due |
 | 2.5 | UX | **The numbers table is engineer-facing** | It shows `card_key`, `month`, raw tool args. Right instinct (show the deterministic inputs), wrong vocabulary for a cardholder |
 | 2.6 | UX | **Ask has no on-page history** | Only the answer just asked. History now exists at `/recommendations`, but the natural place is inline |
+| 2.7 | FN·UX | **Loyalty accounts — the missing half of redemption** | See below. One piece of work, not three |
+
+### 2.7 in full
+
+Loyalty accounts are the user's memberships in the *destination* programs —
+KrisFlyer, Bonvoy — as distinct from the card currencies on `/cards` that
+transfer into them. Model, endpoints and TS client all exist; nothing reads
+them and there is no UI.
+
+**Why it is a correctness gap, not a missing form.** `RedemptionOptionsInput`
+takes only card-currency balances, so `balance_sufficient` is computed from what
+you could transfer *in*, ignoring what you already hold *there*:
+
+- **Shortfalls are overstated.** 92,000 KrisFlyer for a business seat, 15,000
+  EDGE Miles transferring at 1:2 → reported as 62,000 short. If you already hold
+  25,000 KrisFlyer you are 37,000 short. It counted from zero.
+- **It can recommend transferring into a program you have no account with.**
+  You cannot transfer to a scheme you are not enrolled in. Advising it without
+  knowing membership asserts something unverified — the same failure family as
+  ADR-019: a confident answer resting on an unasked question.
+
+MASTER_SPEC lists "Loyalty memberships" as a system Input alongside reward
+balances, travel goals and preferences, so this is unfinished rather than
+undesired.
+
+**Ship as one piece:** UI + a `GetLoyaltyAccounts` tool + `RedemptionOptions`
+reading destination balances and enrolment. Any subset is what produced the
+current half-state — a form feeding nothing, or a tool with no data.
+
+**Cheap interim (do this if 2.7 is not next):** state in redemption answers that
+existing destination balances are not counted. Honest, and buys time. Without
+it, the overstated shortfall is live for anyone who holds destination points —
+and Tier 0.2 just unblocked the redemption path by adding balances, so it is
+now reachable in testing.
 
 ## Tier 3 — hardening
 
