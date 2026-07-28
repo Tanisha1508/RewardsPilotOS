@@ -75,12 +75,24 @@ class EvalLLM:
                 " Some required values are UNKNOWN pending issuer verification; "
                 "the system refuses to guess (unknown over incorrect)."
             )
+        # Engine-derived notes the Recommender must reproduce verbatim: a lapsed
+        # accelerated rate (ADR-012) and a comparison scored at base earn only
+        # because no booking channel was named. Validation rejects output that
+        # drops them, so a double that omitted them would fail every query that
+        # triggers one — measuring the double, not the system.
+        notes = [
+            note
+            for entry in state["rule_results"]
+            for key in ("expiry_note", "channel_note")
+            if (note := entry.get(key))
+        ]
         return json.dumps(
             {
                 "decision": decision,
                 "reasoning": [
                     "Numbers are copied verbatim from rule_results and graph_results.",
                     "Citations carry source URLs and freshness timestamps from retrieval.",
+                    *notes,
                 ],
                 "calculations": calculations,
                 "citations": citations,

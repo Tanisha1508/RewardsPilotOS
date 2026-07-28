@@ -28,7 +28,13 @@ class SpendLLM:
     the live Gemini did during D4, correctly declining to guess card_keys. The
     injection must fill them in before validation, or the whole CompareCards
     invocation is rejected (min_length=1) and the comparison is lost. The
-    recommender echoes the computed figure."""
+    recommender echoes the computed figure.
+
+    It also reproduces any engine-supplied note verbatim, as the prompt requires
+    — this plan names no channel, so every card scores at base earn and each
+    carries a `channel_note`. A double that skipped them would be testing a
+    non-compliant model, and the wiring assertion below would fail for that
+    reason rather than for a card_key regression."""
 
     def complete(self, system: str, user: str) -> str:
         if "Planner prompt" in system:
@@ -48,10 +54,21 @@ class SpendLLM:
                     ],
                 }
             )
+        # On a retry the digest carries appended feedback, so parse defensively:
+        # a double that raised here would look like a wiring failure.
+        try:
+            digest = json.loads(user.split("\n")[0])
+        except (ValueError, IndexError):
+            digest = {}
+        notes = [
+            note
+            for entry in digest.get("rule_results", [])
+            if (note := entry.get("channel_note")) or (note := entry.get("expiry_note"))
+        ]
         return json.dumps(
             {
                 "decision": "HDFC Infinia earns the most on this flight spend.",
-                "reasoning": ["Compared the cards you hold."],
+                "reasoning": ["Compared the cards you hold.", *notes],
                 "calculations": [],
                 "citations": [],
                 "confidence": {"level": "medium", "reason": "computed from verified rules"},

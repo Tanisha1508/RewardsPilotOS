@@ -64,6 +64,16 @@ class EarnResult(BaseModel):
     # validity window, so `points` is base earn rather than accelerated
     # (ADR-012). Deterministic text; the Recommender may repeat it verbatim.
     expiry_note: str | None = None
+    # Set when NO channel was supplied and the card has an in-force accelerated
+    # entry for this category, so `points` is base earn only because the booking
+    # channel is unknown — not because the card earns base here.
+    #
+    # Without this, a channel-less query silently scored every card at base and
+    # reported a winner at high confidence, even though naming the channel could
+    # change which card wins (found live 2026-07-28: a Rs 50,000 flight ranked
+    # hdfc_infinia 1665 > axis_atlas 1000, where axis_atlas earns 2500 booking
+    # direct). Deterministic text; the Recommender repeats it verbatim.
+    channel_note: str | None = None
     unknown_reasons: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     rule_version: int | None = None

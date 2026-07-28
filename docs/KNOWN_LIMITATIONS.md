@@ -574,3 +574,30 @@ roadmap — none is silently papered over.
 
     Recommended: ship empty at launch (this item), then evaluate paid persistent
     storage vs. verified startup ingestion as the first post-launch task.
+
+29. **A channel-dependent comparison is flagged but not resolved — the chat
+    contract is single-turn (ADR-019, found live 2026-07-28).** When a query
+    names no booking channel, every card is scored at base earn and each result
+    carries a `channel_note` naming the channels that would unlock an
+    accelerated rate; confidence is capped at medium and the note is required
+    verbatim in the answer. That stops the silent failure — a Rs 50,000 flight
+    ranked hdfc_infinia 1665 over axis_atlas 1000 at *high* confidence, when
+    booking direct earns axis_atlas 2500 and reverses the result.
+
+    What it does NOT do is ask. The honest interaction is a clarifying question
+    ("are you booking direct with the airline, through the issuer's portal, or
+    via a travel site?"), but `/chat` is request-response with no pending-question
+    state, so adding a turn is a spec change rather than an implementation
+    detail. The user currently gets a correct base-earn answer plus a statement
+    of what would change it, and has to re-ask with the channel named.
+
+    Two consequences worth knowing:
+    - **The note fires on implausible channel/category pairs.** Axis
+      `travel_edge` and Amex `reward_multiplier` are declared `category: "all"`,
+      so an electronics query is flagged for a travel portal. Deliberate — see
+      ADR-019 "Consequences"; narrowing it would mean inventing a per-portal
+      category allowlist that no rule file contains.
+    - **The Planner's channel resolution is not deterministic.** The same
+      question can resolve a channel on one run and not the next, so the
+      *recommended card* can differ between runs. The note makes that visible
+      rather than silent, but does not remove it. A clarifying turn would.

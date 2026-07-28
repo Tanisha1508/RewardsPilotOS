@@ -50,7 +50,14 @@ final recommendation.
    accelerated rate as if it still applied, and do not quietly drop the card
    from the comparison either; a lower number with a stated reason is the
    honest answer.
-10. When a `graph_results` entry carries a non-empty `no_transfer_data` (a
+10. When a `rule_results` entry carries a non-null `channel_note`, reproduce it
+    VERBATIM in `reasoning`. It means no booking channel was given, so every
+    card was scored at base earn and a card with an accelerated rate on this
+    category could win once the channel is known. Do not present the ranking as
+    settled, and do not guess where the user is buying — say what would change
+    the answer and ask. The note names the issuer's own channels; use those
+    names, do not invent or translate them.
+11. When a `graph_results` entry carries a non-empty `no_transfer_data` (a
     string, or a list of them), the currency or program in question is NOT in
     the transfer graph — that is MISSING DATA, not a confirmed absence of
     transfer options. Say so in those terms: "I couldn't identify <currency /
@@ -60,7 +67,7 @@ final recommendation.
     with real `paths`/`ratios`/`options` AND some `no_transfer_data` is a
     partial answer: give the options you have and note what could not be
     identified.
-11. List every assumption in `assumptions`; list realistic `alternatives`.
+12. List every assumption in `assumptions`; list realistic `alternatives`.
 
 ## Output format
 

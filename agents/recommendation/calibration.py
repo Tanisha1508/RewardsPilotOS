@@ -64,6 +64,11 @@ def confidence_basis(
     # card if the program was renewed, which is exactly the kind of uncertainty
     # confidence is supposed to express.
     has_expired = any(entry.get("expiry_note") for entry in results)
+    # A channel-less comparison computes cleanly from verified base rates, so
+    # nothing above catches it either — but naming the booking channel can move
+    # a card from base to accelerated and change the winner outright. A ranking
+    # that depends on an unasked question is not a high-confidence ranking.
+    has_channel_dependent = any(entry.get("channel_note") for entry in results)
 
     confidences: list[tuple[float, str]] = []
     _walk_confidences(results, confidences)
@@ -72,16 +77,22 @@ def confidence_basis(
     if not has_computed:
         ceiling = "low"
         reason = "no value could be computed; all required inputs are unknown"
-    elif has_unknowns or errors or has_expired:
+    elif has_unknowns or errors or has_expired or has_channel_dependent:
         ceiling = "medium"
         if has_unknowns:
             reason = "some values were computed while others are unknown pending verification"
         elif errors:
             reason = "one or more tools failed"
-        else:
+        elif has_expired:
             reason = (
                 "an accelerated rate has lapsed and base earn was used instead; "
                 "whether the program was renewed is unconfirmed"
+            )
+        else:
+            reason = (
+                "no booking channel was given, so every card was scored at base "
+                "earn; a card with an accelerated rate on this category could "
+                "rank differently once the channel is known"
             )
     elif min_confidence is not None and min_confidence < HIGH_CONFIDENCE_FLOOR:
         ceiling = "medium"

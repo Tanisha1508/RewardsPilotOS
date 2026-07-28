@@ -50,3 +50,22 @@ def channel_matches(rule_channel: str, queried_channel: str) -> bool:
 
 def is_canonical(channel: str | None) -> bool:
     return channel in CANONICAL_CHANNELS
+
+
+def unspecified_channel_note(card_key: str, channels: list[str]) -> str:
+    """Explain that base earn was used only because no channel was supplied.
+
+    `channel_matches` resolves a *stated* channel. This covers the other case:
+    the query stated none, so no accelerated entry could match and every card
+    fell to base. That is the correct computation — the evaluator will not
+    assume where a purchase happens — but reporting it without saying so lets a
+    channel-dependent ranking read as settled.
+
+    Deterministic text carrying the issuer's own channel names verbatim from
+    the rule file, so the Recommender repeats it without inventing anything."""
+    named = " or ".join(sorted(set(channels)))
+    return (
+        f"{card_key} earns an accelerated rate on {named} bookings in this "
+        f"category, but no booking channel was given, so the figure shown is "
+        f"base earn. Where you book can change which card is best."
+    )

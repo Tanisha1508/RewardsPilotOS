@@ -15,7 +15,7 @@ import math
 from contracts.api.verified_value import VerifiedValue
 from contracts.tools.rule_engine import CapStatus, EarnResult
 from rules.evaluator.categories import category_matches
-from rules.evaluator.channels import channel_matches
+from rules.evaluator.channels import channel_matches, unspecified_channel_note
 from rules.evaluator.validity import boundary_note, is_active, lapse_note, month_status
 from rules.parser.models import AcceleratedEarn, RuleFile
 
@@ -32,6 +32,26 @@ def _matching(rule: RuleFile, category: str, channel: str | None) -> Accelerated
         if channel_matches(entry.channel, channel) and category_matches(entry.category, category):
             return entry
     return None
+
+
+def find_channel_dependent(
+    rule: RuleFile, category: str, channel: str | None, month: str
+) -> list[AcceleratedEarn]:
+    """Entries that would have applied in `month` had a channel been named.
+
+    Only meaningful when the query supplied no channel: with one supplied, a
+    non-matching entry means the user told us where they are buying and that
+    channel simply does not earn accelerated — an answer, not a gap.
+
+    Lapsed and not-yet-started entries are excluded: pointing at a rate that is
+    not in force would send the user to a channel that no longer pays."""
+    if channel is not None:
+        return []
+    return [
+        entry
+        for entry in rule.accelerated
+        if category_matches(entry.category, category) and is_active(entry, month)
+    ]
 
 
 def find_accelerated(
@@ -161,6 +181,16 @@ def evaluate_earn(
     )
     if lapsed is not None:
         base.expiry_note = lapse_note(lapsed, month)
+
+    # Set before the rate check so the note survives an uncomputable result:
+    # "we could not compute, and a channel would have changed the rate anyway"
+    # is strictly more useful than either half alone.
+    channel_dependent = find_channel_dependent(rule, category, channel, month)
+    if channel_dependent:
+        base.channel_note = unspecified_channel_note(
+            rule.card_key, [entry.channel for entry in channel_dependent]
+        )
+
     rate = rule.base_earn.rate
     base.rate = rate
 
