@@ -232,3 +232,55 @@ and needs `valid_from`/`valid_until` recorded per ADR-012 — plus a
 | ICICI (card set TBD) | not_started (as of 2026-07-19) |
 | AU Small Finance (card set TBD) | not_started (as of 2026-07-19) |
 | Yes Bank (card set TBD) | not_started (as of 2026-07-19) |
+
+---
+
+## Re-verification: Axis Atlas, 2026-07-29 (crawler-triggered)
+
+The crawler flagged `axis_atlas_reward_rules` as changed on its first
+successful run. Cause identified and the earn rates re-checked against the
+live page.
+
+**Cause of the alert: the source moved domain.** `www.axisbank.com` now issues
+a 301 to `www.axis.bank.in` (the RBI-mandated `.bank.in` migration — HDFC's
+source had already moved, which is why `hdfc.bank.in` was in the rule files
+first). Both redirects verified 2026-07-29:
+
+- `/retail/cards/credit-card/axis-bank-atlas-credit-card` → `https://www.axis.bank.in/cards/credit-card/axis-bank-atlas-credit-card`
+- `/retail/cards/credit-card` → `https://www.axis.bank.in/cards/credit-card`
+
+URLs updated in `knowledge/crawler/sources.yaml` and the four
+`knowledge/sources/axis_*.md` docs. Expect one more "changed" alert on the
+next crawl as the hash rebaselines against the new host.
+
+**CONFIRMED unchanged** (live page, browser, 2026-07-29):
+
+| Field | Rule file (`v2.json`) | Live page | Verdict |
+|---|---|---|---|
+| Base earn | 2 per ₹100 | "2 EDGE Miles on other spends" | ✅ matches |
+| Accelerated, travel | 2.5x base = 5 per ₹100 | "5 EDGE Miles on travel" | ✅ matches |
+
+So the numbers behind the flight comparison are sound; no rule-file value
+changed.
+
+**STILL UNVERIFIED — do not treat as re-checked:**
+
+1. **Monthly cap (10,000 EDGE Miles).** Not stated on the HTML page at all. It
+   was derived from the ₹2,00,000/month accelerated spend cap in the T&Cs PDF,
+   which this round did not open. Unchanged in the rule file, still carrying
+   its original source note.
+2. **Transfer partners and ratios.** The known blind spot recorded in
+   `sources.yaml` — JS-rendered, invisible to the crawler, hand-verified via
+   browser 2026-07-21. Not re-checked here.
+3. **Tier/milestone benefits.** The live page describes Silver/Gold/Platinum
+   tiers at ₹7.5 lakh and ₹15 lakh annual spend. The rule file models no
+   milestones. Not a defect — milestones are out of the current rule-file
+   schema — but worth a decision on whether they belong in it.
+4. **Banner on the live page:** "The terms and conditions of Axis Atlas Credit
+   Card will be updated with effect from 20th June, 25." Dated in the past
+   relative to the rule file's 2026-07-19 effective date, so most likely a
+   stale banner — but it points at a T&C revision nobody has read. Open the
+   linked T&C before the next Atlas verification round.
+5. **Point value.** The page states "1 EDGE Mile is equal to ₹1/-". Relevant to
+   `point_value_reference_inr`, which is per-channel; a blanket ₹1 does not map
+   cleanly onto cashback/voucher/travel. Not applied.

@@ -3,7 +3,7 @@ doc_id: axis_ace_reward_rules
 issuer: axis
 program: axis_ace_cashback
 doc_type: reward_rules
-source_url: https://www.axisbank.com/retail/cards/credit-card
+source_url: https://www.axis.bank.in/cards/credit-card
 last_changed: 2026-07-19
 ---
 

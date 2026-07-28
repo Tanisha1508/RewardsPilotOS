@@ -44,7 +44,7 @@ sources:
     doc_id: axis_atlas_reward_rules
     issuer: axis
     program: edge_miles
-    url: https://www.axisbank.com/retail/cards/credit-card/axis-bank-atlas-credit-card
+    url: https://www.axis.bank.in/cards/credit-card/axis-bank-atlas-credit-card
     crawlable: true
     # Page is fetchable and robots allows it; base-earn and general content are
     # in static HTML. BUT the Travel EDGE transfer-partner table is JS-rendered
