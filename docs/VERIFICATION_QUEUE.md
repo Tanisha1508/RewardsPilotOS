@@ -332,3 +332,46 @@ the PDF defers to "the detailed Miles Transfer program terms and conditions",
 a separate document). The PDF *does* confirm the transfer caps already recorded:
 1,50,000 EDGE Miles/calendar year per customer ID, Group A 30,000, Group B
 1,20,000.
+
+### Amex Platinum Travel — Reward Multiplier expiry CONFIRMED, 2026-07-29
+
+Checked two days before the recorded end date, because ADR-012's behaviour
+changes on it.
+
+**Document:** `https://www.americanexpress.com/in/benefits/rewards-program/terms-conditions.html`
+— the official Reward Multiplier T&C, the same source the rule file cites.
+
+**Verdict: the programme ends 31 July 2026 and NO renewal is announced.**
+
+> "Reward Multiplier offer would be valid from January 1, 2021 – July 31, 2026"
+
+| Field | Rule file `v3.json` | T&C | Verdict |
+|---|---|---|---|
+| Base earn | 1 per ₹50 | 3X = 1X base + 2X bonus per ₹50 | ✅ |
+| Reward Multiplier | 3x, `reward_multiplier`/all | "3X multiplier (Platinum Reserve, **Platinum Travel**, Gold Corporate): 2 Points for every Rs. 50 Spent" | ✅ |
+| Monthly bonus cap | 25,000, scope `reward_multiplier_bonus` | "capped at 25,000 Bonus MR Points per month" | ✅ |
+| `valid_from` | 2021-01-01 | "January 1, 2021" | ✅ |
+| `valid_until` | 2026-07-31 | "July 31, 2026" | ✅ **confirmed, not extended** |
+
+No rule-file value required correction.
+
+**What happens on 2026-08-01.** `find_lapsed` starts returning the entry, so
+Amex Platinum Travel answers change on their own:
+
+- points drop from accelerated to **base earn**
+- an `expiry_note` naming 2026-07-31 becomes a required statement in the answer
+- confidence is capped at **medium**
+
+That is ADR-012 working as designed, not a regression — but it is a visible
+change in output, so it is worth expecting rather than discovering.
+
+**This only works because of the 2026-07-29 month fix.** Until then the Planner
+invented `month: 2025-05`, which sits inside the validity window, so the
+accelerated rate would have applied indefinitely and this expiry would never
+have fired. The two findings are linked: B0 is what makes ADR-012 real.
+
+**Next action:** run scenario A7 (`docs/LIVE_TESTING.md` §3) on or after
+2026-08-01 and record the result. If Amex quietly renews the programme later,
+the rule file needs a new `valid_until` — the crawler watches the product page,
+not this T&C page, so a renewal would NOT be detected automatically. Consider
+adding this URL as a crawler source.
