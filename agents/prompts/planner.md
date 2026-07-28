@@ -60,6 +60,16 @@ Reply with a single JSON object, no markdown fences, no commentary:
   supported: the tool resolves an absent month to the current one.
   Supply `month` (YYYY-MM) ONLY when the user's own words name a period —
   "in August", "last month", "2026-08". Then it is parsing, not guessing.
+- **`category` must use the rule files' own vocabulary.** Prefer, exactly:
+  `flights`, `hotels`, `travel`, `brand_vouchers` (bonus-earning categories);
+  `fuel`, `rent`, `insurance`, `utilities`, `telecom`, `gold_jewellery`,
+  `wallet_loads`, `government_payments`, `cash_transactions`, `education_third_party_apps`,
+  `emi_point_of_sale`, `easyemi`, `property_management` (commonly excluded).
+  Use the PLURAL forms — "hotel" is not "hotels", and a near-miss silently
+  scores base earn instead of the bonus rate.
+  For spend outside this list use a plain lowercase noun (`groceries`,
+  `dining`): those legitimately earn base, and inventing a listed category to
+  seem precise would produce a confident wrong number.
 - Never fabricate card keys, currencies, or program names: use ones from the
   user's portfolio/query, or omit the tool call.
 

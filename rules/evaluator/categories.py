@@ -29,6 +29,63 @@ CATEGORY_SUBSUMES: dict[str, frozenset[str]] = {
 }
 
 
+# Wording variant -> the vocabulary the rule files actually use.
+#
+# Found live 2026-07-29: the Planner emitted `category: "hotel"` where every
+# rule file says "hotels". Nothing matched, so HDFC Infinia's smartbuy/hotels
+# entry was skipped and a Rs 30,000 SmartBuy hotel booking scored 1,000 points
+# instead of 10,000 — a 10x under-report, silent, from one letter.
+#
+# CATEGORY_SUBSUMES answers "does this broader category contain that narrower
+# one" and needs an issuer source per entry. This map answers a different and
+# much smaller question: "are these two strings the same word?" It must contain
+# ONLY spelling and inflection variants — plurals, regional spellings, obvious
+# synonyms for the identical concept.
+#
+# It must never encode a semantic relationship. "petrol" -> "fuel" belongs here
+# because they name one thing; "dining" -> "travel" would not, because that is a
+# claim about what an issuer rewards, which is CATEGORY_SUBSUMES' job and needs
+# a source. Widening this map is how invented issuer policy would get in.
+CATEGORY_ALIASES: dict[str, str] = {
+    # accelerated-earn vocabulary
+    "hotel": "hotels",
+    "flight": "flights",
+    "airfare": "flights",
+    "air_travel": "flights",
+    "voucher": "brand_vouchers",
+    "vouchers": "brand_vouchers",
+    "brand_voucher": "brand_vouchers",
+    "gift_card": "brand_vouchers",
+    "gift_cards": "brand_vouchers",
+    # exclusion vocabulary — a missed exclusion is worse than a missed bonus:
+    # it reports earning on spend that earns nothing at all.
+    "petrol": "fuel",
+    "diesel": "fuel",
+    "utility": "utilities",
+    "wallet_load": "wallet_loads",
+    "cash_transaction": "cash_transactions",
+    "government_payment": "government_payments",
+    "jewellery": "gold_jewellery",
+    "jewelry": "gold_jewellery",
+    "gold_jewelry": "gold_jewellery",
+}
+
+
+def canonical_category(category: str) -> str:
+    """Map a category to the wording the rule files use.
+
+    Applied at the tool boundary so everything downstream — accelerated
+    matching, exclusion checks, and the category echoed back in `EarnResult` —
+    sees one vocabulary. Unknown categories pass through unchanged: "groceries"
+    is a perfectly valid query that simply earns base, and rewriting it would be
+    guessing.
+    """
+    if not category:
+        return category
+    key = category.strip().lower().replace(" ", "_").replace("-", "_")
+    return CATEGORY_ALIASES.get(key, key)
+
+
 def category_matches(rule_category: str, queried_category: str) -> bool:
     """True when an accelerated entry declared for `rule_category` applies to
     spend in `queried_category`. Never widens in the other direction: an entry

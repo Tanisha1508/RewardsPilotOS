@@ -601,3 +601,36 @@ roadmap — none is silently papered over.
       question can resolve a channel on one run and not the next, so the
       *recommended card* can differ between runs. The note makes that visible
       rather than silent, but does not remove it. A clarifying turn would.
+
+30. **Category is free text, and a wording variant used to cost the bonus rate
+    silently — FIXED 2026-07-29, but the class is not closed.** The Planner
+    emitted `category: "hotel"` where every rule file says "hotels". Nothing
+    matched, HDFC Infinia's `smartbuy/hotels` entry was skipped, and a Rs 30,000
+    SmartBuy hotel booking scored 1,000 points instead of 10,000 — 10x low, from
+    one letter, with full confidence and no warning.
+
+    Nastier because ADR-019 had just started telling users "specifying a booking
+    channel could alter the ranking". A user following that advice supplied the
+    channel and would have received the under-reported number: the caveat led
+    them into the error.
+
+    Fixed by `canonical_category()` (`rules/evaluator/categories.py`), applied at
+    the tool boundary so accelerated matching, exclusion checks and the category
+    echoed back in `EarnResult` all see one vocabulary. The Planner prompt now
+    publishes the rule files' vocabulary rather than leaving it to invention.
+
+    **What remains open:** the alias map covers wording variants we have thought
+    of. It cannot cover every phrasing a model might produce, and an unmapped
+    category still silently earns base — which is *correct* for genuinely
+    different spend ("groceries") and *wrong* for an unrecognised synonym of a
+    bonus category. The two are indistinguishable to the engine.
+
+    Options if this recurs, none chosen:
+    - **Constrain `category` to an enum** in the tool contract, so an unknown
+      value is rejected rather than scored. Cost: every legitimate non-bonus
+      category ("groceries", "dining") must be enumerated too, or those queries
+      start failing instead of correctly earning base.
+    - **Return an `unrecognised_category` note** on `EarnResult` when the
+      category matches no rule file entry AND no exclusion, letting the
+      Recommender say "I scored this at base earn; if you meant hotels, say so".
+      Mirrors the ADR-019 channel note. Cheaper and honest, but noisier.
