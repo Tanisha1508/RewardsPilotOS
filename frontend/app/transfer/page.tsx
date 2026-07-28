@@ -24,11 +24,17 @@ export default function TransferPage() {
   const [chunks, setChunks] = useState<RetrievedChunk[] | null>(null);
   const [error, setError] = useState<{ message: string; requestId?: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [slow, setSlow] = useState(false);
 
   async function search(event?: React.FormEvent) {
     event?.preventDefault();
     setBusy(true);
+    setSlow(false);
     setError(null);
+    // The first search after any restart re-embeds the whole corpus on
+    // ephemeral disk — measured ~120 s, then <3 s (KNOWN_LIMITATIONS 28). A
+    // silent "Searching…" through two minutes reads as broken, so say so.
+    const slowTimer = setTimeout(() => setSlow(true), 4000);
     try {
       const result = await api.searchKnowledge({
         q: query.trim() || "transfer partners and ratios",
@@ -45,7 +51,9 @@ export default function TransferPage() {
       );
       setChunks(null);
     } finally {
+      clearTimeout(slowTimer);
       setBusy(false);
+      setSlow(false);
     }
   }
 
@@ -56,6 +64,13 @@ export default function TransferPage() {
         Verified transfer-partner data by issuer, with sources. For a computed
         best-transfer path from your balances, use Ask.
       </p>
+
+      {slow ? (
+        <p className="mt-3 text-sm text-neutral-500">
+          First search after a restart is slow — the knowledge index is rebuilt in memory. This
+          takes up to two minutes once, then a few seconds.
+        </p>
+      ) : null}
 
       <form onSubmit={search} className="mt-4 flex flex-wrap gap-2">
         <select
