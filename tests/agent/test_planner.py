@@ -23,9 +23,12 @@ def test_valid_plan_accepted():
             ],
         }
     )
-    state = plan(initial_state("q", "fixture_user"), llm)
+    # The query names a period, so the supplied month is parsing rather than
+    # guessing and survives the month guard (agents/planner/month_args.py).
+    state = plan(initial_state("what do I earn in 2026-07?", "fixture_user"), llm)
     assert state["intent"] == "spend"
     assert [p["tool"] for p in state["plan"]] == ["GetCards", "CalculateEarn"]
+    assert state["plan"][1]["args"]["month"] == "2026-07"
     assert state["errors"] == []
 
 

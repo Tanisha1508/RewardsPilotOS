@@ -53,8 +53,13 @@ Reply with a single JSON object, no markdown fences, no commentary:
   RedemptionOptions → GetTransferRatios / SearchKnowledge for context.
 - For portfolio questions: GetPortfolio, GetRewardBalances, GetTravelGoals,
   GetOpportunities as relevant.
-- Use `month` in YYYY-MM form; default to the current month if the user did
-  not specify one.
+- **OMIT `month` entirely unless the user named a period.** You do not know
+  today's date, so you cannot supply "the current month" — a guess here is not
+  harmless, because `month` decides which accelerated rates are in force, and a
+  wrong one silently changes the numbers. Leaving it out is correct and
+  supported: the tool resolves an absent month to the current one.
+  Supply `month` (YYYY-MM) ONLY when the user's own words name a period —
+  "in August", "last month", "2026-08". Then it is parsing, not guessing.
 - Never fabricate card keys, currencies, or program names: use ones from the
   user's portfolio/query, or omit the tool call.
 

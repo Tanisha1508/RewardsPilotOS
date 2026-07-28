@@ -21,6 +21,24 @@ checks unverifiable) · `NOT RUN`
 
 Ordered by what unblocks the most coverage.
 
+**Status as of 2026-07-29:**
+
+| | Blocker | Status |
+|---|---|---|
+| B0 | Planner invents `month` | **FIXED** — guard + prompt, `tests/agent/test_month_args.py` |
+| B1 | No balance UI | **FIXED** — inline editor on `/cards` |
+| B2 | No renewal-date field | **FIXED** — input added (state existed, input was never rendered) |
+| B3 | No recommendations history | **FIXED** — `/recommendations`, linked as "History" |
+| B4 | Gemini 20/day quota | **WON'T FIX** — a free-tier constraint, not a defect. Plan around it |
+| B5 | Crawler secret missing | **FIXED** — secret added by owner; run 30387612637 green |
+| B6 | Cold start / re-ingest | **MITIGATED** — keep-alive workflow + honest "waking the server" UI |
+| B7 | Test account not seeded | **UNBLOCKED** — B1/B2 make it doable through the UI, no script or token needed |
+| B8 | Open signups | **OPEN** — owner decision, gates public sharing only |
+
+Preferences, goals and loyalty still have no UI. Left deliberately: unlike
+balances they block no scenario in §3, and the API is testable directly. Logged
+in B1 rather than fixed.
+
 ### B0. ★ The Planner invents `month` — fix before 2026-08-01
 
 Highest priority, and time-boxed. Live answers carry `month: 2025-05` on queries
@@ -222,6 +240,18 @@ so a failure is a correctness defect, not a UX issue.
 ## 4. Execution log
 
 Newest first. One row per execution.
+
+### 2026-07-29 — blocker clearance round
+
+| ID | Scenario | Result | Detail |
+|---|---|---|---|
+| E1 | **Cold start, measured cleanly** | PASS | First call `/portfolio` **15.6 s**; immediately after, the same endpoint **1.2 s**, balances 1.5 s, recommendations 1.0 s. Replaces the void 2026-07-28 attempt. Confirms the "dashboard takes a minute" report is container wake-up, not slow endpoints — every endpoint is ~1 s warm |
+| B5/E5 | Crawler, secret now set | **PASS** | Run 30387612637 green in 35 s — and it did its job: **`axis_atlas_reward_rules` changed** and needs human re-verification. Detected, not auto-ingested (ADR-016) |
+
+**★ Action arising:** the Axis Atlas source page has changed since 2026-07-19.
+Atlas is a P1 card and the pivot of the flight comparison, so its rule file may
+now be stale. Re-verify against the live page and add to VERIFICATION_QUEUE
+before trusting any Atlas number in testing.
 
 ### 2026-07-28 (later) — post-deploy verification of ADR-019
 

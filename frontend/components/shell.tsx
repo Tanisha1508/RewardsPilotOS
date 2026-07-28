@@ -17,6 +17,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/cards", label: "Cards" },
   { href: "/chat", label: "Ask" },
+  { href: "/recommendations", label: "History" },
   { href: "/transfer", label: "Transfer" },
 ];
 
@@ -136,4 +137,19 @@ export function ErrorNotice({ error }: { error: { message: string; requestId?: s
 
 export function Empty({ message }: { message: string }) {
   return <p className="text-sm text-neutral-500">{message}</p>;
+}
+
+/** Shown when a request is still running after a few seconds.
+ *
+ *  The backend runs on a free tier that sleeps after ~15 minutes idle; the next
+ *  request pays the wake-up (measured 15.6 s cold vs ~1.2 s warm). A bare
+ *  "Loading…" through that reads as a hang, and the honest thing is to say
+ *  which of the two is happening rather than let the user guess. */
+export function WakingNotice({ context }: { context?: string }) {
+  return (
+    <p className="text-sm text-neutral-500">
+      {context ?? "Loading"} — waking the server, which sleeps when idle. This can take up to a
+      minute the first time.
+    </p>
+  );
 }

@@ -13,6 +13,7 @@ from agents.planner.empty_portfolio import (
     empty_portfolio_recommendation,
     held_cards,
 )
+from agents.planner.month_args import strip_unrequested_month
 from agents.planner.portfolio_args import resolve_portfolio_args
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState, ToolInvocation
@@ -99,6 +100,10 @@ def plan(state: AgentState, llm: LLM) -> AgentState:
             state["citations"] = []
             return state
         raw_plan = resolve_portfolio_args(raw_plan, cards)
+
+    # After portfolio resolution, before validation: an invented month is
+    # schema-valid, so validation would wave it through (found live 2026-07-28).
+    raw_plan = strip_unrequested_month(raw_plan, state["query"], state["errors"])
 
     state["plan"] = validate_plan(raw_plan, state["errors"])
     return state

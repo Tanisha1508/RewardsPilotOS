@@ -2,7 +2,7 @@
 
 import { api } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
-import { Empty, ErrorNotice, Shell } from "@/components/shell";
+import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
 
 // Dashboard shell (BUILD_SPEC §10). D2 wires cards and balances; opportunities
 // and expiring-points counts arrive with D5's opportunity engine, and are
@@ -19,6 +19,14 @@ export default function DashboardPage() {
       <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
 
       {portfolio.error ? <div className="mt-4"><ErrorNotice error={portfolio.error} /></div> : null}
+
+      {/* One notice for the whole page: the three calls share a backend, so a
+          cold start delays all of them and three copies would just be noise. */}
+      {portfolio.slow || balances.slow || recommendations.slow ? (
+        <div className="mt-4">
+          <WakingNotice context="Loading your portfolio" />
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <Stat
@@ -43,7 +51,11 @@ export default function DashboardPage() {
             <ErrorNotice error={balances.error} />
           </div>
         ) : balances.loading ? (
-          <p className="mt-3 text-sm text-neutral-500">Loading…</p>
+          <div className="mt-3">
+            {balances.slow ? <WakingNotice context="Loading balances" /> : (
+              <p className="text-sm text-neutral-500">Loading…</p>
+            )}
+          </div>
         ) : !balances.data?.length ? (
           <div className="mt-3">
             <Empty message="No balances recorded yet. Add a card, then record its balance." />

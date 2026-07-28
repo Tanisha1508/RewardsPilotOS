@@ -1,0 +1,55 @@
+# Keep the Render free-tier backend awake during waking hours.
+#
+# Render free instances spin down after ~15 minutes idle. The next request pays
+# the wake-up: measured 15.6 s on 2026-07-29 (a warm call to the same endpoint
+# is ~1.2 s). That is the "dashboard takes ages to load" symptom — the page
+# itself is fine, it is waiting on a container that went to sleep.
+#
+# ── Why a daily window rather than 24/7 ──────────────────────────────────────
+# The free tier allows 750 instance-hours/month. Keeping the service awake
+# around the clock costs ~730 h, which fits but leaves no headroom for a second
+# service or a busy month. This window (01:00–17:59 UTC = 06:30–23:29 IST)
+# costs ~17 h/day, roughly 517 h/month, and covers the hours the app is
+# actually used. Outside it the first request of the day still pays one wake-up.
+#
+# To go 24/7, change the hour field to `*`, and watch the Render usage meter.
+#
+# ── Honest caveat ────────────────────────────────────────────────────────────
+# GitHub's scheduled runners are best-effort: `*/10` is a request, not a
+# promise, and runs are routinely delayed 10–20 minutes under load and can be
+# dropped entirely. So this REDUCES cold starts, it does not eliminate them.
+# If they need to be gone completely, an external pinger (UptimeRobot,
+# cron-job.org — both have free tiers) fires far more reliably; this workflow
+# is the version that needs no extra account.
+#
+# Hits /health only: no auth, no database writes, no LLM call, no quota cost.
+
+name: keepalive
+
+on:
+  schedule:
+    - cron: "*/10 1-17 * * *" # every 10 min, 01:00–17:59 UTC (06:30–23:29 IST)
+  workflow_dispatch: {}
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping backend health
+        run: |
+          # --max-time 120 so a genuine cold start is waited out rather than
+          # counted as a failure; a wake can take far longer than a warm call.
+          code=$(curl -s -o /tmp/body -w "%{http_code}" --max-time 120 \
+            https://rewardspilotos.onrender.com/api/v1/health) || true
+          echo "status=$code"
+          cat /tmp/body || true
+          # A non-200 is worth surfacing: the backend is down, not just asleep.
+          if [ "$code" != "200" ]; then
+            echo "::error::health check returned $code"
+            exit 1
+          fi
