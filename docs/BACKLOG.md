@@ -36,6 +36,21 @@ stale data.
 | 0.3 | TEST | **Amex expiry (A7) on/after 2026-08-01** | The real proof B0 worked. Should return base earn + expiry note + medium confidence. Before the fix it would have reported 3000 accelerated silently |
 | 0.4 | TEST | **Smoke s01 on the next Mon/Thu run** | Second sample of whether Gemini reliably reproduces the ADR-019 channel note. One live sample so far |
 
+## Parked — verification (resume when convenient)
+
+P1 data is verified and clean; these are the leftovers, none blocking.
+
+| # | Item | Why parked |
+|---|---|---|
+| V-1 | **HDFC Infinia against its T&C** | `hdfc.bank.in` is robots-disallowed, so neither the crawler nor I fetch it. Needs the owner to paste SmartBuy rates, caps and exclusions |
+| V-2 | Atlas transfer partner ratios | JS-rendered; the features PDF defers to a separate Miles Transfer T&C document |
+| V-3 | Add the Amex Reward Multiplier T&C as a crawler source | The crawler watches the *product page*, so a later renewal of the expiring programme would not be detected |
+| V-4 | Above-cap base fallback (Atlas) | Confirmed real: above ₹2L/month the T&C says base earn continues; the evaluator clips. Under-reports, so safe direction. Needs a spec update, not a patch |
+| V-5 | Run A7 on/after 2026-08-01 | Confirms the Amex expiry fires. Date-gated |
+
+**Verified and closed:** Axis Atlas (full T&C PDF, every field) and the Amex
+Reward Multiplier expiry (ends 2026-07-31, not renewed) — both 2026-07-29.
+
 ## Tier 1 — product completeness ("no capability without a UI")
 
 Your principle, applied. Ordered by how much invisible behaviour each removes.

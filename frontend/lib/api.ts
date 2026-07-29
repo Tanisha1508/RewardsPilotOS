@@ -8,6 +8,7 @@ import type {
   Envelope,
   FeedbackStatus,
   Goal,
+  GoalInput,
   HealthReport,
   KnowledgeSearchResult,
   LoyaltyAccount,
@@ -123,6 +124,8 @@ export const api = {
     request<Preferences>("/api/v1/preferences", { method: "PUT", body: { values } }),
 
   listGoals: () => request<Goal[]>("/api/v1/goals"),
+  createGoal: (goal: GoalInput) =>
+    request<Goal>("/api/v1/goals", { method: "POST", body: goal }),
 
   // Intelligence: chat runs the workflow and persists a recommendation.
   chat: (query: string) =>

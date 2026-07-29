@@ -13,12 +13,18 @@ import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 // cleared on sign-out so a different fresh user in the same tab still syncs.
 const SYNCED_FLAG = "rp_synced";
 
+// Ordered as: overview, then what you tell the system, then what you ask of it.
+// Preferences sits last because it is the only entry you rarely open on purpose
+// — but it IS in the nav, not buried: it can be written by the agent during a
+// conversation, and a preference you cannot find is one you cannot correct.
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/cards", label: "Cards" },
+  { href: "/goals", label: "Goals" },
   { href: "/chat", label: "Ask" },
   { href: "/recommendations", label: "History" },
   { href: "/transfer", label: "Transfer" },
+  { href: "/preferences", label: "Preferences" },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {

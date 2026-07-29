@@ -89,6 +89,10 @@ export interface Goal {
   status: string;
 }
 
+/** Mirrors `backend/schemas/identity.py::GoalIn`. `goal_type` is constrained
+ *  server-side to trip|redemption|savings, so the union is not cosmetic. */
+export type GoalInput = Omit<Goal, "goal_id">;
+
 export interface Preferences {
   values: Record<string, string>;
 }

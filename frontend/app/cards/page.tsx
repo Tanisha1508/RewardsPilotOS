@@ -4,7 +4,7 @@ import { useState } from "react";
 import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell } from "@/components/shell";
-import type { Card, RewardBalance } from "@/types/api";
+import type { Card, CardPatch, RewardBalance } from "@/types/api";
 
 // Cards CRUD (BUILD_SPEC §10). Annual fee is optional and stays empty rather
 // than defaulting to 0 — an unknown fee and a waived fee are different facts,
@@ -76,6 +76,21 @@ export default function CardsPage() {
       setError(toNotice(caught));
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** Edit a card in place.
+   *
+   *  Without this the only way to fix a typo was delete-and-re-add, which drops
+   *  the card's recorded balance with it — a data-loss trap sitting behind a
+   *  one-character mistake. */
+  async function patchCard(card: Card, changes: CardPatch) {
+    setError(null);
+    try {
+      await api.updateCard(card.card_id, changes);
+      cards.reload();
+    } catch (caught) {
+      setError(toNotice(caught));
     }
   }
 
@@ -185,12 +200,26 @@ export default function CardsPage() {
                   <td className="py-2 text-neutral-400">{card.network}</td>
                   <td className="py-2 text-right tabular-nums">
                     {/* Unknown, not zero. */}
-                    {card.annual_fee === null
-                      ? "unknown"
-                      : `₹${card.annual_fee.toLocaleString("en-IN")}`}
+                    <EditableCell
+                      display={
+                        card.annual_fee === null
+                          ? "unknown"
+                          : `₹${card.annual_fee.toLocaleString("en-IN")}`
+                      }
+                      value={card.annual_fee === null ? "" : String(card.annual_fee)}
+                      type="number"
+                      onSave={(v) =>
+                        patchCard(card, { annual_fee: v.trim() === "" ? null : Number(v) })
+                      }
+                    />
                   </td>
                   <td className="py-2 text-right text-neutral-400">
-                    {card.renewal_date ?? "—"}
+                    <EditableCell
+                      display={card.renewal_date ?? "—"}
+                      value={card.renewal_date ?? ""}
+                      type="date"
+                      onSave={(v) => patchCard(card, { renewal_date: v === "" ? null : v })}
+                    />
                   </td>
                   <td className="py-2 text-right">
                     <BalanceCell
@@ -214,6 +243,59 @@ export default function CardsPage() {
         )}
       </section>
     </Shell>
+  );
+}
+
+/** Click-to-edit table cell. Shows the rendered value until clicked, then an
+ *  input; Enter saves, Escape abandons. Kept generic so annual fee and renewal
+ *  date share one behaviour rather than growing two near-identical widgets. */
+function EditableCell({
+  display,
+  value,
+  type,
+  onSave,
+}: {
+  display: string;
+  value: string;
+  type: "number" | "date" | "text";
+  onSave: (value: string) => void | Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+
+  if (!editing) {
+    return (
+      <button
+        onClick={() => {
+          setDraft(value);
+          setEditing(true);
+        }}
+        className="hover:text-accent"
+        title="Click to edit"
+      >
+        {display}
+      </button>
+    );
+  }
+
+  const commit = () => {
+    void onSave(draft);
+    setEditing(false);
+  };
+
+  return (
+    <input
+      autoFocus
+      type={type}
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") commit();
+        if (e.key === "Escape") setEditing(false);
+      }}
+      className="w-32 rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-right text-sm outline-none focus:border-accent"
+    />
   );
 }
 
