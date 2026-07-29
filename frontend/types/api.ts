@@ -41,13 +41,22 @@ export interface Card {
   /** Links the card to the transfer graph. Required — a guessed value resolves
    *  to the wrong graph node instead of failing. */
   reward_currency: string;
+  /** The Rule Engine key this card resolved to, or null when the engine has no
+   *  verified rule file for it. Resolved SERVER-side from (issuer, card_name) —
+   *  the client never sends it, which is why it is omitted from `CardInput`.
+   *
+   *  null is not an error: the card is tracked, it simply cannot be computed
+   *  against. But it is worth surfacing, because a card that silently resolves
+   *  to nothing looks identical to one that works until you ask a question
+   *  about it. */
+  card_key: string | null;
   joining_date: string | null;
   annual_fee: number | null;
   renewal_date: string | null;
   status: string;
 }
 
-export type CardInput = Omit<Card, "card_id">;
+export type CardInput = Omit<Card, "card_id" | "card_key">;
 export type CardPatch = Partial<CardInput>;
 
 /** Mirrors `backend/schemas/portfolio.py::PortfolioOut`. */

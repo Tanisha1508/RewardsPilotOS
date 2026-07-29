@@ -10,6 +10,42 @@ import type { Card, CardPatch, RewardBalance } from "@/types/api";
 // than defaulting to 0 — an unknown fee and a waived fee are different facts,
 // and the project's rule is that unknown beats incorrect.
 
+/** Cards the Rule Engine can actually compute for.
+ *
+ *  Mirrors `rules/parser/catalog.py` (and the reward_currency each rule file
+ *  declares). Hand-written to match, per the project's no-codegen convention for
+ *  API types — kept to the same three cards the catalogue resolves, so drift is
+ *  visible rather than subtle. When a card graduates from VERIFICATION_QUEUE,
+ *  it gets a line there and a line here.
+ *
+ *  The point is not convenience. `reward_currency` must match a transfer-graph
+ *  node id and (issuer, card_name) must match the catalogue, and both were free
+ *  text: one typo produced a card that tracked fine and silently computed
+ *  nothing. */
+const KNOWN_CARDS = [
+  {
+    label: "HDFC Infinia",
+    issuer: "hdfc",
+    card_name: "HDFC Infinia",
+    network: "visa",
+    reward_currency: "hdfc_reward_points",
+  },
+  {
+    label: "Axis Bank Atlas",
+    issuer: "axis",
+    card_name: "Axis Bank Atlas",
+    network: "visa",
+    reward_currency: "edge_miles",
+  },
+  {
+    label: "Amex Platinum Travel",
+    issuer: "amex",
+    card_name: "Amex Platinum Travel",
+    network: "amex",
+    reward_currency: "membership_rewards",
+  },
+] as const;
+
 const EMPTY_FORM = {
   issuer: "",
   card_name: "",
@@ -108,7 +144,32 @@ export default function CardsPage() {
     <Shell>
       <h1 className="text-lg font-semibold tracking-tight">Cards</h1>
 
-      <form onSubmit={addCard} className="mt-6 grid gap-3 sm:grid-cols-7">
+      {/* Pick a supported card and the four identity fields fill themselves.
+          Typing them by hand still works — the catalogue is deliberately small,
+          and refusing unknown cards would be worse than tracking them. */}
+      <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-xs text-neutral-500">Quick add:</span>
+        {KNOWN_CARDS.map((card) => (
+          <button
+            key={card.label}
+            type="button"
+            onClick={() =>
+              setForm({
+                ...EMPTY_FORM,
+                issuer: card.issuer,
+                card_name: card.card_name,
+                network: card.network,
+                reward_currency: card.reward_currency,
+              })
+            }
+            className="rounded border border-neutral-800 px-2.5 py-1 text-xs text-neutral-300 hover:border-accent hover:text-accent"
+          >
+            {card.label}
+          </button>
+        ))}
+      </div>
+
+      <form onSubmit={addCard} className="mt-3 grid gap-3 sm:grid-cols-7">
         <Field
           label="Issuer"
           value={form.issuer}
@@ -195,7 +256,20 @@ export default function CardsPage() {
             <tbody className="divide-y divide-neutral-900">
               {cards.data.map((card) => (
                 <tr key={card.card_id}>
-                  <td className="py-2">{card.card_name}</td>
+                  <td className="py-2">
+                    {card.card_name}
+                    {/* Tracked but not computable. Silence here is what makes a
+                        typo look like a working card until you ask a question
+                        about it and get nothing back. */}
+                    {card.card_key === null ? (
+                      <span
+                        className="ml-2 rounded border border-amber-800 bg-amber-950/40 px-1.5 py-0.5 text-[10px] text-amber-200"
+                        title="No verified rule file matches this issuer and card name, so Ask cannot compute rewards for it. Check the spelling, or use Quick add."
+                      >
+                        not recognised
+                      </span>
+                    ) : null}
+                  </td>
                   <td className="py-2 text-neutral-400">{card.issuer}</td>
                   <td className="py-2 text-neutral-400">{card.network}</td>
                   <td className="py-2 text-right tabular-nums">

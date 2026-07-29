@@ -634,3 +634,35 @@ roadmap — none is silently papered over.
       category matches no rule file entry AND no exclusion, letting the
       Recommender say "I scored this at base earn; if you meant hotels, say so".
       Mirrors the ADR-019 channel note. Cheaper and honest, but noisier.
+
+31. **A card's `reward_currency` was pointed at a *card* node, not a currency
+    node — FIXED 2026-07-29; the missing validation is not.** Investigating what
+    looked like duplicate graph nodes turned up a real defect:
+
+    - `membership_rewards` — `node_type: currency`, "Amex Membership Rewards",
+      **8 outgoing transfer edges** (KrisFlyer, Emirates, Cathay, Avios, …)
+    - `amex_membership_rewards` — `node_type: card`, the P2 skeleton "American
+      Express Membership Rewards Credit Card", **zero** edges
+
+    Not duplicates: a currency and a card with similar names.
+    `infra/scripts/seed_demo_portfolio.py` set Amex Platinum Travel's
+    `reward_currency` to the **card** id. Transfer lookups start from that id,
+    so every Amex transfer/redemption query returned no paths — indistinguishable
+    from a card that genuinely has no transfer options.
+
+    Fixed in the seed script and the frontend quick-add catalogue. Regression
+    cover asserts every quick-add currency is a `currency` node
+    (`tests/rules/test_frontend_card_catalog_matches.py`).
+
+    **What remains open — the reason it happened.** Nothing validates that a
+    card's `reward_currency` names a currency node. It is a free-text column;
+    any string is accepted, and a wrong-but-real node id fails silently and
+    looks like an answer. The frontend quick-add now covers the three supported
+    cards, but a hand-typed card can still do it.
+
+    The durable fix is server-side validation at card create/update: reject (or
+    flag) a `reward_currency` that is not a currency node in the transfer graph.
+    That is an API behaviour change, so it waits for a spec decision.
+
+    **Live data note:** cards added to the deployed demo account before this fix
+    carry the wrong Amex currency and need correcting through the UI.

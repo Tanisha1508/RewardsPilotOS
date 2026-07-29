@@ -50,7 +50,7 @@ CARDS = [
         "issuer": "amex",
         "card_name": "Amex Platinum Travel",
         "network": "amex",
-        "reward_currency": "amex_membership_rewards",
+        "reward_currency": "membership_rewards",
         "annual_fee": 5000.0,  # + GST, verified (Amex official)
         "renewal_date": "2027-01-10",
         "_demo_balance": 20000,
@@ -96,7 +96,9 @@ def main() -> None:
                 "current_balance": card["_demo_balance"],
             },
         )
-        print(f"  added {card['card_name']} ({card['reward_currency']}), balance {card['_demo_balance']}")
+        print(
+            f"  added {card['card_name']} ({card['reward_currency']}), balance {card['_demo_balance']}"
+        )
 
     cards = _call("GET", "/api/v1/portfolio/cards", token)["data"]
     print(f"done — demo portfolio now has {len(cards)} cards")

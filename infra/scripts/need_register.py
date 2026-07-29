@@ -17,8 +17,17 @@ ROOT = Path(__file__).resolve().parent.parent.parent
 def _walk_rule(node, path, entries, card):
     if isinstance(node, dict):
         if "status" in node and "confidence" in node and node.get("status") == "unverified":
-            entries.append((card, path, "unverified value (null)" if node.get("value") is None
-                            else f"unverified value ({node.get('value')})"))
+            entries.append(
+                (
+                    card,
+                    path,
+                    (
+                        "unverified value (null)"
+                        if node.get("value") is None
+                        else f"unverified value ({node.get('value')})"
+                    ),
+                )
+            )
         for key, value in node.items():
             if key == "notes" and isinstance(value, str) and "[NEED" in value:
                 entries.append((card, f"{path}.notes", value))
