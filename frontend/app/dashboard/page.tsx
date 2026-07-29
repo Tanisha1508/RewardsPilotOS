@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
+import { FirstRun } from "@/components/first-run";
 
 // Dashboard shell (BUILD_SPEC §10). D2 wires cards and balances; opportunities
 // and expiring-points counts arrive with D5's opportunity engine, and are
@@ -14,13 +15,23 @@ export default function DashboardPage() {
   const balances = useApi(() => api.listBalances());
   const recommendations = useApi(() => api.listRecommendations());
 
+  // An empty portfolio is a new account, not a state worth summarising. Gated on
+  // loading AND no error so a cold start or a 500 never masquerades as "you have
+  // nothing" — the failure mode `useApi` was written to keep distinct.
+  const isFirstRun =
+    !portfolio.loading && !portfolio.error && (portfolio.data?.cards.length ?? 0) === 0;
+
   return (
     <Shell>
-      <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
-      <p className="mt-1 max-w-2xl text-sm text-neutral-400">
-        A summary of what the system knows about you. Opportunities and expiring-points alerts are
-        not wired yet — they are deliberately absent rather than shown as zero.
-      </p>
+      <h1 className="text-lg font-semibold tracking-tight">
+        {isFirstRun ? "Welcome" : "Dashboard"}
+      </h1>
+      {isFirstRun ? null : (
+        <p className="mt-1 max-w-2xl text-sm text-neutral-400">
+          A summary of what the system knows about you. Opportunities and expiring-points alerts are
+          not wired yet — they are deliberately absent rather than shown as zero.
+        </p>
+      )}
 
       {portfolio.error ? <div className="mt-4"><ErrorNotice error={portfolio.error} /></div> : null}
 
@@ -32,7 +43,9 @@ export default function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
+      {isFirstRun ? <FirstRun /> : null}
+
+      <div className={`mt-6 grid gap-4 sm:grid-cols-3 ${isFirstRun ? "hidden" : ""}`}>
         <Stat
           label="Cards"
           value={portfolio.loading ? "…" : String(portfolio.data?.cards.length ?? 0)}
@@ -48,7 +61,7 @@ export default function DashboardPage() {
         />
       </div>
 
-      <section className="mt-8">
+      <section className={`mt-8 ${isFirstRun ? "hidden" : ""}`}>
         <h2 className="text-sm font-medium text-neutral-300">Reward balances</h2>
         {balances.error ? (
           <div className="mt-3">
