@@ -17,6 +17,10 @@ export default function DashboardPage() {
   return (
     <Shell>
       <h1 className="text-lg font-semibold tracking-tight">Dashboard</h1>
+      <p className="mt-1 max-w-2xl text-sm text-neutral-400">
+        A summary of what the system knows about you. Opportunities and expiring-points alerts are
+        not wired yet — they are deliberately absent rather than shown as zero.
+      </p>
 
       {portfolio.error ? <div className="mt-4"><ErrorNotice error={portfolio.error} /></div> : null}
 

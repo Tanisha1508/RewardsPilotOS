@@ -143,6 +143,10 @@ export default function CardsPage() {
   return (
     <Shell>
       <h1 className="text-lg font-semibold tracking-tight">Cards</h1>
+      <p className="mt-1 max-w-2xl text-sm text-neutral-400">
+        The cards you hold, and how many points sit on each. Ask compares only these — add a card
+        before asking which one to use.
+      </p>
 
       {/* Pick a supported card and the four identity fields fill themselves.
           Typing them by hand still works — the catalogue is deliberately small,
