@@ -66,7 +66,37 @@ def test_quick_add_reward_currencies_match_the_rule_files():
         )
 
 
-def test_quick_add_currencies_are_currency_nodes_not_card_nodes():
+def test_currency_labels_match_the_graph_node_names():
+    """`frontend/lib/display.ts` hand-mirrors the currency nodes' display names,
+    so the UI can show "Axis EDGE Miles" instead of `edge_miles`. Derivation is
+    not an option — title-casing gives "Edge Miles", which is not the programme's
+    name — so the labels are looked up and must be kept in step.
+
+    Synthetic fixture currencies must NOT be listed: they should never reach a
+    real user, and showing the raw id makes it obvious when one does.
+    """
+    display = (Path(__file__).resolve().parents[2] / "frontend" / "lib" / "display.ts").read_text()
+    block = re.search(r"CURRENCY_LABELS: Record<string, string> = \{(.*?)\};", display, re.S)
+    assert block, "CURRENCY_LABELS literal not found in frontend/lib/display.ts"
+    labels = dict(re.findall(r'(\w+):\s*"([^"]*)"', block.group(1)))
+    assert labels, "no currency labels parsed"
+
+    nodes = json.loads(
+        (Path(__file__).resolve().parents[2] / "database" / "seed" / "graph_nodes.json").read_text()
+    )
+    nodes = nodes if isinstance(nodes, list) else nodes.get("nodes", nodes)
+    by_id = {n.get("node_id") or n.get("id"): n for n in nodes}
+
+    for currency, label in labels.items():
+        node = by_id.get(currency)
+        assert node is not None, f"{currency!r} is labelled but is not a graph node"
+        assert node.get("node_type") == "currency", f"{currency!r} is not a currency node"
+        assert (
+            node.get("name") == label
+        ), f"{currency}: frontend shows {label!r}, graph node says {node.get('name')!r}"
+        assert (
+            "SYNTHETIC" not in label
+        ), f"{currency}: a synthetic fixture currency must not be given a friendly label"
     """The bug this test was written for (2026-07-29).
 
     A portfolio card's `reward_currency` is the *source node* for transfer

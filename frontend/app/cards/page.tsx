@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell } from "@/components/shell";
+import { currencyLabel, formatDate, formatDateTime } from "@/lib/display";
 import type { Card, CardPatch, RewardBalance } from "@/types/api";
 
 // Cards CRUD (BUILD_SPEC §10). Annual fee is optional and stays empty rather
@@ -293,7 +294,7 @@ export default function CardsPage() {
                   </td>
                   <td className="py-2 text-right text-neutral-400">
                     <EditableCell
-                      display={card.renewal_date ?? "—"}
+                      display={card.renewal_date ? formatDate(card.renewal_date) : "—"}
                       value={card.renewal_date ?? ""}
                       type="date"
                       onSave={(v) => patchCard(card, { renewal_date: v === "" ? null : v })}
@@ -405,8 +406,8 @@ function BalanceCell({
         className="text-right hover:text-accent"
         title={
           balance
-            ? `${card.reward_currency} · updated ${balance.last_updated}`
-            : `Record a ${card.reward_currency} balance`
+            ? `${currencyLabel(card.reward_currency)} · updated ${formatDateTime(balance.last_updated)}`
+            : `Record a ${currencyLabel(card.reward_currency)} balance`
         }
       >
         {balance ? (

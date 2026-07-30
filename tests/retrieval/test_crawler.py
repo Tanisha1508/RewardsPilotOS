@@ -87,9 +87,16 @@ def test_a_fetch_error_is_logged_not_fatal():
 
     report = crawl(store=InMemoryCrawlStateStore(), fetcher=boom, today="2026-07-21")
     errors = report.by_status("error")
-    # All three P1 sources are crawlable (HDFC corrected 2026-07-22), so all
-    # three reach the fetcher and error — none is fatal, each is logged.
-    assert len(errors) == 3
+
+    # Every crawlable source reaches the fetcher and errors — none is fatal, each
+    # is logged. Derived from the source list rather than hard-coded: the count
+    # was never the point of this test, and a literal breaks the moment a source
+    # is added (it did, when the Amex Reward Multiplier T&C page was added
+    # 2026-07-29).
+    _user_agent, sources = load_sources()
+    expected = sum(1 for source in sources if source.crawlable)
+    assert expected >= 3, "sanity: the source list should not have shrunk"
+    assert len(errors) == expected
     assert all("ConnectionError" in r.detail for r in errors)
 
 

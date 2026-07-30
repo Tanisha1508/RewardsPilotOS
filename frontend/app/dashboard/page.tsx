@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
 import { FirstRun } from "@/components/first-run";
+import { currencyLabel, formatDate, formatDateTime } from "@/lib/display";
 
 // Dashboard shell (BUILD_SPEC §10). D2 wires cards and balances; opportunities
 // and expiring-points counts arrive with D5's opportunity engine, and are
@@ -90,15 +91,18 @@ export default function DashboardPage() {
             <tbody className="divide-y divide-neutral-900">
               {balances.data.map((balance) => (
                 <tr key={balance.balance_id}>
-                  <td className="py-2">{balance.reward_currency}</td>
+                  <td className="py-2">{currencyLabel(balance.reward_currency)}</td>
                   <td className="py-2 text-right tabular-nums">
                     {balance.current_balance.toLocaleString("en-IN")}
                   </td>
                   <td className="py-2 text-right text-neutral-400">
-                    {balance.expiry_date ?? "—"}
+                    {balance.expiry_date ? formatDate(balance.expiry_date) : "—"}
                   </td>
-                  {/* Balances are user-entered; staleness is part of the answer. */}
-                  <td className="py-2 text-right text-neutral-400">{balance.last_updated}</td>
+                  {/* Balances are user-entered; staleness is part of the answer —
+                      which only lands if the date is legible. */}
+                  <td className="py-2 text-right text-neutral-400">
+                    {formatDateTime(balance.last_updated)}
+                  </td>
                 </tr>
               ))}
             </tbody>

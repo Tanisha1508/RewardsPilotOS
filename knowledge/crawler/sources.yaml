@@ -65,3 +65,25 @@ sources:
     # crawler detects when the page changes; the numbers came from the official
     # benefits catalogue, reviewed manually.
     blind_spot: "exact reward figures and MR transfer-partner list are JS-rendered / in linked catalogue, not static HTML"
+
+  - key: amex_reward_multiplier_tnc
+    doc_id: amex_plat_travel_reward_rules
+    issuer: amex
+    program: amex_membership_rewards
+    url: https://www.americanexpress.com/in/benefits/rewards-program/terms-conditions.html
+    crawlable: true
+    # Added 2026-07-29. The product page above is what the crawler watched, but
+    # the Reward Multiplier's validity window lives HERE — verified 2026-07-29:
+    # "Reward Multiplier offer would be valid from January 1, 2021 - July 31,
+    # 2026", plus the 25,000 Bonus MR/month cap and the per-card multipliers.
+    #
+    # Why it matters: from 2026-08-01 the programme lapses and ADR-012 makes the
+    # engine fall back to base earn with an expiry note. If Amex quietly renews
+    # it, nothing would have told us — the product page can change without this
+    # page changing, and vice versa. Watching only the product page left the
+    # renewal undetectable, which would under-report the card indefinitely.
+    #
+    # Shares amex_plat_travel's doc_id on purpose: it is the same knowledge doc,
+    # sourced from two pages. A change on either warrants the same
+    # re-verification.
+    blind_spot: "multiplier tiers are in an HTML table; a layout change may alter the hash without any figure changing"
