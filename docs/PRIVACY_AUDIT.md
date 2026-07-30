@@ -60,13 +60,25 @@ statement away: anyone following the hint Postgres itself prints
 there is nothing behind it.
 
 **Second layer added, same day.** RLS is now enabled on all 16 public tables
-with **no policies**, which is deny-all for every non-owner role. Verified:
+with **no policies**, which is deny-all for every non-owner role.
 
-- `select tablename, rowsecurity from pg_tables where schemaname='public'`
-  returns `true` for all 16.
-- The deployed app still lists cards and balances, so the backend is unaffected
-  — it connects as the `postgres` role, which **owns** these tables, and table
-  owners bypass RLS.
+Evidence, and who produced it — worth separating, because the two halves were
+established differently:
+
+| Claim | How it was established | Confidence |
+|---|---|---|
+| RLS is on for all 16 tables | `pg_tables` query, owner-run | Direct |
+| The backend still works | **Live check** — the deployed app lists cards and balances after the change | Direct |
+| `anon` is denied | Table Editor as the Anonymous role, **before RLS was enabled** — a GRANT denial (42501), a different mechanism | Direct, but pre-change |
+| `anon` is *still* denied after RLS | **Not observed.** RLS only ever restricts, never grants, so it cannot have become more permissive | Reasoning, not evidence |
+
+The last row is the open one. A post-RLS check on `cards` under the Anonymous
+role would close it; the expected result is the same 42501. Nothing suggests
+otherwise, but it has not been seen.
+
+The direct anon check could not be run from here: reading the anon key out of the
+client bundle to query PostgREST was blocked as credential extraction, correctly,
+and was not worked around.
 
 `anon` is now denied by two independent mechanisms: no GRANT, and no policy. A
 stray `GRANT SELECT ... TO anon` — including the one Postgres prints in its own
