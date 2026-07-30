@@ -141,7 +141,9 @@ roadmap — none is silently papered over.
     vocabulary against those maps, and the integration test that catches an
     omission is a cross-card comparison, not per-field verification.
 
-16. **~~`cap_usage` is not scoped to a user~~ — RESOLVED 2026-07-30.**
+16. **~~`cap_usage` is not scoped to a user~~ — RESOLVED 2026-07-30, but see
+    item 33 first: the table is unused by design, so this hardened something
+    the product does not rely on.**
     `user_id` is now part of the primary key, with `ON DELETE CASCADE` from
     `users` (migration `cap_usage_user_id`; BUILD_SPEC §4 amended).
     `PostgresCapUsageStore` takes the owner as a **constructor argument**, so an
@@ -165,8 +167,13 @@ roadmap — none is silently papered over.
     (`YYYY-MM`) — a statement cycle is not a calendar month, so that cap cannot
     be recorded in this table at all. See item 32.
 
-    So this table will need altering again. One of at least two mismatches is
-    fixed; the schema is not finished.
+    **Superseded framing.** The paragraphs above treat this as a table on its
+    way to being finished. Item 33 establishes it is not on its way anywhere:
+    accrual tracking needs transaction data this product does not collect, caps
+    are enforced per transaction from the rule files, and nothing writes here.
+    The `user_id` fix stands — a global counter would have been wrong under any
+    design, and it closed an account-deletion gap — but "the schema is not
+    finished" implies work that is not queued and should not be.
 
     *Original entry, kept for the reasoning:* BUILD_SPEC §4 specified
     `(card_id, category, month, accrued_points)` with no `user_id`, so accrual
@@ -694,8 +701,10 @@ roadmap — none is silently papered over.
     carry the wrong Amex currency and need correcting through the UI.
 
 
-32. **`cap_usage` cannot represent a statement-cycle cap.** Found 2026-07-30
-    while re-examining item 16. `cap_usage.month` is `String(7)` holding
+32. **`cap_usage` cannot represent a statement-cycle cap — MOOT while the
+    table is unused (see item 33).** Found 2026-07-30 while re-examining item
+    16, and worth keeping as a record of *why* the table is not simply
+    "unfinished": the gap starts at the input, not the schema. `cap_usage.month` is `String(7)` holding
     `YYYY-MM`, and `PostgresCapUsageStore` keys on it — but cap periods in the
     rule files are not all monthly:
 
@@ -743,8 +752,13 @@ roadmap — none is silently papered over.
     **The fix that makes it computable:** collect the statement date per card
     (a user knows it; it is on every statement) and key accrual by a resolved
     period *window* rather than a month. That is a schema change plus a new
-    input, so it waits for the write path — but note that until it exists, the
-    honest answer to "am I near my statement-cycle cap?" is that we cannot say.
+    input.
+
+    **Not queued.** Item 33 settles the prior question: this product does not
+    track spend, so there is no accrual to place in any window, correct or
+    otherwise. `CheckCap` now says so outright. This entry stays because it
+    documents the depth of the gap — input, engine, storage — which is the
+    argument against anyone "just adding a period column" later.
 
 33. **`CheckCap` reported an empty table as a confident zero — FIXED
     2026-07-30.** Asked "am I close to my cap?", the engine answered:

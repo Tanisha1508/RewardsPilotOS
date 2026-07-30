@@ -32,6 +32,26 @@ Ordered by value. This is the working queue.
 | A8 | OPS | **Re-measure cold start** | Keep-alive has been live since 2026-07-29; the 15.6 s figure predates it |
 | A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer |
 
+## Deferred by design — `cap_usage` / cap awareness
+
+Recorded here so it is not repeatedly rediscovered as a gap.
+
+The `cap_usage` table is **unused by design** (KNOWN_LIMITATIONS 33). Caps are
+enforced per transaction, straight from the rule files: a single purchase larger
+than the monthly cap is correctly clipped, needing no history, no billing date
+and no stored table. Tracking *accrual* would need transaction data this product
+does not collect and is not trying to — it is a rewards recommendation pilot,
+not a statement analyser.
+
+`CheckCap` now answers "unknown" rather than reporting an empty table as zero,
+so nothing user-facing depends on it.
+
+**If cap awareness is ever wanted**, the fitting shape is a **query-time input**
+— "I have already spent ₹1.5L on travel this month, which card now?" — passed
+straight into `calculate_earn`'s `accrued_for_scope`, which already accepts it.
+That needs no schema, no billing date and no ledger. Not queued; recorded so the
+option is not lost.
+
 ## B. Needs a nod, not a decision
 
 Small, clearly right, but each changes behaviour rather than adding to it.
