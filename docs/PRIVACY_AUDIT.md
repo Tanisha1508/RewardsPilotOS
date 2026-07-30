@@ -70,11 +70,14 @@ established differently:
 | RLS is on for all 16 tables | `pg_tables` query, owner-run | Direct |
 | The backend still works | **Live check** — the deployed app lists cards and balances after the change | Direct |
 | `anon` is denied | Table Editor as the Anonymous role, **before RLS was enabled** — a GRANT denial (42501), a different mechanism | Direct, but pre-change |
-| `anon` is *still* denied after RLS | **Not observed.** RLS only ever restricts, never grants, so it cannot have become more permissive | Reasoning, not evidence |
+| `anon` is *still* denied after RLS | **Observed** — `public.cards` under the Anonymous role returns `42501 permission denied` post-change | Direct |
 
-The last row is the open one. A post-RLS check on `cards` under the Anonymous
-role would close it; the expected result is the same 42501. Nothing suggests
-otherwise, but it has not been seen.
+Closed on `cards` specifically, which is the table holding financial data.
+
+The denial is still at the **GRANT** level, not the policy level: Postgres checks
+privileges before RLS, so RLS is never consulted and cannot be observed working.
+That is the intended shape — the outer layer fires, and RLS sits behind it as the
+backstop for the day a grant appears.
 
 The direct anon check could not be run from here: reading the anon key out of the
 client bundle to query PostgREST was blocked as credential extraction, correctly,
