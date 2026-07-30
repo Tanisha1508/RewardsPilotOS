@@ -709,13 +709,39 @@ roadmap — none is silently papered over.
     zero), so nothing is wrong in the answers — but the *first* code path that
     records accrual for a statement-cycle scope has nowhere to put it.
 
-    **Do not solve this by rounding a statement cycle to a month.** The two
-    windows differ by up to 30 days, and a cap silently applied to the wrong
-    period would over- or under-report earning with full confidence, which is
-    the failure mode the whole verified-value structure exists to prevent.
+    **The gap is three layers deep, not one** (corrected 2026-07-30 — an
+    earlier draft of this entry suggested computing the window from the card's
+    `renewal_date`, which is wrong twice over):
 
-    Options when the write path is built, none chosen: store a period *key*
-    (`"2026-07"` or `"2026-07-15/2026-08-14"`) instead of a month; or add a
-    `period_type` column and let the store compute the window from the card's
-    `renewal_date`/billing date. Both are schema changes, so both wait for the
-    spec update that the write path will need anyway.
+    1. **Input — we never ask.** `cards` holds `joining_date` (when the card was
+       issued) and `renewal_date` (the annual-fee anniversary). Neither is the
+       statement date, and there is no billing-date column. So even a correct
+       schema could not be populated: the system does not know, and has never
+       asked, when this cardholder's cycle starts.
+    2. **Engine — the period is ignored.** `RuleEngine.check_cap(card_key,
+       cap_scope, month)` reads accrual keyed by `month` regardless of the
+       period the rule file declares, and `CapStatus` then reports
+       `period: "statement_cycle"` beside a figure derived from a calendar
+       month. The two disagree and nothing says so.
+    3. **Storage — `cap_usage.month` is `String(7)`.**
+
+    **Do not solve this by rounding a statement cycle to a month.** The windows
+    differ by up to 30 days, and a cap applied to the wrong period would over-
+    or under-report earning at full confidence — the failure the verified-value
+    structure exists to prevent.
+
+    Harmless today only because every accrual is absent and therefore zero. The
+    conflation is already present in the *read* path, so it becomes live the
+    moment anything writes.
+
+    **The fix that needs no new input, and matches the project's own rule:**
+    refuse. A cap whose period the system cannot resolve for this cardholder is
+    `unknown`, with a stated reason — exactly how the evaluator already treats a
+    validity-window boundary month (item 10, ADR-012) rather than guessing which
+    side the spend fell on. Unknown over incorrect.
+
+    **The fix that makes it computable:** collect the statement date per card
+    (a user knows it; it is on every statement) and key accrual by a resolved
+    period *window* rather than a month. That is a schema change plus a new
+    input, so it waits for the write path — but note that until it exists, the
+    honest answer to "am I near my statement-cycle cap?" is that we cannot say.
