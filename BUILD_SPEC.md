@@ -273,7 +273,9 @@ graph_edges         edge_id PK, from_node FK, to_node FK, edge_type (earn|transf
 
 Migrations: Alembic in `database/migrations/`, single head, one migration per build day maximum.
 
-**Reward caps state:** monthly cap consumption tracked in `interaction_events` aggregation or a dedicated `cap_usage` table (card_id, category, month, accrued_points). Use the dedicated table; simpler queries.
+**Reward caps state:** monthly cap consumption tracked in `interaction_events` aggregation or a dedicated `cap_usage` table (**user_id**, card_id, category, month, accrued_points). Use the dedicated table; simpler queries.
+
+*Amended 2026-07-30:* `user_id` added, as part of the primary key, with `ON DELETE CASCADE` from `users`. The original columns made every accrual row global — two users holding the same card shared one monthly counter, so one person's spend consumed the other's headroom (KNOWN_LIMITATIONS 16). Changed while the table was still empty, so no data migration was needed, and because it was also the only user data an account deletion could not reach.
 
 ---
 

@@ -141,8 +141,22 @@ roadmap — none is silently papered over.
     vocabulary against those maps, and the integration test that catches an
     omission is a cross-card comparison, not per-field verification.
 
-16. **`cap_usage` is not scoped to a user — DEFERRED (product owner,
-    2026-07-20).** BUILD_SPEC §4 specifies
+16. **~~`cap_usage` is not scoped to a user~~ — RESOLVED 2026-07-30.**
+    `user_id` is now part of the primary key, with `ON DELETE CASCADE` from
+    `users` (migration `cap_usage_user_id`; BUILD_SPEC §4 amended).
+    `PostgresCapUsageStore` takes the owner as a **constructor argument**, so an
+    unscoped store cannot be built — the global counter is unrepresentable
+    rather than merely unused. Two tests pin it: one user's accrual is invisible
+    to another, and cap rows are erased with the account.
+
+    Brought forward from the deferral below because the trigger condition was
+    the wrong one to wait for. Waiting until "the first code path calls
+    `cap_store.record`" meant changing a populated table under a live write
+    path; doing it while empty needed no data migration and no ambiguity about
+    who existing rows belonged to. It was also the one place user data survived
+    `DELETE /auth/me` (privacy audit P3), since the table had no foreign key.
+
+    *Original entry, kept for the reasoning:* BUILD_SPEC §4 specified
     `(card_id, category, month, accrued_points)` with no `user_id`, so accrual
     rows are global: two users holding the same card would share one monthly
     cap counter. Two further mismatches with the `CapUsageStore` protocol are

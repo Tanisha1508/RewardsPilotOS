@@ -179,8 +179,9 @@ def test_episodic_recall_is_most_recent_first_and_limited(seeded_user):
     assert recalled.episodic[0].payload["query"] == "q3"
 
 
-def test_cap_usage_accrues_and_reads_back():
-    store = PostgresCapUsageStore()
+def test_cap_usage_accrues_and_reads_back(user_id):
+    sync_user(user_id, "cap@example.test", "Cap User")
+    store = PostgresCapUsageStore(user_id)
     assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 0.0
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 4000)
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 1500)
@@ -189,18 +190,20 @@ def test_cap_usage_accrues_and_reads_back():
     assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-08") == 0.0
 
 
-def test_cap_usage_absent_row_is_zero_not_unknown():
+def test_cap_usage_absent_row_is_zero_not_unknown(user_id):
     """Nothing accrued is genuinely zero: accrual starts at zero each month by
     definition, so this is one of the few places a missing value is knowable."""
-    assert PostgresCapUsageStore().get_accrued("axis_atlas", "never_used", "2026-07") == 0.0
+    sync_user(user_id, "cap2@example.test", "Cap User")
+    assert PostgresCapUsageStore(user_id).get_accrued("axis_atlas", "never_used", "2026-07") == 0.0
 
 
-def test_rule_engine_reads_cap_usage_from_postgres():
+def test_rule_engine_reads_cap_usage_from_postgres(user_id):
     """The engine's behaviour must not change with the store swapped in — same
     protocol, same numbers."""
     from rules.engine.engine import RuleEngine
 
-    store = PostgresCapUsageStore()
+    sync_user(user_id, "cap3@example.test", "Cap User")
+    store = PostgresCapUsageStore(user_id)
     engine = RuleEngine(cap_store=store)
     before = engine.check_cap("hdfc_infinia", "smartbuy_total", "2026-07")
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 1000)
@@ -215,3 +218,47 @@ def test_uuid_users_are_isolated_from_each_other(seeded_user):
         assert get_cards(UserScopedInput()).cards == []
     with acting_as(str(seeded_user)):
         assert len(get_cards(UserScopedInput()).cards) == 1
+
+
+def test_cap_usage_is_isolated_between_users(user_id):
+    """The bug this schema change exists to prevent (KNOWN_LIMITATIONS 16).
+
+    Before `user_id` joined the key, `(card_key, scope, month)` was global: two
+    people holding the same card wrote to one row, so one person's spend ate the
+    other's remaining monthly cap. Nothing wrote to the table, which is why it
+    stayed theoretical — but a cap counter that silently belongs to everyone is
+    not something to leave lying next to a multi-user product.
+    """
+    other = uuid.uuid4()
+    sync_user(user_id, "mine@example.test", "Mine")
+    sync_user(other, "theirs@example.test", "Theirs")
+
+    mine = PostgresCapUsageStore(user_id)
+    theirs = PostgresCapUsageStore(other)
+
+    mine.record("hdfc_infinia", "smartbuy_total", "2026-07", 9000)
+
+    assert mine.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 9000.0
+    # Same card, same scope, same month — and untouched, because it is a
+    # different person's counter.
+    assert theirs.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 0.0
+
+
+def test_cap_usage_is_deleted_with_the_user(user_id):
+    """Cap rows had no foreign key, so they were the one piece of user data
+    `DELETE /auth/me` could not reach (privacy audit P3)."""
+    from backend.application.users import delete_user
+
+    sync_user(user_id, "erase@example.test", "Erase Me")
+    store = PostgresCapUsageStore(user_id)
+    store.record("axis_atlas", "travel_accelerated", "2026-07", 5000)
+    assert store.get_accrued("axis_atlas", "travel_accelerated", "2026-07") == 5000.0
+
+    delete_user(user_id)
+
+    # Re-synced as the same id, the counter is gone rather than inherited.
+    sync_user(user_id, "erase@example.test", "Erase Me")
+    assert (
+        PostgresCapUsageStore(user_id).get_accrued("axis_atlas", "travel_accelerated", "2026-07")
+        == 0.0
+    )
