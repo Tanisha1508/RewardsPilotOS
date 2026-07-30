@@ -114,6 +114,62 @@ live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
   (IPv6; works from home networks) — never through the transaction pooler.
   Schema is current: 16 public tables, verified through the pooler.
 
+## ❌ PHASE 1 IS BLOCKED — measured on the preview 2026-07-30
+
+**Do not merge `privacy/p6-p7-same-origin` yet.** Everything about the rewrite
+works; the thing it exposed does not.
+
+Tested side by side, same backend, same query, same minutes:
+
+| Path | Result |
+|---|---|
+| Preview → Vercel rewrite → Render | **502 after ~90 s** |
+| Production → Render directly | **Succeeded at ~85 s**, correct answer |
+
+So the proxy imposes a ceiling that chat currently sits right underneath, and
+occasionally above. `experimental.proxyTimeout` did not save it — whatever cuts
+the request on Vercel is not the setting measured locally.
+
+**But the proxy is not the real problem. Chat takes ~85 seconds.** That is the
+finding that matters, and it is independent of any of this work: the core
+feature of the product takes a minute and a half against a warm backend. The
+rewrite did not cause it, it just removed the slack that was hiding it.
+
+So the order of work is now:
+
+1. **Find out why chat takes 85 s warm** and fix it. Suspects, cheapest first:
+   the Planner and Recommender are two sequential Gemini calls, each with a
+   retry; retrieval runs against Chroma on a free Render instance with very
+   little CPU; and `complete_with_retry` may be backing off against a Gemini
+   free-tier rate limit (20 requests/day shared) rather than failing fast.
+2. **Then** re-run this preview test. With chat at a sane latency the proxy
+   ceiling stops being reachable and phase 1 merges unchanged.
+3. **Then** phase 2, which needs the latency answer anyway because a route
+   handler inherits a stricter execution limit than a rewrite.
+
+Everything else on the branch is verified and safe — see below.
+
+## ✅ VERIFIED ON THE PREVIEW (2026-07-30)
+
+Confirmed live, signed in, on `rewards-pilot-melvcn1a2-…vercel.app`:
+
+- **Same-origin routing.** Every API call goes to the preview origin;
+  **zero requests to `onrender.com`**. `POST /api/v1/auth/sync`,
+  `GET /api/v1/portfolio/cards`, `GET /api/v1/recommendations` all 200.
+- **CORS preflight is gone.** Production still shows `OPTIONS /api/v1/chat`
+  before every POST; the preview does not.
+- **Google OAuth works on a preview URL**, once the owner added the wildcard to
+  Supabase's Redirect URLs. `redirectTo` already sent `window.location.origin`,
+  so no code change was needed — only the allow-list entry.
+- **CSP is clean.** No violations in the console on any page.
+- **The reworded privacy notice is live**, and the app's own error handling
+  degraded honestly on the 502: "The server returned a non-JSON response
+  (HTTP 502)" rather than a blank screen.
+- **ADR-019 is working in production.** The successful answer carried the
+  channel note verbatim — "because no booking channel was provided, these
+  figures reflect base earn only" — with HDFC Infinia at 1665.0 points against
+  1000.0 for the other two, medium confidence, and dated citations.
+
 ## ⚠️ BEFORE PROMOTING THE NEXT DEPLOY (added 2026-07-30)
 
 Unpushed commits change how the browser reaches the backend. **Verify on a
