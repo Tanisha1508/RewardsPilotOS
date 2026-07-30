@@ -114,6 +114,48 @@ live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
   (IPv6; works from home networks) — never through the transaction pooler.
   Schema is current: 16 public tables, verified through the pooler.
 
+## ⚠️ BEFORE PROMOTING THE NEXT DEPLOY (added 2026-07-30)
+
+Unpushed commits change how the browser reaches the backend. **Verify on a
+Vercel preview URL before promoting to production** — one question cannot be
+answered locally.
+
+**What changed.** API calls are now relative (`/api/v1/...`) and forwarded to
+Render by a rewrite in `frontend/next.config.mjs`, instead of the browser
+calling `rewardspilotos.onrender.com` directly. A Content Security Policy also
+ships, and it **fails closed** — a wrong origin blocks calls rather than
+weakening anything.
+
+**The open question: the proxy's timeout.** Measured locally, Next's rewrite
+proxy aborts at **exactly 30s** and returns a 500, where a direct call to the
+same slow backend succeeded at 45s. `experimental.proxyTimeout: 120_000` fixes
+it on a self-hosted `next start` — verified, 45s request returns 200.
+
+**Whether Vercel honours `proxyTimeout` for external rewrites is unverified.**
+Vercel proxies these through its own routing layer, which may impose its own
+gateway limit regardless of this setting. This matters because a cold Render
+dyno is ~15.6s *before* the model is called, and a restart that re-ingests the
+Chroma corpus is ~120s (KNOWN_LIMITATIONS 28) — so chat is exactly the request
+that would hit any such cap.
+
+**The test, on the preview URL:**
+
+1. Let Render idle >15 min so the next request pays a cold start.
+2. Ask a question on the preview deployment's Ask tab.
+3. A recommendation means the proxy tolerated the cold start. A 500 or a
+   gateway error near 30s means it did not.
+
+**If it fails**, the options in order of preference: keep the backend warm with
+a scheduled ping so cold starts stop happening (also fixes the long-standing
+"dashboard takes a minute" complaint); make chat asynchronous (POST returns a
+job id, the client polls) which removes long requests entirely and is the right
+shape for a slow model call on a free tier; or exclude `/api/v1/chat` from the
+rewrite and leave that one route cross-origin, which is the cheapest and the
+ugliest since it keeps CORS alive for the route that most needs phase 2.
+
+Also confirm on the preview: **Google sign-in**, which is the flow that crosses
+origins, and check the browser console for CSP violations.
+
 ## NEXT SESSION — pending items (recorded 2026-07-24, session end)
 
 All code is committed and pushed (this commit is the tip). Live URLs:

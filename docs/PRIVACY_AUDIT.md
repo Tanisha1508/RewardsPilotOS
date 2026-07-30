@@ -462,6 +462,51 @@ Until one of those, the CSP plus a 4-dependency, sink-free frontend is the
 better use of the effort, and the rework is deferred on evidence rather than on
 reluctance.
 
+#### Phase 1 done 2026-07-30: the API is now same-origin
+
+The evaluation above answers "is the cookie rework urgent" (no). It does not
+answer "should any of it start now" (yes), and the reason is architectural
+rather than a matter of appetite.
+
+**httpOnly cookies were impossible on the previous architecture, not merely
+expensive.** With the token in an httpOnly cookie the browser cannot read it, so
+it cannot set `Authorization: Bearer`. The frontend is on `vercel.app` and the
+backend on `onrender.com` — different registrable domains — so a cookie set by
+the frontend is a *third-party* cookie for the backend, and Safari and Firefox
+block those by default with Chrome phasing them out. Adopting `@supabase/ssr`
+without first making the API same-origin would simply not have worked.
+
+So the work is two phases, and phase 1 stands on its own:
+
+- `lib/api.ts` calls relative paths; a rewrite in `next.config.mjs` forwards
+  `/api/v1/*` to the backend.
+- CORS and its preflight round-trip stop applying — worth having on a backend
+  that sleeps after 15 minutes.
+- The backend's origin leaves the browser bundle, and `connect-src` narrows to
+  `'self'` plus Supabase. The exfiltration surface the CSP has to reason about
+  is now one host.
+- Development goes through the same path, so the proxy is not first exercised
+  in production.
+
+Verified locally against a stub backend: path, method, `Authorization` and
+`x-request-id` all forwarded on GET and POST, and the security headers present.
+
+**One measured hazard, and it is the reason this was not just pushed.** Next's
+rewrite proxy aborts at **exactly 30s** with a 500, where a direct call to the
+same slow backend returned 200 at 45s. Chat is precisely the request that would
+hit this: a cold dyno is ~15.6s before the model is called.
+`experimental.proxyTimeout: 120_000` fixes it on a self-hosted server (verified,
+45s → 200), but **whether Vercel honours it for external rewrites is not
+established**, and cannot be from here. `docs/DEPLOY_STATUS.md` carries the
+preview-deployment test and the fallbacks.
+
+Phase 2 — `@supabase/ssr`, a middleware session refresh, an OAuth callback route
+handler, and the proxy attaching the bearer token server-side — is deliberately
+a separate change. It is the part that can lock people out of Google sign-in,
+and it deserves its own blast radius. Note it needs a *route handler* rather
+than a rewrite, which inherits the serverless execution limit; the chat-latency
+question above has to be settled before it can land.
+
 ### P8 — FIXED 2026-07-30: `x-request-id` was client-controllable
 
 `request.headers.get("x-request-id") or str(uuid.uuid4())` — a caller could set
