@@ -11,13 +11,38 @@
 // /portfolio. /dashboard is temporary (307) because it returns as "Today" once
 // the opportunity engine gives it content, and a permanent redirect cached in
 // users' browsers would be awkward to undo.
-// Origins this app legitimately talks to. Derived from the same env vars the
-// client uses, so the policy cannot drift from the configuration: if the API
-// moves and this is not updated, the app fails visibly rather than quietly
-// shipping a policy that permits the wrong host.
-const connectOrigins = [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_API_URL]
+// Origins this app legitimately talks to. Read from the same env vars the
+// client itself reads — `lib/supabase.ts` and `lib/api.ts` — so the policy
+// cannot drift from the configuration it describes.
+//
+// The name matters and got this wrong once: the backend variable is
+// NEXT_PUBLIC_BACKEND_URL, not NEXT_PUBLIC_API_URL. With the wrong name the
+// list silently came back one origin short, `connect-src` omitted Render, and
+// the policy would have blocked every API call in production while building
+// and testing clean locally. Hence the assertion below — a security header
+// that fails open is bad, and one that fails closed takes the app down.
+const API_URL_VAR = "NEXT_PUBLIC_BACKEND_URL";
+
+const connectOrigins = [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env[API_URL_VAR]]
   .filter(Boolean)
   .map((url) => new URL(url).origin);
+
+// Fail the build rather than ship a policy that bricks the deployment.
+//
+// Keyed on "one is set but not the other" rather than on NODE_ENV, which is
+// not yet "production" when Next evaluates this file — the first version of
+// this guard tested it and silently never fired, which is the same class of
+// bug it exists to catch. A local checkout with neither variable set is a
+// legitimate state ('self' covers localhost); a deployment with one of the two
+// is always a mistake.
+const configuredOrigins = [process.env.NEXT_PUBLIC_SUPABASE_URL, process.env[API_URL_VAR]];
+if (configuredOrigins.some(Boolean) && !configuredOrigins.every(Boolean)) {
+  throw new Error(
+    `CSP connect-src would be incomplete: NEXT_PUBLIC_SUPABASE_URL and ${API_URL_VAR} must ` +
+      `both be set at build time, or neither. Got [${configuredOrigins.join(", ")}]. ` +
+      `Shipping this would block every call to the missing origin from the browser.`
+  );
+}
 
 const isDev = process.env.NODE_ENV === "development";
 
