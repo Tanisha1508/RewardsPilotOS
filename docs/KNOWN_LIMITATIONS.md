@@ -149,12 +149,24 @@ roadmap — none is silently papered over.
     rather than merely unused. Two tests pin it: one user's accrual is invisible
     to another, and cap rows are erased with the account.
 
-    Brought forward from the deferral below because the trigger condition was
-    the wrong one to wait for. Waiting until "the first code path calls
-    `cap_store.record`" meant changing a populated table under a live write
-    path; doing it while empty needed no data migration and no ambiguity about
-    who existing rows belonged to. It was also the one place user data survived
-    `DELETE /auth/me` (privacy audit P3), since the table had no foreign key.
+    Brought forward from the deferral below, but **the deferral's reasoning was
+    only partly superseded** — an earlier draft of this entry said the trigger
+    condition was simply "wrong", which overstated it.
+
+    What justifies acting early: user-scoping is needed under *any* write path,
+    so it is not a decision that benefits from waiting, and the table is empty
+    today so there is no data to migrate and no ambiguity about ownership. It
+    was also the one place user data survived `DELETE /auth/me` (privacy audit
+    P3), since the table had no foreign key.
+
+    What the deferral was rightly protecting, and still is: **the rest of the
+    key depends on the write path, and is still wrong.** `hdfc_infinia` declares
+    a cap with `period: statement_cycle`, but `cap_usage.month` is `String(7)`
+    (`YYYY-MM`) — a statement cycle is not a calendar month, so that cap cannot
+    be recorded in this table at all. See item 32.
+
+    So this table will need altering again. One of at least two mismatches is
+    fixed; the schema is not finished.
 
     *Original entry, kept for the reasoning:* BUILD_SPEC §4 specified
     `(card_id, category, month, accrued_points)` with no `user_id`, so accrual
@@ -680,3 +692,30 @@ roadmap — none is silently papered over.
 
     **Live data note:** cards added to the deployed demo account before this fix
     carry the wrong Amex currency and need correcting through the UI.
+
+
+32. **`cap_usage` cannot represent a statement-cycle cap.** Found 2026-07-30
+    while re-examining item 16. `cap_usage.month` is `String(7)` holding
+    `YYYY-MM`, and `PostgresCapUsageStore` keys on it — but cap periods in the
+    rule files are not all monthly:
+
+    ```
+    hdfc_infinia   scope=statement_cycle_max   period=statement_cycle
+    ```
+
+    A statement cycle starts on the card's own billing date, so it neither
+    aligns with a calendar month nor is the same window for two cardholders. The
+    engine reads such caps correctly today (every accrual is absent, therefore
+    zero), so nothing is wrong in the answers — but the *first* code path that
+    records accrual for a statement-cycle scope has nowhere to put it.
+
+    **Do not solve this by rounding a statement cycle to a month.** The two
+    windows differ by up to 30 days, and a cap silently applied to the wrong
+    period would over- or under-report earning with full confidence, which is
+    the failure mode the whole verified-value structure exists to prevent.
+
+    Options when the write path is built, none chosen: store a period *key*
+    (`"2026-07"` or `"2026-07-15/2026-08-14"`) instead of a month; or add a
+    `period_type` column and let the store compute the window from the card's
+    `renewal_date`/billing date. Both are schema changes, so both wait for the
+    spec update that the write path will need anyway.
