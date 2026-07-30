@@ -7,8 +7,10 @@ broad user base*. Privacy had received no dedicated attention until now.
 Scope: what the system stores, what leaves it, who can reach it, and what a user
 can do about it. Code-level audit plus live checks where possible.
 
-**Nothing in here was changed.** This is findings only, so the fixes can be
-prioritised rather than applied piecemeal.
+**Written as findings only**, so the fixes could be prioritised rather than
+applied piecemeal. Each finding was then updated in place as it was addressed —
+the status in each heading is current, and the reasoning that led there is kept
+rather than rewritten, including where it turned out to be wrong (see P6).
 
 ---
 
@@ -19,7 +21,7 @@ accident.
 
 | | Practice | Where |
 |---|---|---|
-| ✅ | **No application logging.** No `logging`/`logger` calls anywhere in `backend/`, `agents/`, `tools/`, `rules/`, `graph/`. Only `print()` in CLI scripts. Nothing to leak, because nothing is written | repo-wide |
+| ⚠️ | **No application logging** — no `logging`/`logger` calls in `backend/`, `agents/`, `tools/`, `rules/`, `graph/`; only `print()` in CLI scripts. **"So nothing is written" was wrong**: uvicorn's access logger is on by default and was writing full URLs, query strings included. Corrected under P6 and now scrubbed in code. The lesson is worth keeping in this table: *the dangerous logging is the logging you did not write* | repo-wide, `infra/logging/access_log.py` |
 | ✅ | **No third-party scripts.** Zero analytics, tag managers, session recorders, error trackers in the frontend | `frontend/` |
 | ✅ | **Errors do not leak internals.** Unmapped exceptions return a generic message; the code comments say why — "can carry SQL, file paths, or connection strings" | `backend/api/responses.py:60` |
 | ✅ | **The Planner receives only the query.** `user = json.dumps({"query": state["query"]})`, with a comment stating the user id is deliberately withheld | `agents/planner/planner.py:72` |
@@ -263,7 +265,7 @@ false by omission.
 policy, and a decision on whether Gemini's free tier permits training on
 submitted content. If it does, this notice is necessary but not sufficient.
 
-### P6 — ACCEPTED 2026-07-30, with a guard: search text travels in URL query strings
+### P6 — FIXED 2026-07-30 (was accepted; the acceptance rested on a wrong fact)
 
 `GET /api/v1/knowledge/search?q=...` puts the search text in the URL, which
 lands in Render's access logs and any intermediary, whereas `POST /chat` keeps
@@ -285,17 +287,46 @@ comment is in `backend/api/knowledge.py` where someone adding that box will
 read it, not only in this document.
 
 **Second guard added 2026-07-30: `docs/LOGGING_POLICY.md`.** The URL was never
-really the exposure — the exposure was the URL *reaching a log*. This service
-logs nothing at all today, which is why the policy could be written as a
-decision rather than a retrofit: it requires the route template, never the
-populated URL, so `?q=` cannot land in a log even if the endpoint stays a GET
-forever.
+really the exposure — the exposure was the URL *reaching a log*. The policy
+requires the route template, never the populated URL, so `?q=` may not land in a
+log even if the endpoint stays a GET forever.
 
-That is the durable half of the fix. The call-site guard defends the endpoint;
-the policy defends every endpoint, including ones not yet written. Two
-independent defences, because either alone is a single point of failure — and
-the policy's real value is that it exists *before* the first `logger.info`, when
-changing the default is free.
+#### Then the acceptance turned out to rest on a false premise
+
+Both the acceptance above and the policy were written on the claim that "this
+service logs nothing." That was true of code in this repository and **false of
+the server running it.** Uvicorn installs a `uvicorn.access` logger that is on by
+default and writes the full URL:
+
+```
+127.0.0.1:0 - "GET /api/v1/knowledge/search?q=edge+miles HTTP/1.1" 200
+```
+
+Render captures stdout. So `?q=` was reaching a log the whole time, and P6 was
+never latent — it was live, via a logger nobody in this repo had configured.
+
+**Now actually fixed, in code:** `infra/logging/access_log.py` attaches a
+`logging.Filter` to `uvicorn.access` from `create_app()`. Query strings are
+stripped from every access line and path UUIDs collapse to `{id}`, so the logged
+line is the route template the policy always asked for. Method, status and route
+survive — this suppresses the contents of a line, never the line, because access
+logs are how you find out the service is being scanned.
+
+Installed in `create_app()` rather than as a `uvicorn --no-access-log` flag
+deliberately. The start command lives in Render's dashboard, not in this
+repository; a defence that depends on a setting in a web console is not a
+defence. This one travels with the code and holds under any server.
+
+Cover in `tests/unit/test_access_log_scrubbing.py`, driven through the real
+`logging` machinery rather than by calling the helper — a correct helper proves
+nothing if the filter is never attached, is attached to the wrong logger, or
+stops matching uvicorn's record shape after an upgrade. One test asserts
+`create_app()` installs it, which is the part that actually fails silently.
+
+**The lesson, which generalises past this finding:** the dangerous logging is the
+logging you did not write. "We log nothing" is a claim about a repository;
+whether anything is written is a question about the whole running process. The
+call-site POST guard still stands as the second defence.
 
 ### P7 — ACCEPTED 2026-07-30 as a stated decision: session token in `localStorage`
 
@@ -382,14 +413,16 @@ request's name.
    History. Automatic expiry and single-answer deletion remain open product
    decisions.
 6. ~~**P8**~~ — **done.** `x-request-id` validated as a UUID.
-7. ~~**P6, P7**~~ — **accepted as stated decisions**, each with the condition
-   written down that should reverse it: a user-facing search box (P6), or the
-   first third-party script (P7). Both then gained a second, enforcing defence
-   on 2026-07-30, so neither rests on someone remembering to read this file:
-   `docs/LOGGING_POLICY.md` keeps query strings out of logs (P6), and a Content
-   Security Policy makes the token unexfiltratable and breaks the build's
-   behaviour visibly if a third-party script is ever added (P7).
-8. ~~**P2 extended**~~ — **done 2026-07-30.** `renewal_date` and
+7. ~~**P6**~~ — **fixed in code 2026-07-30**, after the acceptance turned out to
+   rest on a false premise. Uvicorn's access logger was writing `?q=` to
+   Render's logs by default; `infra/logging/access_log.py` now scrubs query
+   strings and path ids from every access line.
+8. **P7** — **still accepted, now mitigated but not fixed.** The token is still
+   in `localStorage`; that has not changed. The Content Security Policy added
+   2026-07-30 stops it being *exfiltrated* and turns the reversal condition into
+   something that fails visibly in the browser. The fix, if the condition ever
+   triggers, is cookie-based sessions.
+9. ~~**P2 extended**~~ — **done 2026-07-30.** `renewal_date` and
    `portfolio_name` dropped (nothing reasons over either), and contact and
    account numbers scrubbed from the typed query, preferences and remembered
    queries — in the Planner as well as the Recommender.

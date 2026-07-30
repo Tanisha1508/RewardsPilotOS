@@ -1,18 +1,53 @@
 # Logging policy
 
-**Written 2026-07-30, while this system logs nothing at all.** That is the point.
+**Written 2026-07-30, before this system logs anything of its own.** That is the
+point.
 
-There is currently no `logging` or `logger` call anywhere in `backend/`,
-`agents/`, `tools/`, `rules/` or `graph/` — only `print()` in CLI scripts. So
-nothing leaks, because nothing is written.
+There is no `logging` or `logger` call anywhere in `backend/`, `agents/`,
+`tools/`, `rules/` or `graph/` — only `print()` in CLI scripts.
 
-That will not last. A product aimed at a broad user base needs observability, and
-every default is generous: uvicorn access logs write full URLs, hosting platforms
-capture stdout and headers, and APM SDKs capture request bodies unless told
-otherwise. Retrofitting redaction onto a system already logging is expensive and
-never quite complete — the leaked field is always the one nobody thought of.
+**One correction, made the same day.** "Nothing is logged" was true of code we
+wrote and false of the server underneath it. Uvicorn installs a `uvicorn.access`
+logger that is **on by default** and writes the full URL:
 
-Deciding while the answer is still "nothing" costs nothing.
+```
+127.0.0.1:0 - "GET /api/v1/knowledge/search?q=edge+miles HTTP/1.1" 200
+```
+
+Render captures stdout, so `?q=` has been landing in a log the entire time,
+written by a logger nobody in this repo configured. That is the shape of the
+problem this policy exists for: the dangerous logging is the logging you did not
+write. It is now scrubbed in code — see below.
+
+The rest of the risk is still ahead. A product aimed at a broad user base needs
+observability, and every default is generous: hosting platforms capture stdout
+and headers, and APM SDKs capture request bodies unless told otherwise.
+Retrofitting redaction onto a system already logging is expensive and never
+quite complete — the leaked field is always the one nobody thought of.
+
+Deciding now, while application logging is still a blank page, costs nothing.
+
+## Enforced in code
+
+`infra/logging/access_log.py`, installed by `create_app()`:
+
+- **query strings are removed** from every access line —
+  `/api/v1/knowledge/search?q=...` becomes `/api/v1/knowledge/search`
+- **UUIDs in paths collapse to `{id}`**, restoring the route template the rule
+  below asks for, since the server logs the URL that arrived rather than the
+  route that matched it
+- method, status and route survive: this suppresses the contents of a line,
+  never the line. Access logs are how you find out the service is being scanned.
+
+Installed in `create_app()` rather than as a `uvicorn` flag on purpose — the
+start command lives in Render's dashboard, not in this repository, and a defence
+that depends on a setting in a web console someone else can edit is not a
+defence. Cover in `tests/unit/test_access_log_scrubbing.py`, asserted through the
+real `logging` machinery: a correct helper proves nothing if the filter is never
+attached or stops matching uvicorn's record shape after an upgrade.
+
+Everything below is the policy that filter enforces, and the rule for the
+application logging that does not exist yet.
 
 ---
 
