@@ -66,6 +66,10 @@ export default function PreferencesPage() {
   async function removePreference(key: string) {
     setError(null);
     setSaving(true);
+    // Clear the "Saved." confirmation from an earlier edit. Leaving it up next
+    // to a row that has just been deleted reads as confirming the deletion,
+    // which is a different claim from the one it was making.
+    setSaved(false);
     try {
       await api.deletePreference(key);
       // Drop it from the draft too, or the row reappears the moment the

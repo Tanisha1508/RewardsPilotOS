@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiRequestError } from "@/lib/api";
 import { KNOWN_CARDS } from "@/lib/known-cards";
@@ -24,11 +24,34 @@ const STEPS = 4;
 export default function WelcomePage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  // Set the moment setup does anything, so the guard below can tell "arrived
+  // here with cards already" from "just created cards in step 1".
+  const started = useRef(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [balances, setBalances] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; requestId?: string } | null>(null);
   const [created, setCreated] = useState<{ label: string; cardId: string; currency: string }[]>([]);
+
+  // Setup is for accounts that have nothing. Someone who already has cards and
+  // lands here — a stale bookmark, a back button, or plain curiosity — gets a
+  // wizard that would silently add duplicates of cards they already hold.
+  //
+  // Only when the list is KNOWN to be non-empty, and only if setup has not
+  // started: a failed call must not eject someone mid-flow, and the cards
+  // created by step 1 must not bounce the user out of step 2.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listCards()
+      .then((cards) => {
+        if (!cancelled && !started.current && cards.length > 0) router.replace("/chat");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const fail = (caught: unknown) =>
     setError(
@@ -41,9 +64,11 @@ export default function WelcomePage() {
    *  at the end, so a failure surfaces next to the choice that caused it. */
   async function saveCards() {
     if (!picked.length) {
+      started.current = true;
       setStep(4);
       return;
     }
+    started.current = true;
     setBusy(true);
     setError(null);
     try {
