@@ -38,6 +38,8 @@ const EMPTY_GOAL = {
 export default function RedeemPage() {
   const balances = useApi(() => api.listBalances());
   const goals = useApi(() => api.listGoals());
+  // Needed only to resolve each balance's issuer, which scopes its retrieval.
+  const cards = useApi(() => api.listCards());
 
   const [goalForm, setGoalForm] = useState(EMPTY_GOAL);
   const [addingGoal, setAddingGoal] = useState(false);
@@ -107,7 +109,13 @@ export default function RedeemPage() {
           ) : (
             <div className="space-y-4">
               {balances.data.map((balance) => (
-                <CurrencyTransfers key={balance.balance_id} balance={balance} />
+                <CurrencyTransfers
+                  key={balance.balance_id}
+                  balance={balance}
+                  issuer={
+                    cards.data?.find((c) => c.card_id === balance.card_id)?.issuer
+                  }
+                />
               ))}
             </div>
           )}
@@ -251,19 +259,38 @@ export default function RedeemPage() {
 
 /** Transfer options for one currency the user actually holds.
  *
- *  Each block runs its own retrieval, scoped to that currency's issuer and to
- *  `transfer_rules` documents. Per-currency rather than one combined search so a
- *  slow or empty result for one holding never hides the others — and so the
- *  answer is visibly *about* that balance. */
-function CurrencyTransfers({ balance }: { balance: RewardBalance }) {
+ *  Each block runs its own retrieval, per-currency rather than one combined
+ *  search, so a slow or empty result for one holding never hides the others —
+ *  and so the answer is visibly *about* that balance.
+ *
+ *  `issuer` is not optional in spirit. Retrieval is semantic, so filtering only
+ *  by `doc_type` returns the top-k transfer documents across every issuer: found
+ *  live 2026-07-30, the Amex block listed Axis Atlas caps and HDFC transfer
+ *  partners underneath "20,000 Amex Membership Rewards", which reads as though
+ *  those rules applied to the user's Amex points. Scoping to the card's own
+ *  issuer is what makes the section true.
+ *
+ *  When the issuer is not yet known (cards still loading, or a balance whose
+ *  card was removed) we do not search at all rather than search unscoped — a
+ *  wrong-issuer answer is worse than a missing one. */
+function CurrencyTransfers({
+  balance,
+  issuer,
+}: {
+  balance: RewardBalance;
+  issuer: string | undefined;
+}) {
   const chunks = useApi(
     () =>
-      api.searchKnowledge({
-        q: `${currencyLabel(balance.reward_currency)} transfer partners ratios caps`,
-        doc_type: "transfer_rules",
-        k: 4,
-      }),
-    [balance.reward_currency]
+      issuer
+        ? api.searchKnowledge({
+            q: `${currencyLabel(balance.reward_currency)} transfer partners ratios caps`,
+            issuer,
+            doc_type: "transfer_rules",
+            k: 4,
+          })
+        : Promise.resolve(null),
+    [balance.reward_currency, issuer]
   );
 
   return (

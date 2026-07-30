@@ -340,3 +340,48 @@ look.
    "wrong answer" is not.
 6. A defect gets an ADR or a KNOWN_LIMITATIONS entry, and a test that would have
    caught it. Fixing it in the deployment alone leaves nothing behind.
+
+### 2026-07-30 — post-restructure walkthrough
+
+Nav restructure (7 tabs → 4) deployed. Walked every page that had nothing
+pending.
+
+| ID | Scenario | Result | Detail |
+|---|---|---|---|
+| — | Nav, Settings menu | PASS | Ask · Portfolio · Redeem · History, Settings ⌄ |
+| F5 | Remove card | PASS | |
+| F6 | Quick-add | PASS | Filled the corrected `membership_rewards`; card_key resolved |
+| — | **Live Amex currency corrected** | FIXED | Was `amex_membership_rewards` (a *card* node, KL 31); now `membership_rewards`. All three cards resolve |
+| F5 | Inline edit — annual fee | PASS | "unknown" → ₹5,000 |
+| F7 | Inline edit — balance | PASS | Amex → 20,000 |
+| — | Currency labels | PASS | "Axis EDGE Miles", "Amex Membership Rewards" — no raw ids |
+| E2 | Chroma re-ingest after deploy | PASS | ~2 min, and the page *said so* rather than spinning silently |
+| F19 | **Redeem — where your points can go** | **PASS, after a fix** | Renders verified partner data per held currency, with sources and freshness. Sources now show `axis.bank.in`, so the URL migration reached the corpus |
+
+#### ★ D2 (NEW, found live) — retrieval was not scoped to the issuer
+
+Under **"20,000 Amex Membership Rewards"**, the block listed *Axis Atlas
+transfer caps* and *HDFC Reward Points transfer partners*.
+
+**Cause:** retrieval is semantic and was filtered only by
+`doc_type=transfer_rules`, so the top-k came from every issuer. Each chunk was
+individually true and correctly sourced — and placed under a heading that made
+it read as applying to the user's Amex points. A user could act on an Axis cap
+believing it governed their Membership Rewards.
+
+**Fix:** scope each block's search to its card's own issuer. When the issuer is
+not yet known (cards still loading, or a balance whose card was removed) the
+block does not search at all rather than search unscoped — a wrong-issuer answer
+is worse than a missing one.
+
+**Worth noting as a pattern.** This is the same failure family as ADR-019 and
+the category/channel bugs: nothing was fabricated, every figure was sourced, and
+the answer was still wrong because of the *frame* around it. Correct data under
+the wrong heading is a correctness bug, not a presentation one.
+
+#### Corrected mid-session
+
+I reported the Redeem blocks as "stuck — requests never settled, a real bug".
+Wrong: they were paying the cold Chroma ingest, which finished around the time I
+probed the endpoint directly (hence 2 s there, still-loading on the page). Not a
+hang. Reloading against a warm index rendered immediately.
