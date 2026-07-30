@@ -385,3 +385,74 @@ I reported the Redeem blocks as "stuck — requests never settled, a real bug".
 Wrong: they were paying the cold Chroma ingest, which finished around the time I
 probed the endpoint directly (hence 2 s there, still-loading on the page). Not a
 hang. Reloading against a warm index rendered immediately.
+
+### 2026-07-30 (later) — post-restructure full walkthrough
+
+Signed in as the owner's Google account. Everything below ran against the
+deployed app and the production database.
+
+| ID | Scenario | Result | Detail |
+|---|---|---|---|
+| — | Production migration `cap_usage_user_id` | PASS | Verified table empty first (the migration adds NOT NULL with no backfill). After: `user_id` column, 4-column PK, FK to users, alembic head correct. Backend healthy, auth intact |
+| — | Deployed bundle check | PASS | Every new route serves a real chunk; P3 delete, D-5 remove, goal status select, "not recognised" badge and the 4-step setup all present in the **live** JS. Old cap suggestion absent (0 matches) |
+| — | Retired routes | PASS | `/cards`→`/portfolio` 308, `/transfer`→`/redeem` 308, `/goals`→`/redeem` 308, `/dashboard`→`/chat` 307 |
+| F8 | Preference add → delete (D-5) | PASS | Added `home_airport=BLR`, removed it, list empty |
+| F9 | Goal create via UI | PASS | |
+| F9 | Goal status change (PATCH) | PASS | `active → achieved` through the select |
+| F9 | Goal remove (DELETE) | PASS | |
+| F9 | **All four goal routes via API** | PASS | POST; PATCH `{status}` alone left description AND date intact (`exclude_unset`); PATCH `{target_date: null}` cleared the deadline and kept the description; DELETE |
+| F18 | History page | PASS | |
+| F17 | Feedback persistence | PASS | `generated → accepted`, confirmed via the API not the UI state |
+| F11 | **Ask — full chain** | PASS | See below |
+| F19 | Redeem issuer scoping | PASS | Amex block now shows only Amex documents — the 2026-07-30 fix confirmed live |
+| — | First-run `/welcome` | PASS | Renders centred, step 1 of 4 |
+| **P3** | **Account deletion cascade** | **PASS** | Owner deleted two `deploygate.*` users by SQL; the orphan check returned **0 recommendations, 0 cards, 0 preferences**. The cascade `DELETE /auth/me` depends on, verified against production data without touching a live account |
+
+#### The Ask query that confirmed five fixes at once
+
+*"Which of my cards is best for a Rs 40,000 flight booked direct with the
+airline?"* → **Axis Bank Atlas, 2,000 EDGE Miles, high confidence.**
+
+Arithmetic checks: 40,000 / 100 = 400 blocks × 2 × 2.5 = 2,000, the accelerated
+direct-travel rate. In one answer:
+
+- channel resolved to `direct` from plain English (ADR-011)
+- **no** channel note, correctly — the channel *was* specified (ADR-019)
+- **high** confidence, correctly — nothing unknown
+- category `flights`, the plural the rule files use (the 2026-07-29 alias fix)
+- sources on the migrated `axis.bank.in` URLs
+
+#### History as an accidental regression record
+
+Two entries in the owner's own account, side by side:
+
+- 29 Jul, hotel query → `month: 2026-07` ✅
+- 28 Jul, flight query → `month: 2025-05` ← the invented month, pre-fix
+
+#### Two blemishes found and fixed the same session
+
+- "Saved." lingered on Preferences after a delete, reading as confirmation of
+  the deletion.
+- `/welcome` was reachable with cards already present, offering a wizard that
+  would silently duplicate them.
+
+#### Not tested, deliberately
+
+`DELETE /auth/me` through the UI. It is irreversible and the only signed-in
+account is the owner's. The route is deployed and auth-guarded (401
+unauthenticated), the cascade is verified in production by the row above, and
+integration tests cover cross-table erasure, fresh-account-on-resync,
+idempotency and cross-user isolation.
+
+#### Note for future rounds
+
+Two automation traps cost time here, both worth knowing:
+
+1. **Placeholder text reads identically to a value in a screenshot.** The goal
+   form appeared filled with "Business class to Singapore" — that was the
+   placeholder, and the field was empty. `required` then correctly blocked
+   submission, which looked like a broken button. Check `input.value`, never the
+   screenshot.
+2. **Typed input does not always land.** Driving React inputs via the native
+   value setter plus a dispatched `input` event is reliable where clicking and
+   typing is not.
