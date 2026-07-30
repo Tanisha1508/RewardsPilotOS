@@ -27,6 +27,11 @@ prefer.
 If a log line would tell you something about a *particular user's finances*, it
 is content.
 
+This is a rule about **logs**, not about what the product may store. Questions
+and answers are already persisted in `recommendations`, deliberately — see
+"But evals need the queries and the outputs" below. The rule says a *second*,
+ungoverned copy must not exist beside the governed one.
+
 ---
 
 ## Never log
@@ -55,6 +60,81 @@ Not "redact carefully" — do not write these at all.
 | Tool name and status | `CompareCards → success`, `SearchKnowledge → failed`. Not the arguments |
 | Counts | "3 cards compared", "5 chunks retrieved" |
 | Deploy/version markers | |
+
+## "But evals need the queries and the outputs"
+
+They do, and this policy does not stand in the way — because **the database is
+not a log**, and the eval data is already in the database.
+
+```
+recommendations: rec_id, user_id, query, recommendation_json,
+                 confidence, citations_json, status, created_at
+```
+
+Every question and every answer is already persisted, with the confidence and
+citations attached. An eval harness reads that table. Nothing about "never log
+the query" removes a single row.
+
+The distinction is not pedantry — the two stores have opposite properties:
+
+| | `recommendations` row | log line |
+|---|---|---|
+| Access control | RLS, scoped to the owner | whoever can read the log stream |
+| Deletion | `ON DELETE CASCADE` from `users` | platform retention, not ours to erase |
+| Covered by the notice | yes, "saved to your History until you delete them" | no |
+| Location known | the Supabase instance | wherever the vendor ships it |
+
+The last two rows are why writing the query to a log is a real loss and not
+bookkeeping. `DELETE /auth/me` erases a person's questions from the database. It
+cannot reach into yesterday's log stream. A logged query is a copy that survives
+the deletion we promise — which turns a working privacy guarantee into a false
+one. That is the whole argument.
+
+### What logs *should* carry for evals
+
+A large amount of eval signal is content-free, and this is the half that belongs
+in logs, because it is aggregate by nature:
+
+- confidence distribution, and how often the deterministic ceiling bound it down
+- recommendation validation rejections, and how often the single retry rescued
+  them
+- tool error rates by tool name
+- citation counts per answer; answers produced with zero citations
+- how often a value came back `unverified` and the answer had to say "unknown"
+- latency by stage
+
+None of that names a person or a portfolio, all of it tracks whether quality is
+moving, and it is the natural input to the continuous-improvement half of this
+product. Content-level evaluation reads the table; trend-level evaluation reads
+these.
+
+### Before production traffic becomes an eval set
+
+One thing to settle first, and it is a consent question, not a technical one.
+
+Today's evals run on a golden set in `evaluation/datasets/`, written by us. The
+moment real users' questions are pulled into an eval corpus, the purpose has
+changed: answering someone's question is one thing, and keeping it to improve
+the product is another. The notice currently says answers are "saved to your
+History until you delete them" — which is true of storage, and says nothing
+about product improvement. Reusing the data for that without saying so would
+make the notice quietly untrue, which is the failure mode this whole project is
+organised against.
+
+Three workable answers, in increasing cost:
+
+1. **Own accounts only.** Build eval cases from your own usage. Free, honest,
+   no consent question, and enough to get started.
+2. **Extend the notice and offer a choice.** Say plainly that questions may be
+   used to improve answer quality, with an opt-out in Settings.
+3. **De-identify into a curated set.** A human rewrites real failures into
+   golden cases that carry the *shape* of the problem and none of the person.
+   This is what `evaluation/datasets/` already is, and it is the only form that
+   survives account deletion by construction.
+
+Option 3 is also the most useful: an eval set of raw production queries is
+mostly duplicates, and a curated regression case is worth more than a hundred
+of them.
 
 ## URLs
 
