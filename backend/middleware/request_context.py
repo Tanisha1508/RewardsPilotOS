@@ -30,9 +30,31 @@ def current_request_id() -> str:
     return _request_id.get()
 
 
+def _accepted_request_id(supplied: str | None) -> str:
+    """A caller-supplied request id, if it is genuinely a UUID; else a fresh one.
+
+    Honouring `x-request-id` is worth keeping — it lets a client correlate its
+    own logs with ours across a request. But the value is echoed back in every
+    response envelope and would be written to any log line we ever add, so
+    accepting arbitrary text lets a caller inject newlines, control characters
+    or someone else's identifier into our own records (privacy audit P8).
+
+    Parsing as a UUID is the whole check: it accepts every id we or any sane
+    client would generate, and rejects everything that is not one. Invalid input
+    is replaced rather than rejected — the request is fine, only the label was
+    unusable, and a 400 here would break clients for no gain.
+    """
+    if not supplied:
+        return str(uuid.uuid4())
+    try:
+        return str(uuid.UUID(supplied))
+    except ValueError:
+        return str(uuid.uuid4())
+
+
 class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
-        request_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+        request_id = _accepted_request_id(request.headers.get("x-request-id"))
         request.state.request_id = request_id
         token = _request_id.set(request_id)
         try:

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
-import { ErrorNotice, Shell } from "@/components/shell";
+import { DataNotice, ErrorNotice, Shell } from "@/components/shell";
 import { RecommendationCard } from "@/components/recommendation-card";
 import { formatDateTime } from "@/lib/display";
 import type { FeedbackStatus, Recommendation } from "@/types/api";
@@ -76,6 +76,8 @@ export default function ChatPage() {
           {busy ? "Thinking…" : "Ask"}
         </button>
       </form>
+
+      <DataNotice />
 
       <div className="mt-8 space-y-8">
         {[...turns].reverse().map((turn, revIndex) => {

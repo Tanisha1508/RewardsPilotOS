@@ -5,6 +5,8 @@ These run everywhere. The CRUD behaviour behind them needs a real database and
 lives in `tests/integration/`, which skips unless TEST_DATABASE_URL is set.
 """
 
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -85,9 +87,28 @@ def test_authenticated_request_without_a_database_reports_503_not_500(client):
 
 
 def test_request_id_is_echoed_when_supplied(client):
-    response = client.get("/api/v1/health", headers={"x-request-id": "trace-me"})
-    assert response.json()["meta"]["request_id"] == "trace-me"
-    assert response.headers["x-request-id"] == "trace-me"
+    """A caller-supplied id is honoured, so a client can correlate its logs
+    with ours.
+
+    Used "trace-me" until 2026-07-30. The behaviour under test is unchanged —
+    supply an id, get it back — but the value must now be a UUID: it is echoed
+    into every envelope and would reach any log line, so arbitrary text allowed
+    newline and header injection (privacy audit P8).
+    """
+    supplied = str(uuid.uuid4())
+    response = client.get("/api/v1/health", headers={"x-request-id": supplied})
+    assert response.json()["meta"]["request_id"] == supplied
+    assert response.headers["x-request-id"] == supplied
+
+
+def test_a_non_uuid_request_id_is_replaced_not_echoed(client):
+    """The other half: an id we cannot vouch for never reaches the envelope."""
+    response = client.get("/api/v1/health", headers={"x-request-id": "trace-me\nINJECTED"})
+
+    echoed = response.json()["meta"]["request_id"]
+    assert "INJECTED" not in echoed
+    assert "\n" not in echoed
+    uuid.UUID(echoed)  # and what replaced it is a real id
 
 
 @pytest.mark.parametrize(

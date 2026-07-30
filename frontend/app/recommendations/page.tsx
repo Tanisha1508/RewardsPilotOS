@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
@@ -55,6 +56,17 @@ export default function RecommendationsPage() {
       <p className="mt-1 text-sm text-neutral-400">
         Every recommendation you have asked for, with the numbers and sources it was given at the
         time.
+      </p>
+      {/* Retention, stated (privacy audit P4). "Kept indefinitely" was the
+          honest answer until DELETE /auth/me existed and there was nothing a
+          user could do about it. Now the honest answer is "until you delete
+          it", which is only worth saying because the second half is true. */}
+      <p className="mt-1 max-w-2xl text-xs text-neutral-600">
+        These are kept until you delete them. Removing your data in{" "}
+        <Link href="/account" className="text-accent-soft hover:underline">
+          Account
+        </Link>{" "}
+        erases this history along with everything else.
       </p>
 
       {error ? (

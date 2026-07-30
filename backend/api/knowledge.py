@@ -28,6 +28,16 @@ DOC_TYPES = ("reward_rules", "transfer_rules", "promotions", "benefit_guides", "
 
 @router.get("/search")
 def search_knowledge(
+    # PRIVACY (audit P6): `q` travels in the URL, so it reaches Render's access
+    # logs and any intermediary — unlike `POST /chat`, which keeps the question
+    # in the body. That is fine today because every caller generates `q` itself
+    # (Redeem builds it from a currency name); no user-typed text reaches this
+    # endpoint.
+    #
+    # If a user-facing search box is ever added, move this to POST first. GET is
+    # the correct verb for a read and worth keeping while the query is
+    # machine-generated — but it stops being worth it the moment the text is
+    # something a person typed about their own finances.
     request: Request,
     q: str = Query(min_length=1, description="search query"),
     issuer: str | None = Query(default=None),

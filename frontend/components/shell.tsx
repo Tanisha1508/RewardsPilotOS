@@ -247,6 +247,31 @@ export function Empty({ message }: { message: string }) {
   return <p className="text-sm text-neutral-500">{message}</p>;
 }
 
+/** What leaves the service when you ask a question (privacy audit P5).
+ *
+ *  Answering a question sends the query, the cards and balances you have
+ *  recorded, and your preferences to Google's Gemini API. A user had no way to
+ *  know that, and no way to weigh it. Saying so is not optional politeness: the
+ *  whole product rests on not asserting things that are not true, and silence
+ *  about where financial data goes is the same failure in a different register.
+ *
+ *  Deliberately placed on Ask rather than buried in a policy page — it belongs
+ *  where the sending happens, at the moment of choosing to send. Deliberately
+ *  factual rather than reassuring: it names the recipient and the contents, and
+ *  does not editorialise about safety.
+ *
+ *  Database identifiers are stripped before the request leaves (P2), which is
+ *  worth stating because it is the one mitigation a reader cannot verify. */
+export function DataNotice() {
+  return (
+    <p className="mt-2 text-xs leading-relaxed text-neutral-600">
+      Answering uses Google Gemini. Your question, the cards and balances you have recorded, and
+      your preferences are sent there; account identifiers are removed first. Answers are saved to
+      your History until you delete them.
+    </p>
+  );
+}
+
 /** Shown when a request is still running after a few seconds.
  *
  *  The backend runs on a free tier that sleeps after ~15 minutes idle; the next
