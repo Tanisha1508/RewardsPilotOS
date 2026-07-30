@@ -74,10 +74,15 @@ export default function PreferencesPage() {
 
   return (
     <Shell>
-      <h1 className="text-lg font-semibold tracking-tight">Preferences</h1>
+      <h1 className="text-lg font-semibold tracking-tight">Reward preferences</h1>
+      {/* Says only what is true. An earlier draft claimed some of these "may have
+          been recorded automatically from things you said in Ask" — the
+          StorePreference tool exists but the planner is never told to use it, so
+          nothing writes here except this page. Describing a latent capability as
+          live behaviour is the same overclaim the engines are built to avoid. */}
       <p className="mt-1 max-w-2xl text-sm text-neutral-400">
-        These influence the recommendations you get. Some may have been recorded automatically from
-        things you said in Ask — everything the system remembers about you is listed here.
+        Used when there is more than one sensible answer — a preferred airline or hotel programme,
+        or how you like to redeem. Everything here was set by you, and nothing else writes to it.
       </p>
 
       {error ? (
@@ -96,7 +101,7 @@ export default function PreferencesPage() {
             <p className="text-sm text-neutral-500">Loading…</p>
           )
         ) : !Object.keys(stored).length ? (
-          <Empty message="Nothing recorded yet. Add a preference below, or mention one in Ask." />
+          <Empty message="Nothing set yet. Add one below — or leave it, and Ask will tell you when a preference would change its answer." />
         ) : (
           <table className="w-full text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
