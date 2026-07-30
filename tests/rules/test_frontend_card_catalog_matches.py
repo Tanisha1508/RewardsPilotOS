@@ -97,6 +97,9 @@ def test_currency_labels_match_the_graph_node_names():
         assert (
             "SYNTHETIC" not in label
         ), f"{currency}: a synthetic fixture currency must not be given a friendly label"
+
+
+def test_quick_add_currencies_are_currency_nodes_not_card_nodes():
     """The bug this test was written for (2026-07-29).
 
     A portfolio card's `reward_currency` is the *source node* for transfer
