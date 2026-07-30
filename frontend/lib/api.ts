@@ -9,6 +9,7 @@ import type {
   FeedbackStatus,
   Goal,
   GoalInput,
+  GoalPatch,
   HealthReport,
   KnowledgeSearchResult,
   LoyaltyAccount,
@@ -123,9 +124,23 @@ export const api = {
   setPreferences: (values: Record<string, string>) =>
     request<Preferences>("/api/v1/preferences", { method: "PUT", body: { values } }),
 
+  // PUT merges, so it can set a key but never unset one — hence a separate
+  // delete rather than "send an empty value".
+  deletePreference: (key: string) =>
+    request<{ key: string; deleted: boolean }>(
+      `/api/v1/preferences/${encodeURIComponent(key)}`,
+      { method: "DELETE" }
+    ),
+
   listGoals: () => request<Goal[]>("/api/v1/goals"),
   createGoal: (goal: GoalInput) =>
     request<Goal>("/api/v1/goals", { method: "POST", body: goal }),
+  updateGoal: (goalId: string, changes: GoalPatch) =>
+    request<Goal>(`/api/v1/goals/${goalId}`, { method: "PATCH", body: changes }),
+  deleteGoal: (goalId: string) =>
+    request<{ goal_id: string; deleted: boolean }>(`/api/v1/goals/${goalId}`, {
+      method: "DELETE",
+    }),
 
   // Intelligence: chat runs the workflow and persists a recommendation.
   chat: (query: string) =>

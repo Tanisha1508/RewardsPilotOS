@@ -44,3 +44,40 @@ def create_goal(
         session.add(goal)
         session.flush()
         return goal
+
+
+def _owned_goal(session, user_id: uuid.UUID, goal_id: uuid.UUID) -> Goal:
+    """A goal, only if it belongs to this user.
+
+    Scoped by owner in the lookup itself rather than fetched-then-checked: the
+    two are equivalent here, but the first cannot be got wrong by a later edit
+    that forgets the check. A goal belonging to someone else is `NotFoundError`,
+    not a permission error — telling a caller that an id exists but is not
+    theirs confirms the id.
+    """
+    goal = session.scalars(
+        select(Goal).where(Goal.goal_id == goal_id, Goal.user_id == user_id)
+    ).first()
+    if goal is None:
+        raise NotFoundError("goal not found")
+    return goal
+
+
+def update_goal(user_id: uuid.UUID, goal_id: uuid.UUID, **changes) -> Goal:
+    """PATCH semantics: an omitted field means "leave it alone".
+
+    `target_date` is the one field where an explicit null is meaningful —
+    removing a deadline is a real edit — so callers pass it explicitly and
+    unset fields never reach here.
+    """
+    with session_scope() as session:
+        goal = _owned_goal(session, user_id, goal_id)
+        for field, value in changes.items():
+            setattr(goal, field, value)
+        session.flush()
+        return goal
+
+
+def delete_goal(user_id: uuid.UUID, goal_id: uuid.UUID) -> None:
+    with session_scope() as session:
+        session.delete(_owned_goal(session, user_id, goal_id))

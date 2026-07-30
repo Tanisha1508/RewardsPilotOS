@@ -102,6 +102,12 @@ export interface Goal {
  *  server-side to trip|redemption|savings, so the union is not cosmetic. */
 export type GoalInput = Omit<Goal, "goal_id">;
 
+/** Mirrors `backend/schemas/identity.py::GoalPatch`. Every field optional: an
+ *  omitted field means "leave it alone", while an explicit `null` on
+ *  `target_date` clears the deadline. The route uses `exclude_unset`, so the
+ *  two are genuinely different — send only what you mean to change. */
+export type GoalPatch = Partial<GoalInput>;
+
 export interface Preferences {
   values: Record<string, string>;
 }

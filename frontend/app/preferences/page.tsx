@@ -63,6 +63,30 @@ export default function PreferencesPage() {
     }
   }
 
+  async function removePreference(key: string) {
+    setError(null);
+    setSaving(true);
+    try {
+      await api.deletePreference(key);
+      // Drop it from the draft too, or the row reappears the moment the
+      // reloaded values merge with stale local state.
+      setDraft((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+      preferences.reload();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiRequestError
+          ? { message: caught.message, requestId: caught.requestId }
+          : { message: caught instanceof Error ? caught.message : "Request failed." }
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function addPreference(event: React.FormEvent) {
     event.preventDefault();
     const key = newKey.trim();
@@ -108,6 +132,7 @@ export default function PreferencesPage() {
               <tr>
                 <th className="py-2">Preference</th>
                 <th className="py-2">Value</th>
+                <th className="py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-900">
@@ -124,6 +149,15 @@ export default function PreferencesPage() {
                         onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
                         className="w-full max-w-md rounded border border-neutral-800 bg-neutral-900 px-3 py-1.5 text-sm outline-none focus:border-accent"
                       />
+                    </td>
+                    <td className="py-2 text-right">
+                      <button
+                        onClick={() => removePreference(key)}
+                        disabled={saving}
+                        className="text-xs text-neutral-500 hover:text-red-300 disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -189,17 +223,6 @@ export default function PreferencesPage() {
         </form>
       </section>
 
-      {/* Honest about a gap rather than offering a button that half-works.
-          `PUT /preferences` merges by design, so sending a subset cannot remove
-          a key, and no delete endpoint exists. Adding one is an API-contract
-          change (CLAUDE.md build constraints), so it waits for a spec decision
-          instead of being invented here. */}
-      {Object.keys(stored).length ? (
-        <p className="mt-8 max-w-2xl text-xs text-neutral-600">
-          Preferences can be changed but not yet removed — the API merges updates and has no delete.
-          To neutralise one, clear its value and save.
-        </p>
-      ) : null}
     </Shell>
   );
 }

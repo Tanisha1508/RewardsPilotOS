@@ -202,3 +202,114 @@ def test_invalid_goal_type_is_rejected(client, jwt_secret, synced_user):
 
 def test_health_reports_the_database_as_ok_when_connected(client):
     assert client.get("/api/v1/health").json()["data"]["checks"]["database"] == "ok"
+
+
+def test_preference_can_be_deleted_not_just_changed(client, jwt_secret, synced_user):
+    """`PUT /preferences` merges, so it can set a key but never unset one.
+
+    Before `DELETE /preferences/{key}` the only way to "remove" a preference was
+    to blank its value — and an empty string is still a stored preference the
+    agent reads, not an absence.
+    """
+    client.put(
+        "/api/v1/preferences",
+        json={"values": {"preferred_airline_program": "krisflyer", "home_airport": "BLR"}},
+        headers=auth(synced_user, jwt_secret),
+    )
+
+    deleted = client.delete(
+        "/api/v1/preferences/preferred_airline_program",
+        headers=auth(synced_user, jwt_secret),
+    )
+    assert deleted.status_code == 200, deleted.text
+
+    remaining = client.get("/api/v1/preferences", headers=auth(synced_user, jwt_secret)).json()[
+        "data"
+    ]["values"]
+    assert "preferred_airline_program" not in remaining
+    # The other key is untouched — delete removes one row, not the collection.
+    assert remaining["home_airport"] == "BLR"
+
+
+def test_deleting_an_unknown_preference_is_404_not_silent_success(client, jwt_secret, synced_user):
+    """ "It is gone" and "it was never there" are different answers."""
+    response = client.delete("/api/v1/preferences/never_set", headers=auth(synced_user, jwt_secret))
+    assert response.status_code == 404, response.text
+
+
+def test_goal_can_be_edited_and_removed(client, jwt_secret, synced_user):
+    created = client.post(
+        "/api/v1/goals",
+        json={
+            "goal_type": "redemption",
+            "description": "Business class to Singapore",
+            "target_date": "2027-03-15",
+        },
+        headers=auth(synced_user, jwt_secret),
+    ).json()["data"]
+    goal_id = created["goal_id"]
+
+    patched = client.patch(
+        f"/api/v1/goals/{goal_id}",
+        json={"status": "achieved"},
+        headers=auth(synced_user, jwt_secret),
+    )
+    assert patched.status_code == 200, patched.text
+    body = patched.json()["data"]
+    assert body["status"] == "achieved"
+    # PATCH leaves omitted fields alone — sending only `status` must not wipe
+    # the description or the deadline.
+    assert body["description"] == "Business class to Singapore"
+    assert body["target_date"] == "2027-03-15"
+
+    removed = client.delete(f"/api/v1/goals/{goal_id}", headers=auth(synced_user, jwt_secret))
+    assert removed.status_code == 200, removed.text
+    assert client.get("/api/v1/goals", headers=auth(synced_user, jwt_secret)).json()["data"] == []
+
+
+def test_a_goal_deadline_can_be_cleared(client, jwt_secret, synced_user):
+    """An explicit null is a real edit — removing a deadline — and must be
+    distinguishable from a field the client simply did not send."""
+    goal_id = client.post(
+        "/api/v1/goals",
+        json={"goal_type": "trip", "description": "Kyoto", "target_date": "2027-04-01"},
+        headers=auth(synced_user, jwt_secret),
+    ).json()["data"]["goal_id"]
+
+    patched = client.patch(
+        f"/api/v1/goals/{goal_id}",
+        json={"target_date": None},
+        headers=auth(synced_user, jwt_secret),
+    ).json()["data"]
+
+    assert patched["target_date"] is None
+    assert patched["description"] == "Kyoto"
+
+
+def test_one_user_cannot_edit_or_delete_another_users_goal(client, jwt_secret, synced_user):
+    """Ownership isolation. A goal belonging to someone else is 404, not 403 —
+    confirming an id exists is itself a leak."""
+    goal_id = client.post(
+        "/api/v1/goals",
+        json={"goal_type": "trip", "description": "Mine"},
+        headers=auth(synced_user, jwt_secret),
+    ).json()["data"]["goal_id"]
+
+    intruder = uuid.uuid4()
+    client.post("/api/v1/auth/sync", json={}, headers=auth(intruder, jwt_secret))
+
+    assert (
+        client.patch(
+            f"/api/v1/goals/{goal_id}",
+            json={"description": "Theirs now"},
+            headers=auth(intruder, jwt_secret),
+        ).status_code
+        == 404
+    )
+    assert (
+        client.delete(f"/api/v1/goals/{goal_id}", headers=auth(intruder, jwt_secret)).status_code
+        == 404
+    )
+    # And the owner's goal is untouched by the attempt.
+    mine = client.get("/api/v1/goals", headers=auth(synced_user, jwt_secret)).json()["data"]
+    assert [g["description"] for g in mine] == ["Mine"]

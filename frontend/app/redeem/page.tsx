@@ -5,7 +5,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
 import { currencyLabel } from "@/lib/display";
-import type { RewardBalance } from "@/types/api";
+import type { GoalPatch, RewardBalance } from "@/types/api";
 
 // Redeem — what your points can become (BUILD_SPEC §10).
 //
@@ -45,6 +45,33 @@ export default function RedeemPage() {
   const [addingGoal, setAddingGoal] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<{ message: string; requestId?: string } | null>(null);
+
+  const fail = (caught: unknown) =>
+    setError(
+      caught instanceof ApiRequestError
+        ? { message: caught.message, requestId: caught.requestId }
+        : { message: caught instanceof Error ? caught.message : "Request failed." }
+    );
+
+  async function patchGoal(goalId: string, changes: GoalPatch) {
+    setError(null);
+    try {
+      await api.updateGoal(goalId, changes);
+      goals.reload();
+    } catch (caught) {
+      fail(caught);
+    }
+  }
+
+  async function removeGoal(goalId: string) {
+    setError(null);
+    try {
+      await api.deleteGoal(goalId);
+      goals.reload();
+    } catch (caught) {
+      fail(caught);
+    }
+  }
 
   async function addGoal(event: React.FormEvent) {
     event.preventDefault();
@@ -229,6 +256,7 @@ export default function RedeemPage() {
                   <th className="py-2">Type</th>
                   <th className="py-2">Target date</th>
                   <th className="py-2">Status</th>
+                  <th className="py-2" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-900">
@@ -238,7 +266,30 @@ export default function RedeemPage() {
                     <td className="py-2 text-neutral-400">{goal.goal_type}</td>
                     {/* No deadline reads as "—", never a guessed date. */}
                     <td className="py-2 text-neutral-400">{goal.target_date ?? "—"}</td>
-                    <td className="py-2 text-neutral-400">{goal.status}</td>
+                    <td className="py-2">
+                      {/* Status is the field that actually changes over a goal's
+                          life — achieved, or abandoned. A select rather than free
+                          text so it stays a known value. */}
+                      <select
+                        value={goal.status}
+                        onChange={(e) => patchGoal(goal.goal_id, { status: e.target.value })}
+                        className="rounded border border-neutral-800 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 outline-none focus:border-accent"
+                      >
+                        {["active", "achieved", "abandoned"].map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="py-2 text-right">
+                      <button
+                        onClick={() => removeGoal(goal.goal_id)}
+                        className="text-xs text-neutral-500 hover:text-red-300"
+                      >
+                        Remove
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -246,12 +297,6 @@ export default function RedeemPage() {
           )}
         </div>
 
-        {goals.data?.length ? (
-          <p className="mt-4 max-w-2xl text-xs text-neutral-600">
-            Goals can be added but not yet edited or removed — the API has no update or delete route
-            for them.
-          </p>
-        ) : null}
       </section>
     </Shell>
   );

@@ -8,7 +8,8 @@ rows, which is how they drift.
 
 import uuid
 
-from memory.semantic.store import get_preferences, set_preference
+from backend.application.errors import NotFoundError
+from memory.semantic.store import delete_preference, get_preferences, set_preference
 
 
 def read_preferences(user_id: uuid.UUID) -> dict[str, str]:
@@ -22,3 +23,19 @@ def write_preferences(user_id: uuid.UUID, values: dict[str, str]) -> dict[str, s
     for key, value in values.items():
         set_preference(user_id, key, value)
     return get_preferences(user_id)
+
+
+def remove_preference(user_id: uuid.UUID, key: str) -> None:
+    """Delete one preference outright.
+
+    `write_preferences` merges by design, so it can set a key but never unset
+    one — a user could change a preference and never remove it. Clearing the
+    value was the only workaround, and an empty string is still a stored
+    preference the agent reads, not an absence.
+
+    404 on an unknown key rather than silent success: "it is gone" and "it was
+    never there" are different answers, and a UI that cannot tell them apart
+    will happily show a delete button for a key that does not exist.
+    """
+    if not delete_preference(user_id, key):
+        raise NotFoundError(f"no preference named {key!r}")
