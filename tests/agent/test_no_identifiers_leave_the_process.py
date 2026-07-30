@@ -119,6 +119,86 @@ def test_card_key_is_not_stripped_despite_the_name():
     assert strip_identifiers({"card_key": "axis_atlas"}) == {"card_key": "axis_atlas"}
 
 
+def test_personal_fields_nothing_reasons_over_are_dropped():
+    """`renewal_date` and `portfolio_name` are not identifiers, so P2 left them.
+    They are still one person's account anniversary and one person's free text,
+    and no code in agents/, rules/ or graph/ reads either — so sending them was
+    pure disclosure for nothing (2026-07-30)."""
+    state = _state_with_everything()
+    state["portfolio"]["portfolio_name"] = "Tanisha's cards"
+    state["portfolio"]["cards"][0]["renewal_date"] = "2027-03-14"
+
+    digest = _digest_of(state)
+
+    assert "Tanisha" not in digest
+    assert "2027-03-14" not in digest
+
+
+def test_contact_details_are_scrubbed_from_the_query():
+    """A person pasting a phone number or a card number into a question should
+    not have it forwarded to the model. None of these can carry meaning in a
+    rewards question, so removing them cannot change an answer."""
+    state = _state_with_everything()
+    state["query"] = (
+        "mail me at tanisha.g@example.com or call 9876543210, "
+        "card 4111 1111 1111 1111 — which card for a flight?"
+    )
+
+    digest = json.loads(_digest_of(state))["query"]
+
+    assert "tanisha.g@example.com" not in digest
+    assert "9876543210" not in digest
+    assert "4111 1111 1111 1111" not in digest
+    assert "which card for a flight?" in digest  # the question itself survives
+
+
+def test_amounts_are_never_scrubbed():
+    """The line this must not cross. Amounts, dates and destinations look like
+    personal data and are exactly what the question is about; eating one would
+    produce a confidently wrong answer, which is worse than the disclosure the
+    scrub is meant to prevent."""
+    state = _state_with_everything()
+    state["query"] = "₹40,000 flight on 2026-08-15 to Delhi, 40000 rupees, 1250000 points"
+
+    digest = json.loads(_digest_of(state))["query"]
+
+    assert digest == state["query"]
+
+
+def test_engine_results_are_never_scrubbed():
+    """`rule_results` and `graph_results` carry the numbers a recommendation
+    quotes verbatim. A regex substitution over them could change a figure, so
+    the scrub deliberately does not reach here."""
+    state = _state_with_everything()
+    state["rule_results"][0]["points"] = 9876543210.0
+
+    digest = json.loads(_digest_of(state))
+
+    assert digest["rule_results"][0]["points"] == 9876543210.0
+
+
+def test_the_planner_scrubs_the_same_text():
+    """Two separate requests carry the typed query to the provider. A boundary
+    defended in one of them is not defended."""
+    import agents.planner.planner as planner_module
+
+    sent = []
+
+    class Recorder:
+        def complete(self, system: str, user: str) -> str:
+            sent.append(user)
+            return json.dumps({"intent": "spend_optimization", "plan": []})
+
+    state = initial_state(
+        "reach me on 9876543210 — best card for a flight?",
+        "1afcccdd-e684-437f-897b-7df0bd8774aa",
+    )
+    planner_module.plan(state, Recorder())
+
+    assert sent and "9876543210" not in sent[0]
+    assert "best card for a flight?" in sent[0]
+
+
 def test_structure_is_otherwise_untouched():
     """The Recommender copies numbers out of these results verbatim, so a
     reordering or coercion here would change an answer."""

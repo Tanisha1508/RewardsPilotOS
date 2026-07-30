@@ -250,24 +250,33 @@ export function Empty({ message }: { message: string }) {
 /** What leaves the service when you ask a question (privacy audit P5).
  *
  *  Answering a question sends the query, the cards and balances you have
- *  recorded, and your preferences to Google's Gemini API. A user had no way to
- *  know that, and no way to weigh it. Saying so is not optional politeness: the
- *  whole product rests on not asserting things that are not true, and silence
- *  about where financial data goes is the same failure in a different register.
+ *  recorded, and your preferences to the Gemini API. A user had no way to know
+ *  that, and no way to weigh it. Saying so is not optional politeness: the whole
+ *  product rests on not asserting things that are not true, and silence about
+ *  where financial data goes is the same failure in a different register.
  *
  *  Deliberately placed on Ask rather than buried in a policy page — it belongs
  *  where the sending happens, at the moment of choosing to send. Deliberately
  *  factual rather than reassuring: it names the recipient and the contents, and
  *  does not editorialise about safety.
  *
- *  Database identifiers are stripped before the request leaves (P2), which is
- *  worth stating because it is the one mitigation a reader cannot verify. */
+ *  Leads with the model rather than the company (2026-07-30). "Goes to Google"
+ *  described the destination but not the reason, and a notice that reads as a
+ *  warning about a company rather than an explanation of how the feature works
+ *  is answering a question the user did not ask. Google is still named — the
+ *  operator of the model is the substance of the disclosure and dropping it
+ *  would make the notice false by omission — but as the second clause.
+ *
+ *  The removals are stated because they are the one part a reader cannot
+ *  verify: database identifiers (P2), and contact or account numbers found in
+ *  the text itself (2026-07-30). */
 export function DataNotice() {
   return (
     <p className="mt-2 text-xs leading-relaxed text-neutral-600">
-      Answering uses Google Gemini. Your question, the cards and balances you have recorded, and
-      your preferences are sent there; account identifiers are removed first. Answers are saved to
-      your History until you delete them.
+      Answers are written by the Gemini model, run by Google. Your question, the cards and balances
+      you have recorded, and your preferences are sent to it; account identifiers are removed
+      first, along with any email, phone or card number found in what you typed. Answers are saved
+      to your History until you delete them.
     </p>
   );
 }
