@@ -96,6 +96,10 @@ export const api = {
   syncUser: (name?: string) =>
     request<User>("/api/v1/auth/sync", { method: "POST", body: { name: name ?? null } }),
   me: () => request<User>("/api/v1/auth/me"),
+  // Erases everything this service holds about the caller. Scoped to the token's
+  // own sub — no id parameter, so it cannot be aimed at anyone else. Does NOT
+  // remove the Supabase auth identity.
+  deleteAccount: () => request<{ deleted: boolean }>("/api/v1/auth/me", { method: "DELETE" }),
 
   getPortfolio: () => request<Portfolio>("/api/v1/portfolio"),
   listCards: () => request<Card[]>("/api/v1/portfolio/cards"),

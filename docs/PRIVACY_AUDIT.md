@@ -133,7 +133,7 @@ digest boundary rather than on the helper — a correct helper proves nothing if
 later edit serialises the dict before calling it. Tests check key names AND raw
 UUID values, and that everything the model reasons with survives.
 
-### P3 — A user cannot delete their data
+### P3 — FIXED 2026-07-30: a user could not delete their data
 
 The only delete endpoint is `DELETE /portfolio/cards/{card_id}`. There is no
 route to delete an account, a recommendation, the question history, or stored
@@ -146,6 +146,31 @@ hand.
 For a broad user base this is not a nice-to-have: erasure is a statutory right
 under India's DPDP Act and the GDPR, and the app already stores every question a
 user has typed.
+
+**Fixed.** `DELETE /api/v1/auth/me` deletes the `users` row; the existing
+cascades take portfolios, cards, balances, loyalty accounts, preferences, goals,
+recommendations, interaction events and notifications with it. One delete rather
+than a list of tables — a list would be a second copy of the schema, and the
+first thing to fall out of date when a table is added.
+
+Scoped to the token's own `sub`, with no id parameter, so the route cannot be
+aimed at another user even deliberately. Idempotent: deleting an already-absent
+user is success, because someone who retries after a slow response should not be
+told it failed.
+
+**What it does NOT delete, stated in the UI rather than glossed:** the Supabase
+auth identity in `auth.users`, which needs the service-role key this service
+does not hold. Signing in again therefore creates a new, empty account. Claiming
+"account deleted" would be a lie discovered at the next sign-in.
+
+UI is on the Account page behind a disclosure and then behind typing your own
+email — the cascade reaches further than people expect, and a one-click
+irreversible action eventually gets clicked by accident. Deleting also signs you
+out, since a live session pointing at deleted data would error on every page.
+
+Tests assert the cascade across tables (not just the `users` row), that
+re-syncing gives a *fresh* account rather than restoring anything, idempotency,
+and that one user's deletion leaves another's cards intact.
 
 ### P4 — Every question is stored indefinitely
 

@@ -40,6 +40,32 @@ def sync_user(user_id: uuid.UUID, email: str | None, name: str | None = None) ->
         return user
 
 
+def delete_user(user_id: uuid.UUID) -> None:
+    """Erase everything this service holds about a user (privacy audit P3).
+
+    One `delete` on the `users` row. Every table that references a user does so
+    with `ON DELETE CASCADE`, so portfolios, cards, balances, loyalty accounts,
+    preferences, goals, recommendations, interaction events and notifications go
+    with it. Deleting them individually here would be a second list to keep in
+    step with the schema, and the first thing to fall out of date when a table
+    is added.
+
+    Idempotent: deleting an already-absent user is success, not 404. The caller
+    asked for the data to be gone and it is gone — and a user who deletes their
+    account, then retries because the response was slow, should not receive an
+    error.
+
+    **This does not delete the Supabase auth identity.** That lives in
+    `auth.users`, reachable only with the service-role key, which this service
+    deliberately does not hold. So the person can sign in again and get a fresh,
+    empty account. The UI says so rather than implying a clean wipe.
+    """
+    with session_scope() as session:
+        user = session.get(User, user_id)
+        if user is not None:
+            session.delete(user)
+
+
 def get_user(user_id: uuid.UUID) -> User | None:
     with session_scope() as session:
         return session.get(User, user_id)

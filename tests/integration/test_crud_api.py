@@ -313,3 +313,63 @@ def test_one_user_cannot_edit_or_delete_another_users_goal(client, jwt_secret, s
     # And the owner's goal is untouched by the attempt.
     mine = client.get("/api/v1/goals", headers=auth(synced_user, jwt_secret)).json()["data"]
     assert [g["description"] for g in mine] == ["Mine"]
+
+
+def test_account_deletion_erases_everything(client, jwt_secret, synced_user):
+    """Privacy audit P3: a user must be able to erase what the service holds.
+
+    Asserted across tables rather than on the users row alone — the whole point
+    is the cascade, and a delete that left recommendations or preferences behind
+    would look successful while retaining the most sensitive data.
+    """
+    add_card(client, jwt_secret, synced_user)
+    client.put(
+        "/api/v1/preferences",
+        json={"values": {"home_airport": "BLR"}},
+        headers=auth(synced_user, jwt_secret),
+    )
+    client.post(
+        "/api/v1/goals",
+        json={"goal_type": "trip", "description": "Kyoto"},
+        headers=auth(synced_user, jwt_secret),
+    )
+
+    deleted = client.delete("/api/v1/auth/me", headers=auth(synced_user, jwt_secret))
+    assert deleted.status_code == 200, deleted.text
+
+    # The local user row is gone, so /me 404s rather than returning a shell.
+    assert client.get("/api/v1/auth/me", headers=auth(synced_user, jwt_secret)).status_code == 404
+
+    # And signing in again is a FRESH account, not a restored one: sync
+    # recreates the row, and everything that hung off the old one stayed gone.
+    client.post("/api/v1/auth/sync", json={}, headers=auth(synced_user, jwt_secret))
+    headers = auth(synced_user, jwt_secret)
+    assert client.get("/api/v1/portfolio/cards", headers=headers).json()["data"] == []
+    assert client.get("/api/v1/goals", headers=headers).json()["data"] == []
+    assert client.get("/api/v1/preferences", headers=headers).json()["data"]["values"] == {}
+
+
+def test_deleting_an_account_twice_is_not_an_error(client, jwt_secret, synced_user):
+    """Idempotent by design: someone who deletes their account and retries
+    because the response was slow should not be told it failed."""
+    assert (
+        client.delete("/api/v1/auth/me", headers=auth(synced_user, jwt_secret)).status_code == 200
+    )
+    assert (
+        client.delete("/api/v1/auth/me", headers=auth(synced_user, jwt_secret)).status_code == 200
+    )
+
+
+def test_deletion_touches_only_the_caller(client, jwt_secret, synced_user):
+    """The route takes no id — it is scoped to the token's own sub — so this
+    pins that one user's deletion cannot reach another's data."""
+    other = uuid.uuid4()
+    client.post("/api/v1/auth/sync", json={}, headers=auth(other, jwt_secret))
+    add_card(client, jwt_secret, other)
+
+    client.delete("/api/v1/auth/me", headers=auth(synced_user, jwt_secret))
+
+    survivors = client.get("/api/v1/portfolio/cards", headers=auth(other, jwt_secret)).json()[
+        "data"
+    ]
+    assert len(survivors) == 1
