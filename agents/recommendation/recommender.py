@@ -8,6 +8,7 @@ the single retry, then a typed failure."""
 import json
 from pathlib import Path
 
+from agents.privacy import strip_identifiers
 from agents.recommendation.calibration import confidence_basis
 from agents.recommendation.margin import margin_caveat
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
@@ -56,24 +57,32 @@ def _state_digest(state: AgentState, basis: dict, caveat: dict | None) -> str:
     def chunk_dump(chunk):
         return chunk.model_dump() if hasattr(chunk, "model_dump") else chunk
 
+    # Database ids are stripped before this leaves the process (privacy audit
+    # P2). The Planner already withholds the user id deliberately; tool results
+    # were reintroducing it, so every request sent the provider a stable UUID
+    # beside that user's cards, balances and question. Nothing here needs them:
+    # the model reasons over `card_key` and `card_name`, and copies numbers from
+    # engine results that are keyed the same way.
     return json.dumps(
-        {
-            "query": state["query"],
-            "intent": state["intent"],
-            "portfolio": state["portfolio"],
-            "preferences": state["preferences"],
-            "knowledge": [chunk_dump(c) for c in state["knowledge"]],
-            "rule_results": state["rule_results"],
-            "graph_results": state["graph_results"],
-            "memory": state["memory"],
-            "tool_errors": state["errors"],
-            # Deterministic calibration ceiling: reporting a HIGHER confidence
-            # than this is rejected; reporting lower is allowed.
-            "confidence_basis": basis,
-            # When present, `statement` MUST be reproduced verbatim in the
-            # decision or reasoning — validation rejects output without it.
-            "margin_caveat": caveat,
-        },
+        strip_identifiers(
+            {
+                "query": state["query"],
+                "intent": state["intent"],
+                "portfolio": state["portfolio"],
+                "preferences": state["preferences"],
+                "knowledge": [chunk_dump(c) for c in state["knowledge"]],
+                "rule_results": state["rule_results"],
+                "graph_results": state["graph_results"],
+                "memory": state["memory"],
+                "tool_errors": state["errors"],
+                # Deterministic calibration ceiling: reporting a HIGHER
+                # confidence than this is rejected; reporting lower is allowed.
+                "confidence_basis": basis,
+                # When present, `statement` MUST be reproduced verbatim in the
+                # decision or reasoning — validation rejects output without it.
+                "margin_caveat": caveat,
+            }
+        ),
         default=str,
     )
 

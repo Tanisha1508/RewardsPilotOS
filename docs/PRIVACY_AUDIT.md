@@ -33,34 +33,42 @@ accident.
 
 Ordered by risk.
 
-### P1 — UNVERIFIED, potentially critical: are the app's tables exposed through Supabase's public REST API?
+### P1 — RESOLVED 2026-07-30: the app's tables are NOT reachable by the anon key
 
-Supabase auto-exposes every table in the `public` schema through PostgREST, and
-the **anon key is public by design** — it ships in the browser bundle. The only
-thing preventing one user from reading every other user's rows through that path
-is **row-level security**.
+Checked in the Supabase Table Editor with **View data as a role → Anonymous**:
 
-Our backend never uses that path (it connects with `DATABASE_URL` via SQLAlchemy
-and scopes every query by `current_user_id`), so RLS could easily have been left
-off without anything breaking or looking wrong.
+```
+ERROR: 42501: permission denied for table users
+HINT: Grant the required privileges to the current role with:
+      GRANT SELECT ON public.users TO anon;
+```
 
-**Not verified.** The live check — reading the anon key from the bundle and
-querying PostgREST — was blocked as credential extraction, correctly. It needs
-checking directly, and it is the highest-risk unknown here.
+**Not an RLS denial — a table-privilege denial.** The `anon` role holds no
+`SELECT` grant on the table, and Postgres evaluates grants *before* RLS, so the
+request never reaches a policy at all.
 
-**How to check (about a minute):**
-1. Supabase dashboard → **Table Editor**. Any app table (`cards`, `users`,
-   `recommendations`, `preferences`) in the `public` schema.
-2. Look at the **RLS** badge on each. "RLS disabled" on a table holding user
-   data means it is readable and writable by anyone holding the anon key.
-3. Also **Settings → API → Exposed schemas**. If `public` is listed and the
-   tables live there, they are reachable.
+**Why the exposure never existed:** these tables were created by Alembic
+migrations running as the owner role. Supabase auto-grants `anon`/`authenticated`
+privileges only for tables created through its own tooling; migration-created
+tables in `public` get none. The path I was worried about was closed by how the
+schema was built.
 
-**If RLS is off:** either enable RLS with deny-all policies (the backend is
-unaffected — it connects as the database owner, which bypasses RLS), or move the
-app tables out of the exposed schema. The first is less disruptive.
+**What is actually protecting the data, though, is the absence of a GRANT — not
+RLS.** That is one layer rather than two, and the failure mode is a single
+statement away: anyone following the hint Postgres itself prints
+(`GRANT SELECT ON public.users TO anon`) opens the table, and if RLS is disabled
+there is nothing behind it.
 
-### P2 — A stable user identifier is sent to Google alongside financial data
+**Recommended (not urgent):** enable RLS with deny-all policies on the app
+tables. It costs nothing operationally — the backend connects as the owner and
+bypasses RLS — and it means a stray grant is no longer instantly a breach.
+Defence in depth for a one-line change.
+
+**Still worth spot-checking:** `cards` and `recommendations` under the same
+Anonymous role. Same migrations, so almost certainly the same result, but those
+hold the financial data and RLS/grants are per-table.
+
+### P2 — FIXED 2026-07-30: a stable user identifier was sent to Google alongside financial data
 
 `GetPortfolioOutput` includes `user_id`, and `agents/workflows/graph.py:45` puts
 the whole payload into `state["portfolio"]`, which the Recommender serialises
@@ -82,8 +90,24 @@ The identifiers buy nothing: the model never needs `user_id`, `portfolio_id` or
 `card_id` to compare cards. Stripping them costs nothing and removes the link
 between a financial profile and a persistent identity at the provider.
 
-**Fix:** drop identifier fields from the digest at the boundary where it is
-built, so it cannot be reintroduced by a future tool.
+**Fixed.** `agents/privacy.py::strip_identifiers` removes every database
+surrogate key (`user_id`, `portfolio_id`, `card_id`, `balance_id`, `rec_id`,
+`event_id`, `goal_id`, `pref_id`, `loyalty_id`, `notif_id`) recursively from the
+digest, applied at the point it is serialised.
+
+Applied to the whole digest, not to `portfolio` alone: the leak was never really
+about portfolio, it was that *any* tool result can carry an id and a future tool
+would reintroduce it silently. Filtering by key name at the boundary covers new
+tools by default.
+
+`card_key` is deliberately kept — it names a rule file, not a user, and the
+engines and prompts depend on it. A broader "anything ending in `_id`/`_key`"
+rule would have broken every comparison.
+
+Cover in `tests/agent/test_no_identifiers_leave_the_process.py`, asserted at the
+digest boundary rather than on the helper — a correct helper proves nothing if a
+later edit serialises the dict before calling it. Tests check key names AND raw
+UUID values, and that everything the model reasons with survives.
 
 ### P3 — A user cannot delete their data
 
@@ -147,10 +171,9 @@ line. Free to fix by validating the shape.
 
 ## Recommended order
 
-1. **P1** — verify RLS. A minute of dashboard checking; potentially the largest
-   hole in the system, and the only one where the blast radius is every user.
-2. **P2** — strip identifiers from the LLM digest. Small, self-contained, and
-   removes a real link between identity and financial data at a third party.
+1. ~~**P1**~~ — **done, clean.** No anon access. Optional follow-up: enable RLS
+   as a second layer.
+2. ~~**P2**~~ — **done.** Identifiers stripped at the digest boundary.
 3. **P3** — account and data deletion. Needed before a broad user base, and the
    schema already supports it.
 4. **P5** — disclosure. One honest line now; a policy before sharing the URL.
