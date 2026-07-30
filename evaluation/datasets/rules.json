@@ -285,7 +285,7 @@
       "month": "2026-07",
       "expected": {
         "status": "unknown",
-        "accrued_points": 0.0,
+        "accrued_points": null,
         "remaining_points": null
       }
     },
@@ -298,7 +298,7 @@
       "month": "2026-07",
       "expected": {
         "status": "unknown",
-        "accrued_points": 0.0,
+        "accrued_points": null,
         "remaining_points": null
       }
     },

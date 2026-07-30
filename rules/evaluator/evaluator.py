@@ -94,9 +94,40 @@ def find_boundary(
     return entry
 
 
-def cap_status(rule: RuleFile, scope: str, month: str, accrued: float) -> CapStatus:
+def cap_status(rule: RuleFile, scope: str, month: str, accrued: float | None) -> CapStatus:
+    """Cap headroom for a scope.
+
+    `accrued=None` means the system has never tracked this user's spend for this
+    scope — which is the normal case, because nothing records accrual. That is
+    NOT the same as zero, and the difference decides whether "how much of your
+    cap is left?" has an answer at all. Reporting the full cap as remaining, on
+    the strength of an empty table, is a fabricated number in a system built not
+    to produce them.
+    """
     for cap in rule.caps:
         if cap.scope == scope:
+            # Ordered deliberately: an unverified cap FIGURE is the more
+            # fundamental unknown and is reported first. Untracked accrual is
+            # only worth mentioning once the cap itself is something we know.
+            if cap.cap_points.is_usable and accrued is None:
+                return CapStatus(
+                    card_key=rule.card_key,
+                    scope=scope,
+                    period=cap.period,
+                    month=month,
+                    cap_points=cap.cap_points,
+                    # Not 0.0. "Never tracked" reported as zero is the exact
+                    # fabrication this branch exists to remove.
+                    accrued_points=None,
+                    remaining_points=None,
+                    status="unknown",
+                    unknown_reasons=[
+                        f"this system does not track spend, so how much of the "
+                        f"'{scope}' cap you have already used in {month} is unknown. "
+                        f"The cap itself is verified; your remaining headroom is not."
+                    ],
+                    sources=_sources(cap.cap_points),
+                )
             if not cap.cap_points.is_usable:
                 return CapStatus(
                     card_key=rule.card_key,

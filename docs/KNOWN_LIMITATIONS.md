@@ -745,3 +745,45 @@ roadmap — none is silently papered over.
     period *window* rather than a month. That is a schema change plus a new
     input, so it waits for the write path — but note that until it exists, the
     honest answer to "am I near my statement-cycle cap?" is that we cannot say.
+
+33. **`CheckCap` reported an empty table as a confident zero — FIXED
+    2026-07-30.** Asked "am I close to my cap?", the engine answered:
+
+    ```
+    status: ok · accrued_points: 0.0 · remaining_points: 15000.0 · unknown_reasons: []
+    ```
+
+    Every figure but the cap was fabricated. Nothing in this system records
+    spend — `cap_store.record` is called from nowhere — so an absent accrual row
+    meant "never tracked", not "nothing spent". The store collapsed the two by
+    returning `0.0`, and `unknown_reasons: []` then asserted that nothing was
+    unknown.
+
+    The old code stated its reasoning: *"No row means nothing accrued this
+    month — genuinely zero, not unknown, since accrual starts at zero each month
+    by definition."* True only if something records accrual. Nothing does.
+
+    **Fixed:** `get_accrued` returns `float | None`, `CapStatus.accrued_points`
+    is `float | None`, and an untracked scope reports `status: "unknown"` with
+    the cap still stated — the cap IS verified; the headroom is not.
+
+    **The earn path deliberately keeps assuming none used.** Asked what a
+    purchase would earn, unknown prior accrual is treated as zero, which still
+    correctly clips a single transaction larger than the whole cap
+    (₹50,00,000 travel on Atlas → 10,000 EDGE Miles, `cap_applied=True`). That
+    is the most the purchase *could* earn; if the cardholder has already
+    consumed cap the real figure is lower. Different question, different honest
+    default — and unlike CheckCap, refusing would break the core feature.
+
+    **What this says about `cap_usage` generally** (supersedes the framing in
+    items 16 and 32): accrual tracking requires transaction data this product
+    does not collect and is not trying to — it is a rewards recommendation
+    pilot, not a statement analyser. Caps still matter and still work: they are
+    enforced per transaction, straight from the rule files, needing no history,
+    no billing date and no stored table. The `cap_usage` table is therefore
+    **unused by design**, not unfinished. If cap-awareness is ever wanted, the
+    fitting shape is a query-time input — "I have already spent ₹1.5L on travel
+    this month" — not a ledger.
+
+    Also removed: "Am I close to any monthly cap?" was offered as a suggested
+    question on Ask and in onboarding. The product cannot answer it.

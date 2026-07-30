@@ -85,7 +85,11 @@ class CapStatus(BaseModel):
     period: str
     month: str
     cap_points: VerifiedValue = Field(default_factory=VerifiedValue.unknown)
-    accrued_points: float = 0.0
+    # None means the system has never tracked this cardholder's spend for the
+    # scope — the normal case, since nothing records accrual. Distinct from 0.0,
+    # which means tracked and nothing accrued. Defaulting this to 0.0 is what
+    # let CheckCap answer "you have used 0 of 15,000" from an empty table.
+    accrued_points: float | None = None
     remaining_points: float | None = None
     status: Literal["ok", "reached", "unknown"]
     unknown_reasons: list[str] = Field(default_factory=list)

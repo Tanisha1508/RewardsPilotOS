@@ -266,16 +266,47 @@ def test_unresearched_cards_have_no_fee_fields():
         assert rule.continuation_eligibility is None
 
 
-def test_hdfc_cap_check_now_verified(engine):
+def test_hdfc_cap_is_verified_but_headroom_is_unknown(engine):
+    """The cap figure is verified; how much of it you have used is not.
+
+    This asserted `status == "ok"` and `remaining == 15000` until 2026-07-30.
+    That was a fabricated number: nothing records spend, so an absent accrual row
+    meant "never tracked", and reporting the whole cap as remaining told a user
+    they had used none of it on the strength of an empty table.
+    """
     status = engine.check_cap("hdfc_infinia", "smartbuy_total", "2026-07")
-    assert status.status == "ok"
-    assert status.remaining_points == 15000.0
+
+    assert status.status == "unknown"
+    assert status.remaining_points is None
+    # The cap itself IS known and worth stating — only the headroom is not.
+    assert status.cap_points.value == 15000.0
+    assert status.cap_points.status == "verified"
+    assert any("does not track spend" in reason for reason in status.unknown_reasons)
 
 
-def test_axis_cap_check_now_verified(engine):
+def test_axis_cap_is_verified_but_headroom_is_unknown(engine):
     status = engine.check_cap("axis_atlas", "travel_accelerated", "2026-07")
+
+    assert status.status == "unknown"
+    assert status.remaining_points is None
+    assert status.cap_points.value == 10000.0
+    assert status.cap_points.status == "verified"
+
+
+def test_headroom_is_known_once_accrual_is_recorded(engine_factory=None):
+    """The unknown is about missing data, not a refusal to compute. Given a
+    store that has actually tracked accrual, headroom is reported normally."""
+    from rules.engine.cap_store import InMemoryCapUsageStore
+    from rules.engine.engine import RuleEngine
+
+    store = InMemoryCapUsageStore()
+    store.record("hdfc_infinia", "smartbuy_total", "2026-07", 4000.0)
+
+    status = RuleEngine(cap_store=store).check_cap("hdfc_infinia", "smartbuy_total", "2026-07")
+
     assert status.status == "ok"
-    assert status.remaining_points == 10000.0
+    assert status.accrued_points == 4000.0
+    assert status.remaining_points == 11000.0
 
 
 def test_compare_seed_cards_all_three_compute(engine):

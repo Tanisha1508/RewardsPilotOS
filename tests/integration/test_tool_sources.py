@@ -182,19 +182,25 @@ def test_episodic_recall_is_most_recent_first_and_limited(seeded_user):
 def test_cap_usage_accrues_and_reads_back(user_id):
     sync_user(user_id, "cap@example.test", "Cap User")
     store = PostgresCapUsageStore(user_id)
-    assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 0.0
+    # None, not 0.0 — never tracked is not "nothing spent".
+    assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") is None
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 4000)
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 1500)
     assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 5500.0
-    # Different month is a different counter — caps reset monthly.
-    assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-08") == 0.0
+    # Different month is a different counter — and untracked, not zero.
+    assert store.get_accrued("hdfc_infinia", "smartbuy_total", "2026-08") is None
 
 
-def test_cap_usage_absent_row_is_zero_not_unknown(user_id):
-    """Nothing accrued is genuinely zero: accrual starts at zero each month by
-    definition, so this is one of the few places a missing value is knowable."""
+def test_cap_usage_absent_row_is_unknown_not_zero(user_id):
+    """Reversed 2026-07-30. This asserted that an absent row is *zero*, on the
+    reasoning that accrual starts at zero each month by definition.
+
+    That is only true if something records accrual, and nothing does — so
+    absence meant "never tracked" while reading as a measurement. Returning 0.0
+    is what let CheckCap tell a user they had used none of a cap the system has
+    never observed."""
     sync_user(user_id, "cap2@example.test", "Cap User")
-    assert PostgresCapUsageStore(user_id).get_accrued("axis_atlas", "never_used", "2026-07") == 0.0
+    assert PostgresCapUsageStore(user_id).get_accrued("axis_atlas", "never_used", "2026-07") is None
 
 
 def test_rule_engine_reads_cap_usage_from_postgres(user_id):
@@ -206,9 +212,15 @@ def test_rule_engine_reads_cap_usage_from_postgres(user_id):
     store = PostgresCapUsageStore(user_id)
     engine = RuleEngine(cap_store=store)
     before = engine.check_cap("hdfc_infinia", "smartbuy_total", "2026-07")
+    # Untracked to begin with — headroom is unknown, not the full cap.
+    assert before.status == "unknown"
+    assert before.accrued_points is None
+
     store.record("hdfc_infinia", "smartbuy_total", "2026-07", 1000)
+
     after = engine.check_cap("hdfc_infinia", "smartbuy_total", "2026-07")
-    assert after.accrued_points == before.accrued_points + 1000
+    assert after.accrued_points == 1000.0
+    assert after.status == "ok"
 
 
 def test_uuid_users_are_isolated_from_each_other(seeded_user):
@@ -240,8 +252,8 @@ def test_cap_usage_is_isolated_between_users(user_id):
 
     assert mine.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 9000.0
     # Same card, same scope, same month — and untouched, because it is a
-    # different person's counter.
-    assert theirs.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") == 0.0
+    # different person's counter. Untracked, so None rather than 0.0.
+    assert theirs.get_accrued("hdfc_infinia", "smartbuy_total", "2026-07") is None
 
 
 def test_cap_usage_is_deleted_with_the_user(user_id):
@@ -256,9 +268,10 @@ def test_cap_usage_is_deleted_with_the_user(user_id):
 
     delete_user(user_id)
 
-    # Re-synced as the same id, the counter is gone rather than inherited.
+    # Re-synced as the same id, the counter is gone rather than inherited —
+    # and `None`, not 0.0: an erased account is back to never-tracked.
     sync_user(user_id, "erase@example.test", "Erase Me")
     assert (
         PostgresCapUsageStore(user_id).get_accrued("axis_atlas", "travel_accelerated", "2026-07")
-        == 0.0
+        is None
     )

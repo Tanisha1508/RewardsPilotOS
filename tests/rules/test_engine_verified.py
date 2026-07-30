@@ -83,7 +83,10 @@ def test_compare_cards_excluded_sorts_last(engine):
 
 def test_cap_store_roundtrip():
     store = InMemoryCapUsageStore()
-    assert store.get_accrued("c", "s", "2026-07") == 0.0
+    # None, not 0.0: never tracked and tracked-as-zero are different facts, and
+    # collapsing them is what let CheckCap report full headroom for a user whose
+    # spend the system has never seen.
+    assert store.get_accrued("c", "s", "2026-07") is None
     store.record("c", "s", "2026-07", 120.0)
     store.record("c", "s", "2026-07", 30.0)
     assert store.get_accrued("c", "s", "2026-07") == 150.0

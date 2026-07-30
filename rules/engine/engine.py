@@ -37,7 +37,14 @@ class RuleEngine:
         accrued = 0.0
         if accelerated is not None:
             scope = accelerated.cap_scope or f"{accelerated.channel}_{accelerated.category}"
-            accrued = self._cap_store.get_accrued(card_key, scope, month)
+            # For the EARN path, unknown prior accrual is treated as none used.
+            # That is deliberate and is not the same choice as CheckCap makes:
+            # here the question is "what would this transaction earn", and the
+            # cap still correctly clips a single transaction larger than the
+            # whole cap. Assuming no prior use gives the most this purchase
+            # could earn; if the cardholder has already consumed cap, the real
+            # figure is lower. `cap_applied` says when the clip engaged.
+            accrued = self._cap_store.get_accrued(card_key, scope, month) or 0.0
         # Pure query: comparing or re-asking never consumes cap. Actual spend is
         # recorded by the application layer via cap_store.record.
         return evaluate_earn(rule, amount, category, channel, month, accrued)

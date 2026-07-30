@@ -220,7 +220,7 @@ export default function WelcomePage() {
               {[
                 "Which of my cards is best for a ₹50,000 flight?",
                 "What can I book with the points I have?",
-                "Am I close to any monthly cap?",
+                "How many points would a ₹20,000 hotel booking earn?",
               ].map((q) => (
                 <button
                   key={q}
