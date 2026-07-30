@@ -1,9 +1,11 @@
-# Keep the Render free-tier backend awake during waking hours.
+# Availability alert for the Render backend. (Was the keepalive until
+# 2026-07-30 — see below for why it was never actually doing that job.)
 #
 # Render free instances spin down after ~15 minutes idle. The next request pays
-# the wake-up: measured 15.6 s on 2026-07-29 (a warm call to the same endpoint
-# is ~1.2 s). That is the "dashboard takes ages to load" symptom — the page
-# itself is fine, it is waiting on a container that went to sleep.
+# the wake-up: measured 15.6 s on 2026-07-29, and 36.0 s on 2026-07-30 (a warm
+# call to the same endpoint is ~1.2 s). That is the "dashboard takes ages to
+# load" symptom — the page itself is fine, it is waiting on a container that
+# went to sleep.
 #
 # ── Why a daily window rather than 24/7 ──────────────────────────────────────
 # The free tier allows 750 instance-hours/month. Keeping the service awake
@@ -14,13 +16,29 @@
 #
 # To go 24/7, change the hour field to `*`, and watch the Render usage meter.
 #
-# ── Honest caveat ────────────────────────────────────────────────────────────
-# GitHub's scheduled runners are best-effort: `*/10` is a request, not a
-# promise, and runs are routinely delayed 10–20 minutes under load and can be
-# dropped entirely. So this REDUCES cold starts, it does not eliminate them.
-# If they need to be gone completely, an external pinger (UptimeRobot,
-# cron-job.org — both have free tiers) fires far more reliably; this workflow
-# is the version that needs no extra account.
+# ── The caveat above turned out to be an understatement (measured 2026-07-30) ─
+# This workflow asks for `*/10`. What it actually ran:
+#
+#     16:58Z (51s)   15:20Z (50s)   13:04Z (9s)   11:21Z (42s)   09:11Z (14s)
+#
+# Roughly every 90–120 minutes. And the 42–51 second durations are the tell:
+# each ping was itself paying a cold start, so the service had already spun
+# down between pings. The workflow was green and achieving nothing.
+#
+# **Keeping the backend awake is now `infra/monitoring/keepalive_pg_cron.sql`**,
+# a pg_cron job in Supabase that runs on a real scheduler, needs no extra
+# account, and actually fires every ten minutes.
+#
+# ── So why is this workflow still here ──────────────────────────────────────
+# Because it does something pg_cron does not: it *fails loudly*. `net.http_get`
+# fires and forgets, so a backend returning 500 looks identical to one returning
+# 200 unless someone queries `net._http_response`. The step below exits non-zero
+# on any non-200, which sends the owner an email.
+#
+# The division of labour, now explicit: pg_cron keeps the service awake,
+# this workflow notices when it is broken. An unreliable schedule is fatal for
+# the first job and merely means "checked a few times a day" for the second,
+# which is a reasonable cadence for an availability alert on a hobby project.
 #
 # Hits /health only: no auth, no database writes, no LLM call, no quota cost.
 
@@ -28,7 +46,11 @@ name: keepalive
 
 on:
   schedule:
-    - cron: "*/10 1-17 * * *" # every 10 min, 01:00–17:59 UTC (06:30–23:29 IST)
+    # Hourly, not */10: pg_cron does the keeping-awake now, so this only needs
+    # to notice breakage. Kept inside the same 01:00–17:59 UTC window on
+    # purpose — a ping outside it would wake the service and spend the instance
+    # hours the window exists to save.
+    - cron: "0 1-17 * * *" # hourly, 01:00–17:59 UTC (06:30–23:29 IST)
   workflow_dispatch: {}
 
 concurrency:
