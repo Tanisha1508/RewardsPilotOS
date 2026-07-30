@@ -59,14 +59,23 @@ statement away: anyone following the hint Postgres itself prints
 (`GRANT SELECT ON public.users TO anon`) opens the table, and if RLS is disabled
 there is nothing behind it.
 
-**Recommended (not urgent):** enable RLS with deny-all policies on the app
-tables. It costs nothing operationally — the backend connects as the owner and
-bypasses RLS — and it means a stray grant is no longer instantly a breach.
-Defence in depth for a one-line change.
+**Second layer added, same day.** RLS is now enabled on all 16 public tables
+with **no policies**, which is deny-all for every non-owner role. Verified:
 
-**Still worth spot-checking:** `cards` and `recommendations` under the same
-Anonymous role. Same migrations, so almost certainly the same result, but those
-hold the financial data and RLS/grants are per-table.
+- `select tablename, rowsecurity from pg_tables where schemaname='public'`
+  returns `true` for all 16.
+- The deployed app still lists cards and balances, so the backend is unaffected
+  — it connects as the `postgres` role, which **owns** these tables, and table
+  owners bypass RLS.
+
+`anon` is now denied by two independent mechanisms: no GRANT, and no policy. A
+stray `GRANT SELECT ... TO anon` — including the one Postgres prints in its own
+error hint — no longer opens the data.
+
+**Do not add `FORCE ROW LEVEL SECURITY`.** It makes RLS apply to the owner too;
+with no policies that would deny the backend and take the app down.
+
+All app tables were checked under the Anonymous role, not just `users`.
 
 ### P2 — FIXED 2026-07-30: a stable user identifier was sent to Google alongside financial data
 
