@@ -19,14 +19,14 @@ from pathlib import Path
 
 from rules.parser.catalog import resolve_card_key
 
-PAGE = Path(__file__).resolve().parents[2] / "frontend" / "app" / "cards" / "page.tsx"
+PAGE = Path(__file__).resolve().parents[2] / "frontend" / "lib" / "known-cards.ts"
 
 
 def _frontend_catalog() -> list[dict[str, str]]:
     """Parse the KNOWN_CARDS literal out of the page."""
     source = PAGE.read_text()
-    block = re.search(r"const KNOWN_CARDS = \[(.*?)\] as const;", source, re.S)
-    assert block, "KNOWN_CARDS literal not found — was frontend/app/cards/page.tsx restructured?"
+    block = re.search(r"export const KNOWN_CARDS = \[(.*?)\] as const;", source, re.S)
+    assert block, "KNOWN_CARDS literal not found — was frontend/lib/known-cards.ts restructured?"
 
     entries = []
     for chunk in re.findall(r"\{(.*?)\}", block.group(1), re.S):

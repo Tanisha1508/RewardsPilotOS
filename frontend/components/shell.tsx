@@ -13,18 +13,43 @@ import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 // cleared on sign-out so a different fresh user in the same tab still syncs.
 const SYNCED_FLAG = "rp_synced";
 
-// Ordered as: overview, then what you tell the system, then what you ask of it.
-// Preferences sits last because it is the only entry you rarely open on purpose
-// — but it IS in the nav, not buried: it can be written by the agent during a
-// conversation, and a preference you cannot find is one you cannot correct.
+// First-run gate. Checked once per browser session, not per navigation: it costs
+// an API call, and someone who deliberately skips setup must not be dragged back
+// to it on every click.
+//
+// Sits in Shell rather than on one page because every entry point lands
+// somewhere different — password login goes to /chat, Google OAuth returns to
+// whatever URL is configured in the Supabase dashboard. A gate on a single page
+// would be silently bypassed by the other route.
+const FIRSTRUN_FLAG = "rp_firstrun_checked";
+
+// Four tabs, each answering one question the others do not:
+//   Ask       — what should I do?
+//   Portfolio — what do I hold?
+//   Redeem    — what can I get?
+//   History   — what was I told?
+//
+// This replaced seven. Dashboard and Cards both answered "what do I hold" and
+// showed the same balances twice; Transfer answered a question users do not ask
+// (it is now a personalised section of Redeem); Goals and Preferences were
+// settings wearing tab clothing. Dashboard returns as "Today" when the
+// opportunity engine gives it something to say — a nav slot before the content
+// is backwards.
 const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/cards", label: "Cards" },
-  { href: "/goals", label: "Goals" },
   { href: "/chat", label: "Ask" },
+  { href: "/portfolio", label: "Portfolio" },
+  { href: "/redeem", label: "Redeem" },
   { href: "/recommendations", label: "History" },
-  { href: "/transfer", label: "Transfer" },
-  { href: "/preferences", label: "Preferences" },
+];
+
+// Reached from the Settings menu, not the tab bar. Reward preferences are set
+// during onboarding and only corrected here, so they do not earn permanent
+// space — but they stay one click away and clearly labelled, because the store
+// is writable by tooling and a preference you cannot find is one you cannot
+// correct.
+const SETTINGS_LINKS = [
+  { href: "/preferences", label: "Reward preferences" },
+  { href: "/account", label: "Account" },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {
@@ -60,6 +85,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
             .catch(() => {});
         }
         setReady(true);
+
+        // A brand-new account has nothing to show on any tab, so send it to
+        // setup. Deliberately only when the list is *known* to be empty: a
+        // failed or slow call must never look like "you have no cards" and
+        // bounce someone out of the app they were using.
+        if (!sessionStorage.getItem(FIRSTRUN_FLAG)) {
+          api
+            .listCards()
+            .then((cards) => {
+              sessionStorage.setItem(FIRSTRUN_FLAG, "1");
+              if (!cancelled && cards.length === 0) router.replace("/welcome");
+            })
+            .catch(() => {});
+        }
       } else {
         router.replace("/login");
       }
@@ -70,6 +109,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_OUT") {
         sessionStorage.removeItem(SYNCED_FLAG);
+        sessionStorage.removeItem(FIRSTRUN_FLAG);
         router.replace("/login");
       }
     });
@@ -96,10 +136,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen">
       <header className="border-b border-neutral-800">
         <div className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
-          <Link href="/dashboard" className="font-semibold tracking-tight">
+          <Link href="/chat" className="font-semibold tracking-tight">
             RewardsPilot<span className="text-accent">OS</span>
           </Link>
-          <nav className="flex gap-4 text-sm">
+          <nav className="flex gap-5 text-sm">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -114,15 +154,77 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
+          <div className="ml-auto">
+            <SettingsMenu onSignOut={signOut} />
+          </div>
+        </div>
+      </header>
+      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+    </div>
+  );
+}
+
+/** The Settings menu.
+ *
+ *  Called "Settings", not "Account": it holds reward preferences, which change
+ *  what the app recommends and are therefore product settings, not profile
+ *  fields. Labelled in text rather than shown as a bare avatar — the first
+ *  person to review the design went looking for it and could not find it. */
+function SettingsMenu({ onSignOut }: { onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close on route change, so following a link does not leave the menu hanging.
+  useEffect(() => setOpen(false), [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("click", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" onClick={(e) => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="true"
+        className="flex items-center gap-1.5 text-sm text-neutral-400 hover:text-neutral-200"
+      >
+        Settings
+        <span aria-hidden="true" className="text-xs">
+          ⌄
+        </span>
+      </button>
+
+      {open ? (
+        <div className="absolute right-0 top-8 z-10 w-52 rounded-lg border border-neutral-800 bg-neutral-900 p-1.5 shadow-xl">
+          {SETTINGS_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="block rounded px-2.5 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
+            >
+              {item.label}
+            </Link>
+          ))}
+          <div className="my-1.5 h-px bg-neutral-800" />
           <button
-            onClick={signOut}
-            className="ml-auto text-sm text-neutral-400 hover:text-neutral-200"
+            onClick={onSignOut}
+            className="block w-full rounded px-2.5 py-1.5 text-left text-sm text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
           >
             Sign out
           </button>
         </div>
-      </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      ) : null}
     </div>
   );
 }

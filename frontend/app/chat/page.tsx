@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { api, ApiRequestError } from "@/lib/api";
+import { useApi } from "@/hooks/use-api";
 import { ErrorNotice, Shell } from "@/components/shell";
 import { RecommendationCard } from "@/components/recommendation-card";
+import { formatDateTime } from "@/lib/display";
 import type { FeedbackStatus, Recommendation } from "@/types/api";
 
 // Chat (BUILD_SPEC §10): ask a question, get a recommendation card. One turn at
@@ -55,7 +58,7 @@ export default function ChatPage() {
     <Shell>
       <h1 className="text-lg font-semibold tracking-tight">Ask</h1>
       <p className="mt-1 text-sm text-neutral-400">
-        Ask about your cards — best card for a purchase, transfers, redemptions.
+        Which card to use, what your points are worth, how to get where you are going.
       </p>
 
       <form onSubmit={ask} className="mt-4 flex gap-2">
@@ -95,12 +98,79 @@ export default function ChatPage() {
             </div>
           );
         })}
-        {turns.length === 0 ? (
-          <p className="text-sm text-neutral-600">
-            No questions yet. Try &ldquo;Which card is best for hotel bookings?&rdquo;
-          </p>
-        ) : null}
+        {turns.length === 0 ? <Suggestions onPick={(q) => setQuery(q)} /> : null}
       </div>
+
+      {/* Earlier questions, inline. Ask is home now, and a landing page that
+          forgets every previous conversation reads as a tool rather than
+          something that knows you. Only the three most recent — the full record
+          is History, and duplicating it here would just be a second History. */}
+      <RecentQuestions />
     </Shell>
+  );
+}
+
+/** Openers for an empty Ask page.
+ *
+ *  Prefilling the box rather than submitting: a suggestion should show what a
+ *  good question looks like, not spend one of a limited number of daily LLM
+ *  calls on a question nobody actually asked. */
+function Suggestions({ onPick }: { onPick: (q: string) => void }) {
+  const EXAMPLES = [
+    "Which of my cards is best for a ₹50,000 flight?",
+    "What can I book with the points I have?",
+    "Am I close to any monthly cap?",
+  ];
+  return (
+    <div>
+      <p className="text-sm text-neutral-500">Not sure where to start?</p>
+      <div className="mt-3 grid gap-2">
+        {EXAMPLES.map((q) => (
+          <button
+            key={q}
+            onClick={() => onPick(q)}
+            className="rounded border border-neutral-800 bg-neutral-900/40 px-3.5 py-2.5 text-left text-sm text-neutral-300 hover:border-accent hover:text-neutral-100"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecentQuestions() {
+  const recent = useApi(() => api.listRecommendations());
+  const items = recent.data?.slice(0, 3) ?? [];
+
+  // Silent when empty or broken: this is a convenience strip, and an error here
+  // must not compete with the answer the page exists to show.
+  if (recent.loading || recent.error || !items.length) return null;
+
+  return (
+    <section className="mt-12 border-t border-neutral-900 pt-6">
+      <h2 className="text-xs uppercase tracking-wide text-neutral-500">Earlier questions</h2>
+      <ul className="mt-3 divide-y divide-neutral-900">
+        {items.map((rec) => (
+          <li key={rec.rec_id} className="flex items-baseline justify-between gap-4 py-2.5">
+            <Link
+              href="/recommendations"
+              className="text-sm text-neutral-300 hover:text-accent-soft"
+            >
+              {rec.query}
+            </Link>
+            <span className="shrink-0 text-xs text-neutral-600">
+              {formatDateTime(rec.created_at)}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <Link
+        href="/recommendations"
+        className="mt-3 inline-block text-xs text-accent-soft hover:underline"
+      >
+        See all questions →
+      </Link>
+    </section>
   );
 }

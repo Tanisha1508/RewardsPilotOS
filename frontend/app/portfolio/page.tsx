@@ -5,47 +5,12 @@ import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell } from "@/components/shell";
 import { currencyLabel, formatDate, formatDateTime } from "@/lib/display";
+import { KNOWN_CARDS } from "@/lib/known-cards";
 import type { Card, CardPatch, RewardBalance } from "@/types/api";
 
 // Cards CRUD (BUILD_SPEC §10). Annual fee is optional and stays empty rather
 // than defaulting to 0 — an unknown fee and a waived fee are different facts,
 // and the project's rule is that unknown beats incorrect.
-
-/** Cards the Rule Engine can actually compute for.
- *
- *  Mirrors `rules/parser/catalog.py` (and the reward_currency each rule file
- *  declares). Hand-written to match, per the project's no-codegen convention for
- *  API types — kept to the same three cards the catalogue resolves, so drift is
- *  visible rather than subtle. When a card graduates from VERIFICATION_QUEUE,
- *  it gets a line there and a line here.
- *
- *  The point is not convenience. `reward_currency` must match a transfer-graph
- *  node id and (issuer, card_name) must match the catalogue, and both were free
- *  text: one typo produced a card that tracked fine and silently computed
- *  nothing. */
-const KNOWN_CARDS = [
-  {
-    label: "HDFC Infinia",
-    issuer: "hdfc",
-    card_name: "HDFC Infinia",
-    network: "visa",
-    reward_currency: "hdfc_reward_points",
-  },
-  {
-    label: "Axis Bank Atlas",
-    issuer: "axis",
-    card_name: "Axis Bank Atlas",
-    network: "visa",
-    reward_currency: "edge_miles",
-  },
-  {
-    label: "Amex Platinum Travel",
-    issuer: "amex",
-    card_name: "Amex Platinum Travel",
-    network: "amex",
-    reward_currency: "membership_rewards",
-  },
-] as const;
 
 const EMPTY_FORM = {
   issuer: "",
@@ -56,7 +21,7 @@ const EMPTY_FORM = {
   renewal_date: "",
 };
 
-export default function CardsPage() {
+export default function PortfolioPage() {
   const cards = useApi(() => api.listCards());
   const balances = useApi(() => api.listBalances());
   const [form, setForm] = useState(EMPTY_FORM);
@@ -143,16 +108,17 @@ export default function CardsPage() {
 
   return (
     <Shell>
-      <h1 className="text-lg font-semibold tracking-tight">Cards</h1>
+      <h1 className="text-lg font-semibold tracking-tight">Portfolio</h1>
       <p className="mt-1 max-w-2xl text-sm text-neutral-400">
-        The cards you hold, and how many points sit on each. Ask compares only these — add a card
-        before asking which one to use.
+        The cards you hold and the points on each. Ask compares only what is listed here.
       </p>
+
+      <h2 className="mt-8 text-sm font-medium text-neutral-300">Your cards</h2>
 
       {/* Pick a supported card and the four identity fields fill themselves.
           Typing them by hand still works — the catalogue is deliberately small,
           and refusing unknown cards would be worse than tracking them. */}
-      <div className="mt-6 flex flex-wrap items-center gap-2 text-sm">
+      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
         <span className="text-xs text-neutral-500">Quick add:</span>
         {KNOWN_CARDS.map((card) => (
           <button
@@ -320,6 +286,24 @@ export default function CardsPage() {
             </tbody>
           </table>
         )}
+      </section>
+
+      {/* Loyalty accounts are holdings too — points sitting at an airline rather
+          than a bank — so they belong beside your card balances, not in Redeem.
+          Stated as an unbuilt gap with its consequence, because the consequence
+          is a wrong number: RedemptionOptions counts shortfalls from zero
+          without them (see docs/BACKLOG.md 2.7). */}
+      <section className="mt-10">
+        <h2 className="text-sm font-medium text-neutral-300">Airline &amp; hotel accounts</h2>
+        <p className="mt-1 max-w-2xl text-xs text-neutral-500">
+          Memberships you already hold, and what is sitting in them. Your card points transfer into
+          these.
+        </p>
+        <div className="mt-3 rounded border border-dashed border-neutral-800 px-4 py-3 text-sm text-neutral-400">
+          <span className="text-neutral-300">Not built yet.</span> Until it is, shortfalls are
+          counted from zero — a goal ignores miles you already hold, and Ask can suggest
+          transferring into a programme you never joined.
+        </div>
       </section>
     </Shell>
   );

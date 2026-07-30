@@ -45,7 +45,7 @@ export default function LoginPage() {
       }
 
       await api.syncUser();
-      router.push("/dashboard");
+      router.push("/chat");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Sign-in failed.");
     } finally {
@@ -63,7 +63,7 @@ export default function LoginPage() {
       // so Shell's guard performs it on arrival (idempotent by design).
       const { error: authError } = await getSupabase().auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: `${window.location.origin}/dashboard` },
+        options: { redirectTo: `${window.location.origin}/chat` },
       });
       if (authError) throw new Error(authError.message);
       // On success the browser navigates away; nothing more to do here.

@@ -24,6 +24,19 @@ These block work below. Everything else I can proceed on.
 
 ---
 
+## Navigation — restructured 2026-07-30
+
+Seven tabs became four, each answering one question the others do not:
+**Ask** (what should I do) · **Portfolio** (what do I hold) · **Redeem** (what
+can I get) · **History** (what was I told). Reward preferences and Account moved
+to a Settings menu; a guided four-step setup replaced landing a new account on an
+empty dashboard.
+
+Recorded as a deliberate deviation from MASTER_SPEC §10, which implies a surface
+per capability. Every capability still ships — in fewer places. Old routes
+(`/cards`, `/transfer`, `/goals`, `/dashboard`) redirect rather than 404, because
+`/dashboard` is still the OAuth return URL configured in Supabase.
+
 ## Tier 0 — do first (data integrity + confirming what just shipped)
 
 Nothing below this line is worth doing while the app might be giving advice from
@@ -59,8 +72,8 @@ Your principle, applied. Ordered by how much invisible behaviour each removes.
 |---|---|---|---|
 | 1.1 | FN·UX | **Preferences UI** | *Highest of these.* Preferences already influence recommendations via `RecallMemory` and the recommender's state digest, and `StorePreference` can write one you cannot see. A system holding an uninspectable opinion about you is a trust problem, not a convenience gap. Needs: list, edit, delete |
 | 1.2 | FN·UX | **Goals UI** | `GetTravelGoals` is a registered tool the planner is told to use, backed by real Postgres, and it always returns empty. Redemption reasoning has no target to aim at. Needs: create/list/delete, target date |
-| 1.3 | FN·UX | **Card editing** | `api.updateCard` exists; UI is add/remove only. Fixing a typo means deleting and re-adding, which loses the balance |
-| 1.4 | UX | **Stop making users type internal identifiers** | The card form asks for `hdfc_reward_points` and `hdfc` as free text. A typo silently produces a card that resolves to no rule file. Should be selects driven by known issuers/currencies, with free text only as a deliberate "other" |
+| ~~1.3~~ | FN·UX | ~~Card editing~~ | **DONE.** Annual fee and renewal date are click-to-edit |
+| ~~1.4~~ | UX | ~~Stop making users type internal identifiers~~ | **DONE.** Quick-add buttons for the three supported cards, a "not recognised" badge when a card matches no rule file, and a guard test so the catalogue cannot drift |
 *(Loyalty moved to 2.7 — it is a redemption-engine item, not a form.)*
 
 ## Tier 2 — depth (the product gets meaningfully better)
@@ -69,10 +82,10 @@ Your principle, applied. Ordered by how much invisible behaviour each removes.
 |---|---|---|---|
 | 2.1 | FN·UX | **Multi-turn clarification** (D-3) | Replaces "here's an answer, but it depends on where you book" with actually asking. Removes the single biggest source of not-quite-right answers |
 | 2.2 | FN | **Opportunity engine** | The deferred half of D5. `GetOpportunities`/`GetPromotions` are registered; the dashboard says opportunities are "not yet wired" rather than showing a fake 0 |
-| 2.3 | UX | **Redesign the transfer explorer** | You couldn't tell what it was for — that is the finding. It is a *reference browser* (verified partner data + sources), while computed paths live in Ask. Either make that split obvious, or merge the two |
-| 2.4 | UX | **Dashboard is thin** | Three counts and an empty table. Should answer "what should I do next?" — expiring points, unused accelerated categories, fees due |
+| ~~2.3~~ | UX | ~~Redesign the transfer explorer~~ | **DONE 2026-07-30.** Now a personalised "Where your points can go" section in Redeem, driven by your recorded balances, instead of a search box over documents |
+| ~~2.4~~ | UX | ~~Dashboard is thin~~ | **RETIRED 2026-07-30.** It duplicated Portfolio's balances and had no unique content. Returns as "Today" when the opportunity engine (2.2) gives it something to say |
 | 2.5 | UX | **The numbers table is engineer-facing** | It shows `card_key`, `month`, raw tool args. Right instinct (show the deterministic inputs), wrong vocabulary for a cardholder |
-| 2.6 | UX | **Ask has no on-page history** | Only the answer just asked. History now exists at `/recommendations`, but the natural place is inline |
+| ~~2.6~~ | UX | ~~Ask has no on-page history~~ | **DONE 2026-07-30.** Three most recent questions inline on Ask, linking to the full History |
 | 2.7 | FN·UX | **Loyalty accounts — the missing half of redemption** | See below. One piece of work, not three |
 
 ### 2.7 in full
