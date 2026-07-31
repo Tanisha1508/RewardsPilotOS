@@ -1,0 +1,222 @@
+{
+  "description": "Retrieval golden set over the SERVING corpus only \u2014 the 14 verified documents a real user's question can actually reach. No fixture issuers. Written 2026-07-31 after the owner asked how a benchmark over invented banks could say anything about real queries; it cannot, and the existing 24-query set is 17/24 about demo_bank and sample_bank.\n\nLabelling discipline: expected_doc_ids were assigned by reading each document's own section headings, BEFORE running retrieval. Labelling from what the retriever returns would make the benchmark agree with itself by construction and measure nothing.\n\nQueries are phrased the way a cardholder would ask, not as keyword bags \u2014 testing semantic search on natural language is the whole point.\n\nSplit into two tiers (2026-07-31). The first 20 name the card, which is how people usually ask \u2014 and scored a flattering 1.000 because naming a card makes the issuer obvious. The h-tier deliberately does not name one, which is where retrieval has to work from meaning alone. A benchmark that always passes teaches nothing.",
+  "queries": [
+    {
+      "id": "p01",
+      "query": "How many EDGE Miles does my Axis Atlas earn per 100 rupees I spend?",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules"
+      ],
+      "why": "'Axis Atlas base earning' section"
+    },
+    {
+      "id": "p02",
+      "query": "What rate does the Atlas give if I book a flight directly with the airline?",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules"
+      ],
+      "why": "'Axis Atlas accelerated travel earning' section"
+    },
+    {
+      "id": "p03",
+      "query": "Which airlines can I move my EDGE Miles to?",
+      "expected_doc_ids": [
+        "axis_atlas_transfer_rules"
+      ],
+      "why": "'transfer partners Group A / Group B' sections"
+    },
+    {
+      "id": "p04",
+      "query": "What is the smallest number of EDGE Miles I am allowed to transfer at once?",
+      "expected_doc_ids": [
+        "axis_atlas_transfer_rules"
+      ],
+      "why": "'Axis Atlas transfer caps and minimum' section"
+    },
+    {
+      "id": "p05",
+      "query": "What spending does not earn anything on the Atlas card?",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules"
+      ],
+      "why": "'Axis Atlas earning exclusions' section"
+    },
+    {
+      "id": "p06",
+      "query": "What is one EDGE Mile actually worth?",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules"
+      ],
+      "why": "'Axis Atlas EDGE Mile value' section"
+    },
+    {
+      "id": "p07",
+      "query": "How many reward points does the HDFC Infinia give me for everyday spending?",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'HDFC Infinia base earning' section"
+    },
+    {
+      "id": "p08",
+      "query": "How much extra do I earn booking a hotel through SmartBuy on my Infinia?",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'HDFC Infinia SmartBuy accelerated earning' section"
+    },
+    {
+      "id": "p09",
+      "query": "Is there a monthly limit on how many bonus points I can earn on the Infinia?",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'HDFC Infinia monthly reward caps' section"
+    },
+    {
+      "id": "p10",
+      "query": "What does the Infinia cost each year and can the fee be waived?",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'HDFC Infinia fees and continuation' section"
+    },
+    {
+      "id": "p11",
+      "query": "Which frequent flyer programmes accept HDFC reward points?",
+      "expected_doc_ids": [
+        "hdfc_infinia_transfer_rules"
+      ],
+      "why": "'HDFC Reward Points transfer partners' section"
+    },
+    {
+      "id": "p12",
+      "query": "What is an HDFC reward point worth if I use it for travel?",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'HDFC Reward Points value by redemption channel' section"
+    },
+    {
+      "id": "p13",
+      "query": "How many Membership Rewards points does the Amex Platinum Travel earn?",
+      "expected_doc_ids": [
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "'Amex Platinum Travel base earning' section"
+    },
+    {
+      "id": "p14",
+      "query": "How many airport lounge visits do I get with my Platinum Travel card?",
+      "expected_doc_ids": [
+        "amex_plat_travel_benefit_guides"
+      ],
+      "why": "'Amex Platinum Travel lounge access' section"
+    },
+    {
+      "id": "p15",
+      "query": "What do I get for hitting the spending milestones on the Platinum Travel?",
+      "expected_doc_ids": [
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "'Amex Platinum Travel milestones' section"
+    },
+    {
+      "id": "p16",
+      "query": "Which airlines can I send my Amex Membership Rewards points to?",
+      "expected_doc_ids": [
+        "amex_plat_travel_transfer_rules"
+      ],
+      "why": "'Amex Membership Rewards transfer partners (India)' section"
+    },
+    {
+      "id": "p17",
+      "query": "What is the yearly fee on the Amex Platinum Travel?",
+      "expected_doc_ids": [
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "'Amex Platinum Travel fees' section"
+    },
+    {
+      "id": "p18",
+      "query": "Am I charged a surcharge when I buy petrol with my Platinum Travel?",
+      "expected_doc_ids": [
+        "amex_plat_travel_benefit_guides"
+      ],
+      "why": "'Amex Platinum Travel fuel convenience fee' section"
+    },
+    {
+      "id": "p19",
+      "query": "Does the Amex Reward Multiplier portal earn me more points?",
+      "expected_doc_ids": [
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "'Amex Reward Multiplier accelerated earning' section"
+    },
+    {
+      "id": "p20",
+      "query": "Which of my cards earns the most on flights?",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules",
+        "hdfc_infinia_reward_rules",
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "A comparison question: all three P1 reward-rule documents are relevant"
+    },
+    {
+      "id": "h01",
+      "query": "what do I get at the airport",
+      "expected_doc_ids": [
+        "amex_plat_travel_benefit_guides"
+      ],
+      "why": "Lounge access is the airport benefit and lives only in the benefit guide"
+    },
+    {
+      "id": "h02",
+      "query": "can I turn my points into airline miles",
+      "expected_doc_ids": [
+        "axis_atlas_transfer_rules",
+        "hdfc_infinia_transfer_rules",
+        "amex_plat_travel_transfer_rules"
+      ],
+      "why": "Any transfer document answers this"
+    },
+    {
+      "id": "h03",
+      "query": "is there a limit on how many bonus points I can earn",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules"
+      ],
+      "why": "'monthly reward caps' is the only cap section in the corpus"
+    },
+    {
+      "id": "h04",
+      "query": "what does this card cost me every year",
+      "expected_doc_ids": [
+        "hdfc_infinia_reward_rules",
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "The two documents with a fees section"
+    },
+    {
+      "id": "h05",
+      "query": "does buying groceries earn me anything",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules",
+        "hdfc_infinia_reward_rules",
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "Exclusion sections are where non-earning spend is defined"
+    },
+    {
+      "id": "h06",
+      "query": "which card should I use to book a hotel",
+      "expected_doc_ids": [
+        "axis_atlas_reward_rules",
+        "hdfc_infinia_reward_rules",
+        "amex_plat_travel_reward_rules"
+      ],
+      "why": "An earning comparison \u2014 reward rules, not transfer rules"
+    }
+  ]
+}

@@ -8,13 +8,24 @@ import sys
 from datetime import date
 from pathlib import Path
 
-from evaluation.metrics import e2e_eval, graph_eval, retrieval_eval, rules_eval
+from evaluation.metrics import (
+    e2e_eval,
+    graph_eval,
+    retrieval_eval,
+    retrieval_production_eval,
+    rules_eval,
+)
 
 REPORT_PATH = Path(__file__).resolve().parent.parent / "reports" / "REPORT.md"
 
 
 def build_report() -> tuple[str, dict]:
     retrieval = retrieval_eval.run()
+    # The serving corpus, separately. `retrieval_eval` benchmarks the
+    # algorithm against a controlled corpus that is 17/24 invented issuers;
+    # this measures what a cardholder's question actually reaches. Reported
+    # as two rows, never averaged: they answer different questions.
+    production = retrieval_production_eval.run()
     rules = rules_eval.run()
     graph = graph_eval.run()
     e2e = e2e_eval.run()
@@ -36,6 +47,12 @@ def build_report() -> tuple[str, dict]:
         f"{retrieval['recall_at_5']:.4f} | reported honestly |",
         f"| Retrieval | {retrieval['queries']} queries | MRR | "
         f"{retrieval['mrr']:.4f} | reported honestly |",
+        f"| Retrieval (real corpus) | {production['queries']} queries | recall@5 | "
+        f"{production['recall_at_5']:.4f} | reported honestly |",
+        f"| Retrieval (real corpus) | {production['queries']} queries | MRR | "
+        f"{production['mrr']:.4f} | reported honestly |",
+        f"| Retrieval (real corpus) | {production['queries']} queries | top-1 correct | "
+        f"{production['top1_accuracy']:.4f} | reported honestly |",
         f"| Rules | {rules['scenarios']} scenarios | exact match | "
         f"{rules['exact_match']:.2%} ({rules['passed']}/{rules['scenarios']}) | 100% |",
         f"| Graph | {graph['queries']} queries | exact match | "

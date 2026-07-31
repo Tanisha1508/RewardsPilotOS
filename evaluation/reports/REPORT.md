@@ -7,6 +7,9 @@ Measured eval results, run on 2026-07-31 against the sprint fixture corpus and s
 | Retrieval | 24 queries | precision@3 | 0.2916 | reported honestly |
 | Retrieval | 24 queries | recall@5 | 1.0000 | reported honestly |
 | Retrieval | 24 queries | MRR | 0.5861 | reported honestly |
+| Retrieval (real corpus) | 26 queries | recall@5 | 0.9872 | reported honestly |
+| Retrieval (real corpus) | 26 queries | MRR | 0.9263 | reported honestly |
+| Retrieval (real corpus) | 26 queries | top-1 correct | 0.8846 | reported honestly |
 | Rules | 25 scenarios | exact match | 100.00% (25/25) | 100% |
 | Graph | 10 queries | exact match | 100.00% (10/10) | 100% |
 | End-to-end | 10 queries | all checks pass | 100.00% (10/10) | 100% |
