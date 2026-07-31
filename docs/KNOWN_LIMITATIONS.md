@@ -905,3 +905,46 @@ roadmap — none is silently papered over.
     one needed checking the *inputs* — a corpus containing something untrue
     makes every downstream check agree on a false answer. Worth remembering when
     the crawler starts adding sources automatically.
+
+36. **Excluding the fixture corpus silently broke two eval suites — FIXED
+    2026-07-31, same day.** KL 35 stopped invented issuers reaching the serving
+    corpus. Both benchmarks read that corpus, and both quietly measured less
+    afterwards. Nobody re-ran the evals after the change; the damage surfaced
+    only when the owner asked "do we have evals for retrieval quality?"
+
+    | Suite | Before | After KL 35 | Now |
+    |---|---|---|---|
+    | Retrieval recall@5 | 1.000 | **0.292** | 1.000 |
+    | End-to-end | 100% | **70%** | 100% |
+
+    Retrieval: 17 of 24 golden queries are about `demo_bank` / `sample_bank`,
+    so most expected documents had left the corpus. Retrieval had not got
+    worse; the answer key had.
+
+    End-to-end: `promotions` and `issuer_policies` existed *only* as fixtures,
+    so "any transfer bonuses right now?" (e05) and "when do my points expire?"
+    (e08) went from answerable to uncitable.
+
+    Fixed by letting each benchmark supply its own corpus, in a temp directory,
+    with fixtures included — the same principle the e2e eval already used for
+    the portfolio and memory sources. `tools/knowledge_search/service.py` gained
+    `set_retriever()` so retrieval is injectable like the others.
+
+    **A third failure, and a better fix.** e02 ("which card for a 70,000 INR
+    laptop?") failed for an unrelated reason: B2's `category_note` fires on
+    "electronics", making it a required verbatim sentence, and the eval's
+    scripted recommender hardcoded `("expiry_note", "channel_note")`. Its own
+    comment warned that omitting a required note would measure the double
+    rather than the system — and then it fell behind exactly that way. It now
+    derives the list from `_required_statements`, the function the validator
+    uses, so it cannot go stale again.
+
+    **The lesson.** Three of this week's regressions came from one shape:
+    something derived a list by hand that another part of the system computes.
+    Fixed the same way each time — `allowed_citations`, `must_repeat_verbatim`,
+    the doc types available for filtering, and now this. Prefer deriving from
+    the authority over restating it.
+
+    **And a process gap:** a corpus change is a behaviour change. Run
+    `python -m evaluation.metrics.report` after touching what the system can
+    retrieve, not only after touching code.

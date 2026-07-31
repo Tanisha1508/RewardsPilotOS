@@ -19,6 +19,10 @@ from pathlib import Path
 
 from agents.state.schema import initial_state
 from agents.workflows.graph import build_workflow
+from knowledge.pipeline.ingest import ingest_sources
+from knowledge.retrieval.hybrid import HybridRetriever
+from knowledge.storage.collections import get_client
+from tools.knowledge_search.service import set_retriever
 from tools.memory.source import InMemoryMemorySource
 from tools.memory.source import set_source as set_memory_source
 from tools.portfolio.source import InMemoryPortfolioSource, acting_as, load_seed
@@ -75,17 +79,23 @@ class EvalLLM:
                 " Some required values are UNKNOWN pending issuer verification; "
                 "the system refuses to guess (unknown over incorrect)."
             )
-        # Engine-derived notes the Recommender must reproduce verbatim: a lapsed
-        # accelerated rate (ADR-012) and a comparison scored at base earn only
-        # because no booking channel was named. Validation rejects output that
-        # drops them, so a double that omitted them would fail every query that
-        # triggers one — measuring the double, not the system.
-        notes = [
-            note
-            for entry in state["rule_results"]
-            for key in ("expiry_note", "channel_note")
-            if (note := entry.get(key))
-        ]
+        # Engine-derived sentences the Recommender must reproduce verbatim.
+        # Validation rejects output that drops them, so a double that omitted
+        # them would fail every query that triggers one — measuring the double,
+        # not the system.
+        #
+        # Taken from `_required_statements`, the same function the validator
+        # checks against, rather than a list repeated here. This used to name
+        # `expiry_note` and `channel_note` explicitly and fell behind on
+        # 2026-07-31 when B2 added `category_note`: e02 ("which card for a
+        # 70,000 INR laptop?") started failing, because "electronics" is in no
+        # rule file and the new note fired. End-to-end dropped 100% -> 90% and
+        # the system was fine — the double had gone stale. Deriving the list
+        # means it cannot happen again.
+        from agents.recommendation.margin import margin_caveat
+        from agents.recommendation.recommender import _required_statements
+
+        notes = _required_statements(margin_caveat(state["rule_results"]), state["rule_results"])
         return json.dumps(
             {
                 "decision": decision,
@@ -128,11 +138,35 @@ def _numbers_traceable(recommendation: dict, state: dict) -> bool:
     return True
 
 
+def _install_benchmark_corpus() -> None:
+    """Point retrieval at a corpus that includes the fixture issuers.
+
+    The golden set is written against them — "any transfer bonuses right now?"
+    and "when do my points expire?" have answers only in the fixture
+    `promotions` and `issuer_policies` documents. Those left the serving corpus
+    on 2026-07-31 (KNOWN_LIMITATIONS 35) so an invented issuer can never be
+    cited to a real user, and these two queries went from answerable to
+    uncitable overnight. The pipeline did not change; its corpus did.
+
+    Consistent with how this eval already injects `InMemoryPortfolioSource` and
+    `InMemoryMemorySource`: a benchmark supplies its own controlled inputs.
+    Isolated in a temp directory so it cannot write invented issuers into the
+    index that serves users.
+    """
+    import tempfile
+    from pathlib import Path as _Path
+
+    client = get_client(_Path(tempfile.mkdtemp(prefix="e2e-eval-")))
+    ingest_sources(client, include_fixtures=True)
+    set_retriever(HybridRetriever(client))
+
+
 def run() -> dict:
     # The golden set is defined against the demo portfolio, so the eval installs
     # it explicitly. Since D2 the portfolio and memory tools read Postgres by
     # default with no fixture fallback, and an eval that quietly scored against
     # whatever happened to be in a database would not be a golden set at all.
+    _install_benchmark_corpus()
     seed = load_seed()
     set_portfolio_source(InMemoryPortfolioSource(seed))
     set_memory_source(InMemoryMemorySource(seed))

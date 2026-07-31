@@ -1,10 +1,31 @@
-"""Retrieval golden set runner: precision@3, recall@5, MRR (BUILD_SPEC §11)."""
+"""Retrieval golden set runner: precision@3, recall@5, MRR (BUILD_SPEC §11).
+
+Runs against a corpus that **includes the fixture issuers**, and must keep doing
+so. This is a benchmark of the retrieval *algorithm* — ranking, filtering,
+freshness — and that needs a corpus with known, hand-labelled relevance. The
+`demo_bank` and `sample_bank` documents exist for exactly this; 17 of the 24
+golden queries are about them.
+
+Broken and repaired on 2026-07-31. Excluding fixtures from the serving corpus
+(KNOWN_LIMITATIONS 35, so an invented issuer could never be cited to a user)
+also silently emptied this benchmark, because it used the shared production
+retriever. recall@5 fell from **1.000 to 0.292** — not because retrieval got
+worse, but because most expected documents had left the corpus. Measured, not
+guessed.
+
+**What this eval does NOT tell you:** how well retrieval works on real questions
+about the three real cards. That needs golden queries over the production
+documents, and there are only seven of those here. Do not read a good score as
+evidence about production quality.
+"""
 
 import json
 from datetime import date
 from pathlib import Path
 
-from tools.knowledge_search.service import get_retriever
+from knowledge.pipeline.ingest import ingest_sources
+from knowledge.retrieval.hybrid import HybridRetriever
+from knowledge.storage.collections import get_client
 
 DATASET = Path(__file__).resolve().parent.parent / "datasets" / "retrieval.json"
 AS_OF = date(2026, 7, 19)  # pinned so eval results are reproducible
@@ -18,9 +39,24 @@ def _ranked_doc_ids(chunks) -> list[str]:
     return seen
 
 
+def _benchmark_retriever() -> HybridRetriever:
+    """A throwaway corpus WITH fixtures, isolated from the serving index.
+
+    Its own temp directory on purpose: reusing the production persist dir would
+    write invented issuers back into the index this eval is not allowed to
+    pollute.
+    """
+    import tempfile
+
+    tmp = tempfile.mkdtemp(prefix="retrieval-eval-")
+    client = get_client(Path(tmp))
+    ingest_sources(client, include_fixtures=True)
+    return HybridRetriever(client)
+
+
 def run() -> dict:
     dataset = json.loads(DATASET.read_text())
-    retriever = get_retriever()
+    retriever = _benchmark_retriever()
     per_query = []
     for item in dataset["queries"]:
         expected = set(item["expected_doc_ids"])
