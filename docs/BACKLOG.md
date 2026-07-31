@@ -22,7 +22,7 @@ Ordered by value. This is the working queue.
 
 | # | Type | Item | Why |
 |---|---|---|---|
-| A1 | SEC | **Privacy audit** | The agenda names privacy; it has had no deliberate attention. What is logged, what reaches the LLM provider, what a request id exposes, what `interaction_events` retains, whether deletion is possible. Audit first, then decide fixes |
+| ~~A1~~ | SEC | ~~**Privacy audit**~~ — **done 2026-07-30/31** | Produced findings P1–P8 in `docs/PRIVACY_AUDIT.md`. All eight now closed or accepted with a written reversal condition — status table below |
 | ~~A2~~ | OPS·FN | ~~**Per-user rate limiting**~~ — **done 2026-07-31** (5/user/day, `CHAT_DAILY_LIMIT_PER_USER`, 429) | One shared 20/day pool: any user can exhaust it for everyone. Required for "broad user base", and it is what makes open signups (D-2) safe rather than a gamble. Adds 429 handling — a behaviour change, so worth a nod before merge |
 | A3 | FN | **Finish the "registered but never wired" sweep** | Three found so far (`GetPromotions`, `StorePreference`, `POST /portfolio`). This class — capability exists, nothing calls it, invisible until something makes you look — has produced several defects. Audit every endpoint, tool and model field once, and record the result |
 | A4 | UX | **The numbers table speaks engineer** | Shows `card_key`, `month`, raw tool args. Right instinct (show the deterministic inputs), wrong vocabulary for a cardholder |
@@ -31,6 +31,45 @@ Ordered by value. This is the working queue.
 | A7 | DATA | **Atlas transfer partner ratios** (V-2) | The features PDF defers to a separate Miles Transfer T&C document. Chase that document |
 | ~~A8~~ | OPS | ~~**Re-measure cold start**~~ — **done 2026-07-31** | Measured 36.0 s cold. Also found the GitHub keep-alive was firing every ~90–120 min, not every 10, so it was never working. Replaced with a Supabase Cron job; `/health` now answers in **0.9 s** after 20 min idle |
 | A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer |
+
+## Privacy findings (P1–P8) — state as of 2026-07-31
+
+A1's output. Kept here as well as in `docs/PRIVACY_AUDIT.md` so the state is
+visible without opening a second file. All are live on production.
+
+| # | What it was | State |
+|---|---|---|
+| P1 | App tables reachable by the public browser key? | **Resolved.** They were never granted to `anon`; RLS enabled on all 16 tables as a second layer. Verified live |
+| P2 | A stable user id was sent to Google beside that user's finances | **Fixed.** Database ids stripped at the boundary. **Extended 2026-07-31:** also drops `renewal_date` and `portfolio_name` (nothing reasons over either), and scrubs email, phone and card numbers out of the typed question, stored preferences and remembered history — in the Planner as well as the Recommender |
+| P3 | No way for a user to delete their data | **Fixed.** `DELETE /auth/me`, cascade-verified live |
+| P4 | Every question stored indefinitely, nothing a user could do | **Addressed** by P3, and said plainly on History |
+| P5 | No disclosure that answers come from a third party | **Fixed.** Notice under the Ask box, reworded 2026-07-31 to lead with the model |
+| P6 | Search text travelled in URLs, so into server logs | **Fixed.** Uvicorn's access logger was on by default and writing full URLs — the earlier "we log nothing" was true of our code and false of the server. Query strings and path ids now scrubbed; `docs/LOGGING_POLICY.md` sets the rule for logging that does not exist yet |
+| P7 | Login token sits in browser storage | **Half done.** Phase 1 (same-origin API) merged and live 2026-07-31, which is what makes the real fix *possible* — see below. Content Security Policy added, closing an exfiltration hole it shipped with. The token is still in the browser |
+| P8 | `x-request-id` was client-controllable | **Fixed.** Validated as a UUID |
+
+### P7 phase 2 — the remaining half
+
+Not queued, deliberately. Moving the session into an httpOnly cookie needs
+`@supabase/ssr`, a middleware refresh, an OAuth callback route and the proxy
+attaching the token server-side. It was impossible before phase 1 — a cookie set
+by `vercel.app` is a third-party cookie for `onrender.com`, which browsers block
+— and it is now merely a real piece of work on the one component whose failure
+signs everyone out.
+
+Deferred on evidence, re-checked 2026-07-31: the frontend has **4 runtime
+dependencies, no third-party scripts, no `innerHTML`/`eval`, and no markdown
+renderer**, so model output reaches the page only through escaping React text
+nodes. Blast radius is disclosure, not theft — there is no payment method and no
+way to move value.
+
+**Do it when any of these become true:**
+
+1. A markdown or HTML renderer is added for model output — the likeliest
+   trigger, and it turns prompt injection into a page attack in one commit
+2. A crawler starts populating citation URLs from third-party pages
+3. The product gains any ability to move value
+4. The first third-party script is added to the frontend
 
 ## Deferred by design — `cap_usage` / cap awareness
 
@@ -82,9 +121,9 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 | # | Decision | What it blocks |
 |---|---|---|
 | D-1 | Loyalty: build now, or caveat redemption? | 2.7 — the missing half of redemption. `RedemptionOptions` counts shortfalls from zero |
-| D-2 | Signups open or closed? | Sharing the URL at all. Safer once A2 lands |
+| D-2 | Signups open or closed? | Sharing the URL at all. **A2 has landed** (5 questions/user/day), so the "one person drains the shared allowance" risk this was waiting on is closed |
 | D-3 | Should Ask become multi-turn? | The honest fix for the channel problem — asking instead of caveating (KL 29) |
-| D-4 | Pay ~$5/mo for persistent Chroma? | Removes the ~120 s re-embed after every restart (KL 28) |
+| D-4 | Pay ~$5/mo for persistent Chroma? | Removes the re-embed after every restart (KL 28). **Much less pressing since 2026-07-31:** the Supabase Cron keepalive stops the idle spin-down, so the process survives and the corpus is not re-embedded. Measured cost when it does happen (a deploy, or the first visit outside the 06:30–23:29 IST window) is ~55 s on the first question. Also note CLAUDE.md rule 3 — free tier only — so this is a rule change, not just a spend |
 | D-5 | Add the missing API routes? | Deleting a preference, editing/removing a goal. Both UIs currently state the limit |
 | D-6 | Atlas above-cap earning | Above ₹2L/month the T&C says base continues; the evaluator clips. Under-reports, so safe |
 | D-7 | `StorePreference` — see B3 | |
@@ -101,6 +140,21 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 ---
 
 ## Done
+
+**2026-07-31** — privacy audit closed out and shipped to production. PII
+scrubbed before the model (P2 extended); notice reworded (P5); query strings
+kept out of access logs after finding uvicorn had been writing full URLs all
+along (P6); same-origin API via a Vercel rewrite plus a Content Security Policy
+(P7 phase 1). **A2** per-user daily limit (5/user/day, 429). **A8** cold starts
+removed — the GitHub keep-alive was firing every ~90–120 minutes rather than
+every 10 and had never worked; replaced with a Supabase Cron job, `/health` went
+from 36.0 s to 0.9 s. LLM daily-quota cooldown: the pinned model was 429ing on
+every call and being re-probed each time.
+
+Measured along the way, and worth keeping: a chat question costs **two** LLM
+calls; the free Gemini tier is **20 requests/day per model**; warm chat is
+~29 s, of which ~25 s is the two model calls, ~2.5 s retrieval; the first
+question after a restart used to add ~55 s of corpus re-embedding.
 
 **2026-07-30** — nav restructured 7 tabs → 4 (Ask · Portfolio · Redeem ·
 History + Settings menu); guided 4-step setup replacing an empty dashboard;
@@ -126,7 +180,13 @@ balances UI; renewal-date field.
   it would be inventing your shopping behaviour.
 - **Injecting today's date into the Planner prompt.** Omitting `month` is
   strictly better; the tool boundary is the single place "now" enters.
-- **Chasing the 20/day quota with a second provider.** A free-tier constraint.
+- **Moving off Gemini as the primary model.** Measured 2026-07-31: the free
+  Gemini tier is 20 requests/day *per model* and a question costs two, so ~10
+  questions/day on the pinned model. Groq's free tier is 1,000/day and ~5x
+  faster. Owner decided 2026-07-31 to keep Gemini primary (ADR-015) and accept
+  the trade — the ADR-018 fallback chain means users still get answers, from
+  `gemini-flash-latest` and then Groq, rather than failures. A2 shares the
+  scarce first tier out fairly.
 - **Wiring `GetPromotions` into the planner.** It works and has corpus data —
   but both promotion documents are for fixture issuers (`demo_bank`,
   `sample_bank`), so guiding the model toward it would surface synthetic content
