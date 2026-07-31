@@ -948,3 +948,37 @@ roadmap — none is silently papered over.
     **And a process gap:** a corpus change is a behaviour change. Run
     `python -m evaluation.metrics.report` after touching what the system can
     retrieve, not only after touching code.
+
+37. **`GetOpportunities` served invented content into the answer path — FIXED
+    2026-07-31.** Found in a sweep for fake data. It returned two hardcoded
+    fixtures about an invented bank: a "Skyhigh Airways 25 percent transfer
+    bonus" and "32000 Voyager Points expiring", with `example.test` source URLs.
+
+    Both titles carried "(SYNTHETIC FIXTURE)" — the only barrier between them
+    and a real user, and a title is exactly what a model paraphrases away.
+
+    **Why it was worse than a stray fixture.** The planner prompt names this
+    tool for portfolio questions, so a genuine question reaches it. Its output
+    lands in `state["memory"]`, and `memory` sits in `_grounded_text` — the text
+    the number-traceability check validates prose against. "25 percent" and
+    "32000" would have been certified as traceable *because a tool produced
+    them*. The guard that exists to stop invented numbers would have vouched for
+    these.
+
+    That is a different shape from KL 35, and nastier. KL 35 put fabricated
+    sources in the corpus, upstream of the checks. This put fabricated *numbers*
+    inside the evidence set the checks trust.
+
+    Now returns an empty list. Nothing populates the `notifications` table (the
+    wiring sweep found no reader and no writer), so empty is the true answer —
+    the same reasoning that made `CheckCap` report "unknown" rather than reading
+    an empty table as zero. Fixtures that assert something false are worse than
+    nothing, because nothing cannot be misquoted.
+
+    The old fixtures are retained, unreferenced, as the shape D5 should produce
+    when `monitor.py` change records reach the notifications table. A test
+    asserts they stay out of the serving path.
+
+    **Generalises to:** every tool's output is trusted evidence downstream, so a
+    tool that invents is more dangerous than a model that invents — the model is
+    checked and the tool is believed.
