@@ -241,6 +241,36 @@ so a failure is a correctness defect, not a UX issue.
 
 Newest first. One row per execution.
 
+### 2026-07-31 — A6 free scenario sweep (zero LLM quota)
+
+**33 checks, 0 failures**, all against production. No AI credit spent: every
+scenario here is auth, validation, CRUD or envelope shape.
+
+| Group | Checks | Result | Detail |
+|---|---|---|---|
+| **S-D auth & guards** | 10 | PASS | Unauthenticated `POST /chat` → 401 carrying a `request_id`. Malformed token → 401. **Tampered signature → 401**, not 500. All of `/portfolio`, `/portfolio/cards`, `/portfolio/balances`, `/preferences`, `/goals`, `/recommendations`, `/auth/me` → 401 without a token |
+| **Public routes & validation** | 6 | PASS | `/health` open. `/knowledge/search` requires auth. Malformed id → 401 (auth runs before parsing, which is the right order). Errors use the same envelope as successes |
+| **P6 log-safety probe** | 1 | PASS | `?q=SECRETPROBE123` came back in no header and no body |
+| **Goals CRUD** | 9 | PASS | Invalid `goal_type` and missing description both → 422. Create → appears in list → **partial PATCH keeps the other fields** (the `exclude_unset` behaviour) → delete → gone → nothing else disturbed → second delete is a clean 404 |
+| **Preferences CRUD** | 8 | PASS | Set → reads back → delete → gone → deleting one that never existed is 404. Originals intact |
+
+Cleanup: every row created was deleted in the same run and verified gone. The
+account's own goals and preferences were counted before and after and were
+unchanged.
+
+**Honest gaps — what this round could not cover, and why:**
+
+| ID | Why not |
+|---|---|
+| D1 signed-out redirect | Not run as a scripted check, but **observed** the same day: opening `/chat` on a fresh preview deployment with no session showed "Checking session…" and redirected to `/login` with no data flash |
+| D3 sign out → back button | Would mean signing the owner out of their live session |
+| **Empty states** | The account has data. Genuinely needs a clean account, which cannot be created here (no account creation) and whose password the owner does not hold either |
+| **A2 daily limit → 429** | Only 2 answers had been given today against a limit of 5, so the limit could not be reached without spending three questions of real quota. Covered by unit and integration tests; **unverified in production** |
+| E2, E4, E5, E6 | Corpus re-ingest timing, memory ceiling, crawler, smoke suite — heavier operational runs, not part of the free sweep |
+
+The `PUT` merge check passed vacuously: the account had no existing preferences,
+so "kept 0 of 0". Recorded rather than counted as evidence.
+
 ### 2026-07-29 — blocker clearance round
 
 | ID | Scenario | Result | Detail |
