@@ -107,6 +107,26 @@ class HybridRetriever:
         )
         return [cid for _, cid in ranked[:KEYWORD_K]]
 
+    #: Chunks any single document may contribute before others get a turn.
+    #: 2 keeps a genuinely multi-part answer intact — transfer partners split
+    #: across Group A and Group B, say — while leaving room for other cards.
+    MAX_PER_DOC = 2
+
+    def _diversify(self, reranked: list[tuple[float, str]], k: int) -> list[tuple[float, str]]:
+        """Best chunks per document first, then backfill. Never returns fewer
+        than `reranked[:k]` would have."""
+        per_doc: dict[str, int] = {}
+        primary: list[tuple[float, str]] = []
+        overflow: list[tuple[float, str]] = []
+        for score, cid in reranked:
+            doc = self._metadata[cid]["doc_id"]
+            if per_doc.get(doc, 0) < self.MAX_PER_DOC:
+                per_doc[doc] = per_doc.get(doc, 0) + 1
+                primary.append((score, cid))
+            else:
+                overflow.append((score, cid))
+        return (primary + overflow)[:k]
+
     def search(
         self,
         query: str,
@@ -130,8 +150,25 @@ class HybridRetriever:
             ),
             key=lambda pair: -pair[0],
         )
+        # Spread the k slots across documents before deepening any one of them
+        # (A11, 2026-07-31).
+        #
+        # Measured failure: "which card should I use to book a hotel" returned
+        # six chunks that were ALL Amex Platinum Travel — four of them from one
+        # document — with the top hit about income eligibility. A comparison
+        # question came back with evidence about a single card, and the scores
+        # were so tightly clustered (0.0293 / 0.0292 / 0.0284) that the ordering
+        # was close to arbitrary anyway.
+        #
+        # Two passes, not a hard cap: the first takes each document's best
+        # chunks up to `max_per_doc`, the second backfills from whatever is left.
+        # So breadth is preferred where it exists, and a query whose answer
+        # genuinely lives in one document still fills its k slots from that
+        # document rather than returning less.
+        selected = self._diversify(reranked, k)
+
         chunks: list[RetrievedChunk] = []
-        for score, cid in reranked[:k]:
+        for score, cid in selected:
             metadata = self._metadata[cid]
             chunks.append(
                 RetrievedChunk(
