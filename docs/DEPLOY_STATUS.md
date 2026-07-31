@@ -1,7 +1,11 @@
-# Deploy status — D5, as of 2026-07-23 ~22:25 IST
+# Deploy status — current as of 2026-07-31
 
-Written mid-deploy as the working-session window closed, so whoever resumes
-(future-you or an agent) has the exact state, not a reconstruction.
+Written so whoever resumes (future-you or an agent) has the exact state, not a
+reconstruction.
+
+**Start at "NEXT SESSION" at the bottom.** Everything above it is history, kept
+because the reasoning is often the useful part — but the sections dated
+2026-07-23/24 describe a deploy that has been superseded many times over.
 
 ## What is LIVE and verified working
 
