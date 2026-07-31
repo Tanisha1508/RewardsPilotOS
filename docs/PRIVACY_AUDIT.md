@@ -265,6 +265,23 @@ false by omission.
 policy, and a decision on whether Gemini's free tier permits training on
 submitted content. If it does, this notice is necessary but not sufficient.
 
+### Consent gate — NOT built for MVP, owner decision 2026-07-31
+
+A consent step was considered — show the policy after first sign-up, accept or
+reject — and **deliberately not built**. For the MVP the policy is a page in the
+Settings menu that anyone can find and read, plus the line under the Ask box at
+the moment data is actually sent, plus a link on the login page.
+
+Recorded rather than left implicit, because "we have a privacy page" and "users
+have agreed to it" are different claims and only the first is true. The login
+page no longer says "by signing in you accept" — without a mechanism, asserting
+acceptance would be the kind of thing this product refuses to do elsewhere.
+
+**Revisit when signups open (D-2).** Notice-before-processing is the DPDP
+expectation, and a page someone *could* have read is a weaker position than a
+step they *did* clear — particularly given section 3 of the policy, which says
+Google may use what is sent to improve its products.
+
 ### P6 — FIXED 2026-07-30 (was accepted; the acceptance rested on a wrong fact)
 
 `GET /api/v1/knowledge/search?q=...` puts the search text in the URL, which
