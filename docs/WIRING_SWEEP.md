@@ -138,6 +138,53 @@ Nothing becomes urgent. Two entries gain detail:
 - **D-1** (loyalty) — confirmed dead on both sides, so the decision is genuinely
   "build it" rather than "connect the existing half".
 
+---
+
+## Round 2 — internal modules (2026-07-31, later)
+
+The first pass checked routes, client methods, tools and database tables. It did
+not check **modules inside the agent packages**, which is a gap in the sweep
+rather than a new class of problem. Three turned up, all real implementations
+with no caller anywhere, tests included:
+
+| Module | What it does | Why it is unwired |
+|---|---|---|
+| `agents/memory/behavior.py` | `should_recall_memory(intent)` — recall policy from BUILD_SPEC §8 | The Planner decides recall through its prompt instead. Ten lines |
+| `agents/knowledge/behavior.py` | Infers `issuer` / `doc_type` retrieval filters from the query — BUILD_SPEC §6 step 3 | Retrieval runs unfiltered. This is the one with real upside: filtering by issuer would have prevented the Redeem cross-issuer bug fixed on 2026-07-30 |
+| `agents/graph/behavior.py` | Maps user phrasing ("edge miles") onto graph node ids | The Planner passes currency ids straight through |
+
+**Not deleted, and not on a whim.** All three implement behaviour BUILD_SPEC
+names, so removing them is the same spec-deviation problem that stopped B3 —
+and unlike B3 there is no deadlock forcing the question. They are small, they
+are correct, and the sensible move is to wire the useful one rather than delete
+all three.
+
+**One is quietly stale.** `agents/knowledge/behavior.py` maps "demo bank" and
+"voyager" to `demo_bank`, and "sample bank" and "trailblazer" to `sample_bank`.
+Those issuers were removed from the serving corpus on 2026-07-31 (KL 35), so if
+this module were wired today it would filter retrieval to issuers that no longer
+exist there — a query mentioning "voyager" would return nothing rather than
+falling back. Fix the map in the same change that wires it, not before.
+
+## Checked and deliberately left alone
+
+Recorded so the next cleanup pass does not re-derive it:
+
+- **Old rule file versions** (`amex_plat_travel/v1,v2,v3`, `axis_atlas/v1,v2`).
+  Load-bearing: `select_version(card_key, as_of_date=...)` walks them to answer
+  what a card earned on a past date. Deleting history would silently change
+  answers about the past.
+- **Test and migration files with no importer.** Pytest and Alembic discover by
+  directory; "nothing imports it" is the expected state, not a smell.
+- **Unused function arguments** flagged by `ruff --select ARG` — every one is a
+  test fake conforming to the `LLM` protocol's `complete(system, user)`, or the
+  in-memory memory source accepting `source` to match the Postgres one.
+  Signature conformance, not dead parameters.
+- **The two `ERA001` "commented-out code"** hits are column headers for
+  parametrised test tables.
+- **`data/`** — only `.gitkeep` files tracked; the corpus and Chroma index are
+  correctly ignored.
+
 ## Re-running this
 
 The checks are four greps and worth repeating whenever a feature lands
