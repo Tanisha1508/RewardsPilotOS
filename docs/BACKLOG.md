@@ -98,9 +98,9 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 
 | # | Item | The change |
 |---|---|---|
-| B1 | **Validate `reward_currency` server-side** (KL 31) | Reject a currency that is not a `currency` graph node. This is the durable fix for the Amex bug — today only the quick-add buttons prevent it, and a hand-typed card can still mis-link silently |
-| B2 | **`unrecognised_category` note** (KL 30) | An unmapped category silently earns base earn, indistinguishable from genuinely different spend. A note mirroring ADR-019 would say so. Cheap and honest, but noisier |
-| B3 | **Remove `StorePreference`** (D-7) | Registered, never guided, writes to a store with no provenance column. One line. Can return deliberately when conversational memory is actually wanted |
+| ~~B1~~ | ~~**Validate `reward_currency` server-side**~~ — **done 2026-07-31** | Rejects a value naming a node of the *wrong type* (`amex_membership_rewards` is a card, not a currency) with a 422 that says what it actually is. A currency the graph has never heard of is still **allowed** — the first version rejected those too and broke three integration tests that add cards for unsupported issuers, which is deliberately supported. Only the wrong-type case can produce silence that looks like an answer |
+| ~~B2~~ | ~~**`unrecognised_category` note**~~ — **done 2026-07-31** | `category_note` on `EarnResult`, forced into the answer verbatim like the channel and expiry notes. Fires when the queried word is in no rule file *and* the card has bonus categories that were therefore not matched, naming them. Verified live on `hdfc_infinia`: `hotels` silent, `hotel_stays` warns. `groceries` also warns — the noise cost KL 30 predicted, accepted because the sentence is still true and says what the card is good for |
+| B3 | **Remove `StorePreference`** (D-7) | **BLOCKED on a spec change, found 2026-07-31.** Not the one-line nod this entry assumed: **BUILD_SPEC §8 names `StorePreference` in the required tool list** (line 429) and §4 describes the `preferences` table as "updated via StorePreference" (line 433). CLAUDE.md rule 6 puts removing it behind a spec update. Three ways out, your call: (a) amend BUILD_SPEC and delete it, (b) keep it and give `preferences` a provenance column so the UI can say "the assistant recorded this" — which is what D-3 multi-turn would need anyway, (c) leave it registered-but-unguided, which is the one state that is not a decision |
 
 ## C. Yours — I cannot do these
 

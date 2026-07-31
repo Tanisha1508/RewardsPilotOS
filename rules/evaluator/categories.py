@@ -71,6 +71,57 @@ CATEGORY_ALIASES: dict[str, str] = {
 }
 
 
+# Every category word the rule files and this module actually use — both sides
+# of the alias map and both sides of the subsumption map. Used only to answer
+# "have we ever seen this word before?" (B2, KNOWN_LIMITATIONS 30).
+RECOGNISED_CATEGORIES: frozenset[str] = (
+    frozenset(CATEGORY_ALIASES)
+    | frozenset(CATEGORY_ALIASES.values())
+    | frozenset(CATEGORY_SUBSUMES)
+    | frozenset().union(*CATEGORY_SUBSUMES.values())
+)
+
+
+def unrecognised_category_note(card_key: str, category: str, bonus_categories: list[str]) -> str:
+    """Say that a category we do not recognise was scored at base earn.
+
+    The gap this closes (KNOWN_LIMITATIONS 30): an unmapped category silently
+    earns base, which is *correct* for genuinely different spend ("groceries")
+    and *wrong* for an unrecognised synonym of a bonus category. `hotel` for
+    `hotels` cost a 10x under-report that way — one letter, full confidence, no
+    warning. The alias map now covers the variants we thought of, and by
+    construction cannot cover the ones we did not.
+
+    So rather than guess, the engine reports what it did and what else exists.
+    Deterministic text carrying the card's own declared categories verbatim, so
+    the Recommender repeats it without inventing anything.
+
+    Fires only when the card actually has bonus categories to miss — on a card
+    with none, base earn is the only possible answer and there is nothing to
+    warn about.
+    """
+    named = ", ".join(sorted(set(bonus_categories)))
+    return (
+        f"'{category}' is not a spend category any rule file uses, so {card_key} "
+        f"was scored at its base rate. This card earns an accelerated rate on: "
+        f"{named}. If your spend falls into one of those, say so — the figure "
+        f"would change."
+    )
+
+
+def is_recognised_category(category: str, declared: list[str] | None = None) -> bool:
+    """True when `category` is a word the rule files use.
+
+    `declared` lets a card's own categories count as recognised even when they
+    are absent from both maps here — a rule file is the authority on its own
+    vocabulary, and a new issuer must not need this module edited before its
+    categories stop being reported as unrecognised."""
+    if not category:
+        return False
+    known = RECOGNISED_CATEGORIES | frozenset(declared or ())
+    return canonical_category(category) in known or category in known
+
+
 def canonical_category(category: str) -> str:
     """Map a category to the wording the rule files use.
 

@@ -126,12 +126,14 @@ def _required_statements(caveat: dict | None, rule_results: list[dict]) -> list[
     The margin caveat names which number a comparison turns on; an expiry note
     (ADR-012) says a card's accelerated rate has lapsed and the figure shown is
     base earn; a channel note says base earn was used only because no booking
-    channel was given. All three are engine-derived text, and all three are the
-    kind of thing a model quietly smooths away — so none is left to the prompt
-    alone."""
+    channel was given; a category note (B2) says the queried category is not one
+    any rule file uses, so base earn was used and a bonus category may have been
+    meant. All four are engine-derived text, and all four are the kind of thing a
+    model quietly smooths away — so none is left to the prompt alone."""
     statements = [caveat["statement"]] if caveat else []
     statements += [note for entry in rule_results if (note := entry.get("expiry_note"))]
     statements += [note for entry in rule_results if (note := entry.get("channel_note"))]
+    statements += [note for entry in rule_results if (note := entry.get("category_note"))]
     return statements
 
 

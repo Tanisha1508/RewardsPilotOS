@@ -15,6 +15,7 @@ import math
 from contracts.api.verified_value import VerifiedValue
 from contracts.tools.rule_engine import CapStatus, EarnResult
 from rules.evaluator.categories import category_matches
+from rules.evaluator.categories import is_recognised_category, unrecognised_category_note
 from rules.evaluator.channels import channel_matches, unspecified_channel_note
 from rules.evaluator.validity import boundary_note, is_active, lapse_note, month_status
 from rules.parser.models import AcceleratedEarn, RuleFile
@@ -221,6 +222,12 @@ def evaluate_earn(
         base.channel_note = unspecified_channel_note(
             rule.card_key, [entry.channel for entry in channel_dependent]
         )
+
+    # Same placement, same reason: set before the rate check so the note
+    # survives an uncomputable result.
+    declared = [entry.category for entry in rule.accelerated]
+    if accelerated is None and declared and not is_recognised_category(category, declared):
+        base.category_note = unrecognised_category_note(rule.card_key, category, declared)
 
     rate = rule.base_earn.rate
     base.rate = rate

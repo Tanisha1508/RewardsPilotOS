@@ -74,6 +74,15 @@ class EarnResult(BaseModel):
     # hdfc_infinia 1665 > axis_atlas 1000, where axis_atlas earns 2500 booking
     # direct). Deterministic text; the Recommender repeats it verbatim.
     channel_note: str | None = None
+    # Set when the queried category is not a word any rule file uses AND this
+    # card has bonus categories that were therefore not matched (B2,
+    # KNOWN_LIMITATIONS 30). An unmapped category earns base silently, which is
+    # correct for genuinely different spend and wrong for an unrecognised
+    # synonym — `hotel` for `hotels` cost a 10x under-report that way. The two
+    # are indistinguishable to the engine, so it reports what it did and what
+    # else the card offers rather than guessing. Deterministic text; the
+    # Recommender repeats it verbatim.
+    category_note: str | None = None
     unknown_reasons: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     rule_version: int | None = None
