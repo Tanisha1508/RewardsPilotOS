@@ -137,143 +137,127 @@ visit before ~6:30am still pays one wake-up. Deliberate — round-the-clock is
 **Next:** re-run the preview test now that nothing is cold. If chat holds at
 ~29 s the branch merges unchanged.
 
-## ⛔ PHASE 1 WAS BLOCKED — measured on the preview 2026-07-30 (blocker now cleared, retest pending)
+## ✅ ALL OF 2026-07-31'S WORK IS LIVE AND VERIFIED
 
-**Do not merge `privacy/p6-p7-same-origin` yet.** Everything about the rewrite
-works; the thing it exposed does not.
+The three sections that used to sit here — "phase 1 blocked", "verified on the
+preview", "before promoting the next deploy" — described a branch that has since
+merged. Removed rather than left to be re-read as current, which is the failure
+mode of a status file nobody prunes.
 
-Tested side by side, same backend, same query, same minutes:
+**Verified on production at session end:** `/health` 200 in 1.4 s, the guarded
+routes 401, `/privacy` 200. Working tree clean, everything pushed.
 
-| Path | Result |
+### Shipped today
+
+| | |
 |---|---|
-| Preview → Vercel rewrite → Render | **502 after ~90 s** |
-| Production → Render directly | **Succeeded at ~85 s**, correct answer |
+| **Privacy (P1–P8)** | Closed. PII scrubbed before the model, notice reworded, query strings kept out of access logs, same-origin API, Content Security Policy. `/privacy` page live under Settings — **no consent gate**, an owner decision to revisit when signups open |
+| **A2** | 5 questions per user per day, 429 with a message that says why and when it lifts |
+| **A3** | Wiring sweep — `docs/WIRING_SWEEP.md`. Four database tables with no reader or writer, recorded not deleted |
+| **A4** | Numbers table. Fixed a hidden `points` field, then found the rate display was *misleading* — "Rate 2" vs "Rate 5" across different denominators |
+| **A5** | One responsive layout. Also fixed sideways scrolling on desktop |
+| **A6** | 33 free scenario checks against production, 0 failures |
+| **A8** | Cold starts gone. `/health` 36.0 s → 0.9 s via Supabase Cron |
+| **A9** | Per-answer permalinks |
+| **A10** | Retrieval filters wired, after fixing two landmines in the module |
+| **A11** | Comparison questions no longer return evidence about one card |
+| **B1, B2** | Reward-currency validation; unrecognised-category warning |
+| **B3** | `StorePreference` kept, with a `source` column. Migration `preferences_source` **applied to production** |
 
-So the proxy imposes a ceiling that chat currently sits right underneath, and
-occasionally above. `experimental.proxyTimeout` did not save it — whatever cuts
-the request on Vercel is not the setting measured locally.
+### Data-integrity bugs found and fixed (KL 34–37)
 
-**But the proxy is not the real problem. Chat takes ~85 seconds.** That is the
-finding that matters, and it is independent of any of this work: the core
-feature of the product takes a minute and a half against a warm backend. The
-rewrite did not cause it, it just removed the slack that was hiding it.
+All four were the same shape — something untrue reaching the answer path from a
+place the guards did not check:
 
-So the order of work is now:
+1. **Groq could not satisfy the output contract** — fixed by handing the model
+   finished lists instead of making it derive them. Gemini improved too.
+2. **Invented issuers were citable.** Ten fixture documents were retrievable by
+   ordinary questions.
+3. **Excluding those fixtures broke two eval suites** and nobody re-ran them.
+4. **`GetOpportunities` served invented promotions** into `grounded_text` — the
+   very text the traceability check trusts.
 
-1. **Find out why chat takes 85 s warm** and fix it. Suspects, cheapest first:
-   the Planner and Recommender are two sequential Gemini calls, each with a
-   retry; retrieval runs against Chroma on a free Render instance with very
-   little CPU; and `complete_with_retry` may be backing off against a Gemini
-   free-tier rate limit (20 requests/day shared) rather than failing fast.
-2. **Then** re-run this preview test. With chat at a sane latency the proxy
-   ceiling stops being reachable and phase 1 merges unchanged.
-3. **Then** phase 2, which needs the latency answer anyway because a route
-   handler inherits a stricter execution limit than a rewrite.
+### Eval baseline at session end
 
-Everything else on the branch is verified and safe — see below.
+```
+Retrieval (fixture benchmark)  recall@5 1.000   MRR 0.586
+Retrieval (real corpus, NEW)   recall@5 0.987   MRR 0.926   top-1 0.885
+Rules                          100% (25/25)
+Graph                          100% (10/10)
+End-to-end                     100% (10/10)
+668 tests passing
+```
 
-## ✅ VERIFIED ON THE PREVIEW (2026-07-30)
+**The real-corpus retrieval eval is new and is the one to watch** — the older
+benchmark is 17/24 questions about invented banks, so a good score there says
+ranking works and nothing about real users.
 
-Confirmed live, signed in, on `rewards-pilot-melvcn1a2-…vercel.app`:
+### Two process rules learned the hard way today
 
-- **Same-origin routing.** Every API call goes to the preview origin;
-  **zero requests to `onrender.com`**. `POST /api/v1/auth/sync`,
-  `GET /api/v1/portfolio/cards`, `GET /api/v1/recommendations` all 200.
-- **CORS preflight is gone.** Production still shows `OPTIONS /api/v1/chat`
-  before every POST; the preview does not.
-- **Google OAuth works on a preview URL**, once the owner added the wildcard to
-  Supabase's Redirect URLs. `redirectTo` already sent `window.location.origin`,
-  so no code change was needed — only the allow-list entry.
-- **CSP is clean.** No violations in the console on any page.
-- **The reworded privacy notice is live**, and the app's own error handling
-  degraded honestly on the 502: "The server returned a non-JSON response
-  (HTTP 502)" rather than a blank screen.
-- **ADR-019 is working in production.** The successful answer carried the
-  channel note verbatim — "because no booking channel was provided, these
-  figures reflect base earn only" — with HDFC Infinia at 1665.0 points against
-  1000.0 for the other two, medium confidence, and dated citations.
+- **A corpus change is a behaviour change.** Run
+  `python -m evaluation.metrics.report` after touching what the system can
+  retrieve, not only after touching code.
+- **A benchmark that cannot see a defect is not evidence the defect is absent.**
+  A11 was invisible to the eval because it deduplicates by document.
 
-## ⚠️ BEFORE PROMOTING THE NEXT DEPLOY (added 2026-07-30)
 
-Unpushed commits change how the browser reaches the backend. **Verify on a
-Vercel preview URL before promoting to production** — one question cannot be
-answered locally.
+## NEXT SESSION — start here (recorded 2026-07-31, session end)
 
-**What changed.** API calls are now relative (`/api/v1/...`) and forwarded to
-Render by a rewrite in `frontend/next.config.mjs`, instead of the browser
-calling `rewardspilotos.onrender.com` directly. A Content Security Policy also
-ships, and it **fails closed** — a wrong origin blocks calls rather than
-weakening anything.
+Everything below is *not started*. `docs/BACKLOG.md` is the full list; this is
+the short version of what to pick up and why.
 
-**The open question: the proxy's timeout.** Measured locally, Next's rewrite
-proxy aborts at **exactly 30s** and returns a 500, where a direct call to the
-same slow backend succeeded at 45s. `experimental.proxyTimeout: 120_000` fixes
-it on a self-hosted `next start` — verified, 45s request returns 200.
+### Yours, and I cannot do them
 
-**Whether Vercel honours `proxyTimeout` for external rewrites is unverified.**
-Vercel proxies these through its own routing layer, which may impose its own
-gateway limit regardless of this setting. This matters because a cold Render
-dyno is ~15.6s *before* the model is called, and a restart that re-ingests the
-Chroma corpus is ~120s (KNOWN_LIMITATIONS 28) — so chat is exactly the request
-that would hit any such cap.
+1. **Delete the leftover test accounts** — `d3.smoke@`, `d4.demo@`,
+   `demo@rewardspilotos.test`, and any `deploygate.*` still present.
+2. **Rotate the Hugging Face token**, and remove the Google OAuth secret from
+   `.env`.
+3. **Open the app on a real phone once.** A5 shipped a responsive layout and I
+   could verify no content is too wide, but not that the breakpoints fire — the
+   browser tool reports a resize and the viewport never changes. If the tabs sit
+   on their own row under the logo, it works.
 
-**The test, on the preview URL:**
+### The decision that unblocks the most
 
-1. Let Render idle >15 min so the next request pays a cold start.
-2. Ask a question on the preview deployment's Ask tab.
-3. A recommendation means the proxy tolerated the cold start. A 500 or a
-   gateway error near 30s means it did not.
+**Signups: open or closed?** The things that were blocking it are done — per-user
+limits, a privacy page, working account deletion. If they open, two follow-ups
+come back on the table: the consent gate (deliberately not built for MVP) and
+whether a page someone *could* have read is enough given section 3 of the policy.
 
-**If it fails**, the options in order of preference: keep the backend warm with
-a scheduled ping so cold starts stop happening (also fixes the long-standing
-"dashboard takes a minute" complaint); make chat asynchronous (POST returns a
-job id, the client polls) which removes long requests entirely and is the right
-shape for a slow model call on a free tier; or exclude `/api/v1/chat` from the
-rewrite and leave that one route cross-origin, which is the cheapest and the
-ugliest since it keeps CORS alive for the route that most needs phase 2.
+### The real ceiling, and it is not code
 
-Also confirm on the preview: **Google sign-in**, which is the flow that crosses
-origins, and check the browser console for CSP violations.
+**Corpus coverage.** Three cards answer properly; seven refuse — correctly, but a
+user with an Axis Magnus gets nothing useful. Coverage per card:
 
-## NEXT SESSION — pending items (recorded 2026-07-24, session end)
+```
+                    rules  transfers  benefits  promos  policies
+amex_plat_travel     yes      yes       yes       —        —
+hdfc_infinia         yes      yes        —        —        —
+axis_atlas           yes      yes        —        —        —
+7 other cards        yes       —         —        —        —
+```
 
-All code is committed and pushed (this commit is the tip). Live URLs:
-frontend https://rewards-pilot-os.vercel.app, backend
-https://rewardspilotos.onrender.com. Demo account
-`demo@rewardspilotos.test` (password held by owner).
+`promotions` and `issuer_policies` are **empty** for real issuers. That is why
+"any transfer bonuses right now?" and "when do my points expire?" cannot be
+answered, and it is data to gather rather than a bug to fix.
 
-**Asked for explicitly by the owner:**
-1. **UI polish round** — known items: a recommendations *history* page
-   (`api.listRecommendations()` already exists in lib/api.ts; only the page is
-   missing — the dashboard shows just a count and the chat page shows only the
-   just-asked answer), plus whatever else a UI walkthrough surfaces.
-2. **Execution/memory walkthrough** — owner-facing explanation of the full
-   call chain from query to answer: POST /chat -> run_chat (acting_as) ->
-   LangGraph planner (prompt + tool catalog) -> resolve_portfolio_args ->
-   validate_plan -> run_tools (Rule/Graph/Knowledge tools) -> recommender
-   (state digest, calibration ceiling, margin caveat) ->
-   validate_recommendation -> persistence (recommendations +
-   interaction_events) -> RecallMemory reading those events back on later
-   queries. Goal: the owner can narrate every hop, e.g. in an interview.
+**Three of the four data-integrity bugs found today were fake data leaking
+toward users.** The fixture scaffolding has outlived its usefulness; filling the
+corpus with verified sources is the work that changes what the product can say.
 
-**Security (still open):**
-- Decide the signups policy: Google sign-in creates new users, so Supabase's
-  "allow new signups" toggle gates it too — open (quota exposure; no per-user
-  rate limiting exists) vs closed (only existing users can Google-sign-in).
-- Delete the two `deploygate.*` throwaway accounts (Supabase -> Auth -> Users).
-- Rotate the HF token (passed through a working transcript; unused by the app).
-- Remove the Google OAuth client secret line from `.env` (the app never reads
-  it; it belongs only in Supabase's provider config) and consider regenerating.
-- Optionally rotate the demo account password (it passed through a transcript).
+### Smaller, queued
 
-**Verification still pending:**
-- Google sign-in end-to-end (dashboard config done per owner; the OAuth dance
-  itself not yet exercised — owner clicks "Continue with Google").
-- Live smoke suite `s02` (odd-day rotation or manual `SMOKE_GROUP=s02` after a
-  quota reset). The Mon/Thu 08:20 UTC Action now has auto-deploy + secrets.
-- Amex Reward Multiplier re-check on/after **2026-08-01** (VERIFICATION_QUEUE).
+- **A7** — Atlas transfer partner ratios. Parked; needs the Axis Miles Transfer
+  T&C document, which I cannot reach.
+- **D-1 loyalty** — dead on both sides, so it is a build, not a wiring job.
+- **D-3 multi-turn Ask** — now cheaper: the `preferences.source` column it needs
+  landed with B3.
+- **The two remaining unwired modules** (`agents/memory/behavior.py`,
+  `agents/graph/behavior.py`) — ten lines each, documented in
+  `docs/WIRING_SWEEP.md`, deliberately not deleted because BUILD_SPEC names them.
 
-**Roadmap (unchanged):** opportunity engine (deferred half of D5), per-user
-rate limiting, persistent Chroma decision (KNOWN_LIMITATIONS 28), P2 card
-verification when sources arrive, KL items 9/11/12/18/27 awaiting product
-decisions.
+### Date-gated
+
+- **A7 Amex expiry test** on/after **2026-08-01** — the real proof the month fix
+  worked.
+- **Smoke s01** next Mon/Thu.
