@@ -8,7 +8,8 @@ work which only holds because one operator remembers to do something is
 unfinished, even when the data is currently correct. Prefer fixes that make a
 failure impossible or self-reporting over fixes that make it currently absent.
 
-Companions: `docs/LIVE_TESTING.md` (how to test), `docs/KNOWN_LIMITATIONS.md`
+Companions: `docs/LIVE_TESTING.md` (how to test), `docs/WIRING_SWEEP.md`
+(what exists but nothing calls), `docs/KNOWN_LIMITATIONS.md`
 (what is knowingly imperfect), `docs/adr/` (why decisions were made).
 
 **Key:** `FN` functionality · `UX` design · `TEST` verification · `OPS`
@@ -24,13 +25,13 @@ Ordered by value. This is the working queue.
 |---|---|---|---|
 | ~~A1~~ | SEC | ~~**Privacy audit**~~ — **done 2026-07-30/31** | Produced findings P1–P8 in `docs/PRIVACY_AUDIT.md`. All eight now closed or accepted with a written reversal condition — status table below |
 | ~~A2~~ | OPS·FN | ~~**Per-user rate limiting**~~ — **done 2026-07-31** (5/user/day, `CHAT_DAILY_LIMIT_PER_USER`, 429) | One shared 20/day pool: any user can exhaust it for everyone. Required for "broad user base", and it is what makes open signups (D-2) safe rather than a gamble. Adds 429 handling — a behaviour change, so worth a nod before merge |
-| A3 | FN | **Finish the "registered but never wired" sweep** | Three found so far (`GetPromotions`, `StorePreference`, `POST /portfolio`). This class — capability exists, nothing calls it, invisible until something makes you look — has produced several defects. Audit every endpoint, tool and model field once, and record the result |
+| ~~A3~~ | FN | ~~**Finish the "registered but never wired" sweep**~~ — **done 2026-07-31** | Result in `docs/WIRING_SWEEP.md`. 26 routes, 20 client methods, 15 tools and every model checked. Nothing urgent found; the notable result is **4 database tables nothing reads or writes** (`graph_nodes`, `graph_edges`, `rule_versions`, `notifications`) — the graph and rule engines are deliberately file-based, so the Postgres mirrors were never wired. Recorded rather than dropped: dropping is a schema change (CLAUDE.md rule 6) and three are plausible homes for planned work |
 | A4 | UX | **The numbers table speaks engineer** | Shows `card_key`, `month`, raw tool args. Right instinct (show the deterministic inputs), wrong vocabulary for a cardholder |
 | A5 | UX | **Mobile** | Never checked. Safe to do now the restructure has settled |
 | A6 | TEST | **Free scenario sweep** | `LIVE_TESTING` §3 — auth, CRUD, guards, empty states. Zero LLM quota |
 | A7 | DATA | **Atlas transfer partner ratios** (V-2) | The features PDF defers to a separate Miles Transfer T&C document. Chase that document |
 | ~~A8~~ | OPS | ~~**Re-measure cold start**~~ — **done 2026-07-31** | Measured 36.0 s cold. Also found the GitHub keep-alive was firing every ~90–120 min, not every 10, so it was never working. Replaced with a Supabase Cron job; `/health` now answers in **0.9 s** after 20 min idle |
-| A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer |
+| A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer. **Sweep confirmed (2026-07-31):** the route *and* the client method `api.getRecommendation` both exist, so this is page-only work |
 
 ## Privacy findings (P1–P8) — state as of 2026-07-31
 
@@ -120,7 +121,7 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 
 | # | Decision | What it blocks |
 |---|---|---|
-| D-1 | Loyalty: build now, or caveat redemption? | 2.7 — the missing half of redemption. `RedemptionOptions` counts shortfalls from zero |
+| D-1 | Loyalty: build now, or caveat redemption? | 2.7 — the missing half of redemption. `RedemptionOptions` counts shortfalls from zero. **Sweep confirmed (2026-07-31):** dead on both sides — no page calls `api.listLoyalty`, and `PUT /portfolio/loyalty` has no client at all. So the decision is genuinely "build it", not "connect the half that exists" |
 | D-2 | Signups open or closed? | Sharing the URL at all. **A2 has landed** (5 questions/user/day), so the "one person drains the shared allowance" risk this was waiting on is closed |
 | D-3 | Should Ask become multi-turn? | The honest fix for the channel problem — asking instead of caveating (KL 29) |
 | D-4 | Pay ~$5/mo for persistent Chroma? | Removes the re-embed after every restart (KL 28). **Much less pressing since 2026-07-31:** the Supabase Cron keepalive stops the idle spin-down, so the process survives and the corpus is not re-embedded. Measured cost when it does happen (a deploy, or the first visit outside the 06:30–23:29 IST window) is ~55 s on the first question. Also note CLAUDE.md rule 3 — free tier only — so this is a rule change, not just a spend |
@@ -141,7 +142,9 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 
 ## Done
 
-**2026-07-31** — privacy audit closed out and shipped to production. PII
+**2026-07-31** — **A3** wiring sweep (`docs/WIRING_SWEEP.md`): 26 routes,
+20 client methods, 15 tools and every model checked; found 4 database tables
+nothing reads or writes. Privacy audit closed out and shipped to production. PII
 scrubbed before the model (P2 extended); notice reworded (P5); query strings
 kept out of access logs after finding uvicorn had been writing full URLs all
 along (P6); same-origin API via a Vercel rewrite plus a Content Security Policy
