@@ -75,6 +75,61 @@ graph is stored in Postgres, or that rule versions are tracked in the database.
 
 ---
 
+## How to fix each one
+
+Written out so none of these needs re-deriving. Each says what already exists,
+so the work is scoped rather than guessed at.
+
+### Loyalty — D-1, needs a decision first
+
+**Exists:** `loyalty_accounts` table, `GET` and `PUT /api/v1/portfolio/loyalty`,
+and the client method `api.listLoyalty`.
+**Missing:** a client method for the `PUT`, and any page at all.
+
+To build it:
+
+1. Add `api.setLoyalty(...)` to `frontend/lib/api.ts` — mirror `api.setBalance`,
+   which wraps the equivalent `PUT` for balances.
+2. Add a loyalty section to **Portfolio**, not Redeem. It is something you *have*
+   (a programme number and a balance), which is what Portfolio answers.
+3. Then remove the caveat in `RedemptionOptions`, which currently counts every
+   shortfall from zero because it cannot see programme balances held outside a
+   card.
+
+Step 3 is the actual prize — it is why D-1 blocks "2.7, the missing half of
+redemption". Steps 1 and 2 are small; the decision is whether the product wants
+to track programme balances at all.
+
+### Permalink — A9, no decision needed
+
+**Exists:** `GET /api/v1/recommendations/{id}` and `api.getRecommendation`.
+**Missing:** one page.
+
+Add `frontend/app/recommendations/[rec_id]/page.tsx` rendering through the
+existing `RecommendationCard` — the same component History and Ask both use, so
+a linked answer shows the same numbers, citations and confidence it was given.
+Link to it from each row of the History list.
+
+One caution: the route marks the recommendation `viewed` as a side effect of
+`GET`. That is fine from a page a user opened, which is what "viewed" means.
+
+### The two unguided tools — both already decided
+
+**`GetPromotions`** — the fix is *data*, not wiring. It works and is described
+to the planner; both promotion documents in the corpus are for fixture issuers
+(`demo_bank`, `sample_bank`). When a real issuer promotion is verified into the
+corpus, add one line to `agents/prompts/planner.md` guiding the model toward it.
+Until then, leaving it unguided is what stops synthetic content being presented
+as real.
+
+**`StorePreference`** — two honest futures, pick one:
+- **B3 / D-7:** delete it. One line. It writes to a store with no provenance
+  column, so a preference it sets is indistinguishable from one the user set.
+- **D-3:** if Ask becomes multi-turn, it becomes genuinely useful — but it needs
+  a provenance column first, so the UI can say "the assistant recorded this".
+
+Leaving it registered-but-unguided is the one state that is not a decision.
+
 ## What this changes on the backlog
 
 Nothing becomes urgent. Two entries gain detail:
