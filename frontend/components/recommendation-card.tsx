@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { currencyLabel } from "@/lib/display";
 import type { FeedbackStatus, Recommendation } from "@/types/api";
 
 // The hero component (BUILD_SPEC §10): decision on top, deterministic numbers
@@ -38,14 +39,14 @@ const CONFIDENCE_STYLE: Record<string, string> = {
 const NUMBER_FIELDS = new Set(["points", "points_before_cap", "amount", "cap_points"]);
 
 const FIELD_LABELS: Record<string, string> = {
-  points: "Earns",
+  points: "You would earn",
   amount: "On spend",
   category: "Category",
   channel: "Booked",
   card_key: "Card",
-  applied: "Rate applied",
+  applied: "Using its",
   rate: "Rate",
-  month: "Month",
+  month: "For",
   status: "Status",
   cap_applied: "Capped",
   points_before_cap: "Before the cap",
@@ -54,7 +55,7 @@ const FIELD_LABELS: Record<string, string> = {
   from_currency: "From",
   to_currency: "To",
   ratio: "Ratio",
-  multiplier: "Multiplier",
+  multiplier: "Bonus multiplier",
 };
 
 // Order the reader cares about, not declaration order. Anything unlisted keeps
@@ -88,19 +89,53 @@ function formatNumber(value: number) {
   return value.toLocaleString("en-IN", { maximumFractionDigits: 20 });
 }
 
-function formatValue(key: string, value: unknown, cardNames?: Record<string, string>): string | null {
+function formatValue(
+  key: string,
+  value: unknown,
+  cardNames?: Record<string, string>,
+  calc: Record<string, unknown> = {}
+): string | null {
   if (value === null || value === undefined || value === "") return null;
   if (key === "card_key" && typeof value === "string") {
     return cardNames?.[value] ?? prettyKey(value);
   }
   if (key === "amount" && typeof value === "number") return `₹${formatNumber(value)}`;
+  // "2026-07" is how the engine stores a month, not how anyone reads one.
+  if (key === "month" && typeof value === "string" && /^\d{4}-\d{2}$/.test(value)) {
+    const [year, mon] = value.split("-");
+    const name = new Date(Number(year), Number(mon) - 1, 1).toLocaleString("en-IN", {
+      month: "long",
+    });
+    return `${name} ${year}`;
+  }
+  // "Rate 2" and "Rate 5" side by side read as "the second card is 2.5x better".
+  // They are 2 EDGE Miles per ₹100 and 5 HDFC points per ₹150 — different
+  // denominators AND different currencies (A4). The bare number was not jargon,
+  // it was misleading, so the rate is only ever shown as a whole phrase.
+  if (key === "rate") {
+    const rate = value as { value?: unknown; status?: string };
+    if (typeof rate?.value !== "number") return null;
+    const per = typeof calc.rate_per_amount === "number" ? calc.rate_per_amount : null;
+    const unit = typeof calc.reward_currency === "string" ? currencyLabel(calc.reward_currency) : "points";
+    // No denominator means no honest comparison, so say nothing rather than a
+    // number a reader would compare against another card's.
+    if (per === null) return null;
+    const qualifier = rate.status === "verified" ? "" : ` (${rate.status ?? "unverified"})`;
+    return `${formatNumber(rate.value)} ${unit} per ₹${formatNumber(per)}${qualifier}`;
+  }
+  if (key === "multiplier") {
+    const m = value as { value?: unknown };
+    const n = typeof m?.value === "number" ? m.value : typeof value === "number" ? value : null;
+    return n === null ? null : `${formatNumber(n)}× the standard rate`;
+  }
   if (NUMBER_FIELDS.has(key) && typeof value === "number") return formatNumber(value);
   if (key === "cap_applied") return value === true ? "yes" : null; // only worth saying when true
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (typeof value === "string") {
-    return ["category", "channel", "applied", "status", "cap_scope"].includes(key)
-      ? prettyKey(value)
-      : value;
+    // The engine's own words for these two are not a cardholder's.
+    if (key === "applied") return value === "accelerated" ? "bonus rate" : "standard rate";
+    if (key === "channel") return value === "direct" ? "directly with the merchant" : prettyKey(value);
+    return ["category", "status", "cap_scope"].includes(key) ? prettyKey(value) : value;
   }
   // A verified value: {value, status, source, confidence}. Previously dropped
   // entirely by a `typeof v !== "object"` filter, which is how the rate behind
@@ -137,6 +172,9 @@ const NEVER_SHOWN = new Set([
   "expiry_note",
   "unknown_reasons",
   "no_transfer_data",
+  // Folded into the rate phrase above; on their own they are noise.
+  "rate_per_amount",
+  "reward_currency",
 ]);
 
 /** Long values must be allowed to wrap. `whitespace-nowrap` is right for
@@ -210,7 +248,7 @@ export function RecommendationCard({
           <div className="space-y-2">
             {body.calculations.map((calc, i) => {
               const fields = orderedFields(calc)
-                .map((key) => [key, formatValue(key, calc[key], cardNames)] as const)
+                .map((key) => [key, formatValue(key, calc[key], cardNames, calc)] as const)
                 // Typed predicate, not a plain filter: `formatValue` returns
                 // null for "nothing worth showing", and TypeScript cannot see
                 // that through the tuple without this.

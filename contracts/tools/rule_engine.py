@@ -83,6 +83,19 @@ class EarnResult(BaseModel):
     # else the card offers rather than guessing. Deterministic text; the
     # Recommender repeats it verbatim.
     category_note: str | None = None
+    # What the rate is actually per, and in what currency (A4, 2026-07-31).
+    #
+    # Without these the UI could only print a bare "Rate 2" beside a bare
+    # "Rate 5" — and those are 2 EDGE Miles per INR 100 against 5 HDFC points
+    # per INR 150. Shown side by side they read as "Infinia is 2.5x better",
+    # which is false twice over: different denominators and different
+    # currencies. The engine knew both and kept them to itself.
+    #
+    # Carried rather than computed downstream: turning them into a per-rupee
+    # figure would be arithmetic outside the engine, and comparing two
+    # currencies needs a valuation this product refuses to assume.
+    rate_per_amount: float | None = None
+    reward_currency: str | None = None
     unknown_reasons: list[str] = Field(default_factory=list)
     sources: list[str] = Field(default_factory=list)
     rule_version: int | None = None

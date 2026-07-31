@@ -184,6 +184,12 @@ def evaluate_earn(
         month=month,
         status="unknown",
         rule_version=rule.version,
+        # Set on every result, including refusals: "we could not compute, and
+        # the rate would have been per INR 150 in HDFC points" is more useful
+        # than a bare refusal, and it keeps the field from appearing only
+        # sometimes (A4).
+        rate_per_amount=rule.base_earn.per_amount,
+        reward_currency=rule.reward_currency,
     )
 
     if category in rule.exclusions:
