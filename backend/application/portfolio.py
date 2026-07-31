@@ -11,6 +11,7 @@ from datetime import date
 
 from sqlalchemy import select
 
+from backend.application.reward_currency import validate_reward_currency
 from backend.application.errors import NotFoundError, PermissionDeniedError
 from backend.models.identity import User
 from backend.models.portfolio import Card, LoyaltyAccount, Portfolio, RewardBalance
@@ -77,6 +78,10 @@ def add_card(
     renewal_date: date | None = None,
     status: str = "active",
 ) -> Card:
+    # B1: reject a currency that is not a currency node before the row exists.
+    # A wrong-but-real node id used to be accepted and then fail silently at
+    # transfer lookup, which looks like "this card has no transfer partners".
+    validate_reward_currency(reward_currency)
     with session_scope() as session:
         portfolio = _portfolio_for(session, user_id)
         card = Card(
@@ -101,6 +106,11 @@ def add_card(
 def update_card(user_id: uuid.UUID, card_id: uuid.UUID, **changes) -> Card:
     with session_scope() as session:
         card = _owned_card(session, user_id, card_id)
+        # Only when it is actually being changed (B1). Validating unconditionally
+        # would make an existing card with a bad currency uneditable — including
+        # uneditable *to a correct value*, which is the one repair a user needs.
+        if "reward_currency" in changes:
+            validate_reward_currency(changes["reward_currency"])
         # PATCH semantics: an omitted field is "leave it alone", which is not
         # the same as an explicit null, so unset values never reach here.
         for field, value in changes.items():

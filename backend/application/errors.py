@@ -32,3 +32,15 @@ class PermissionDeniedError(ApplicationError):
     """
 
     code = "not_found"
+
+
+class InvalidReferenceError(ApplicationError):
+    """A field names something that does not exist, or exists as the wrong kind
+    of thing (B1 / KNOWN_LIMITATIONS 31).
+
+    Distinct from a schema failure, which the request never gets past: the value
+    is a well-formed string, it just does not refer to anything usable. Reported
+    as 422 — the request was understood and is wrong, rather than malformed.
+    """
+
+    code = "invalid_reference"

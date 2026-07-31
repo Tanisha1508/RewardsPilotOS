@@ -14,6 +14,7 @@ from backend.application.chat import DailyLimitReachedError, RecommendationUnava
 from backend.application.errors import (
     ApplicationError,
     ConflictError,
+    InvalidReferenceError,
     NotFoundError,
     PermissionDeniedError,
 )
@@ -27,6 +28,9 @@ STATUS_BY_EXCEPTION: list[tuple[type[Exception], int]] = [
     (PermissionDeniedError, 404),
     (NotFoundError, 404),
     (ConflictError, 409),
+    # A well-formed value that names nothing usable (B1). 422, not 400:
+    # the request was understood, and the value is the problem.
+    (InvalidReferenceError, 422),
     (AuthError, 401),
     (AuthNotConfiguredError, 503),
     (DatabaseNotConfiguredError, 503),
