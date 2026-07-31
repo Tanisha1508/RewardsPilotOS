@@ -31,7 +31,7 @@ Ordered by value. This is the working queue.
 | A6 | TEST | **Free scenario sweep** | `LIVE_TESTING` §3 — auth, CRUD, guards, empty states. Zero LLM quota |
 | A7 | DATA | **Atlas transfer partner ratios** (V-2) | The features PDF defers to a separate Miles Transfer T&C document. Chase that document |
 | ~~A8~~ | OPS | ~~**Re-measure cold start**~~ — **done 2026-07-31** | Measured 36.0 s cold. Also found the GitHub keep-alive was firing every ~90–120 min, not every 10, so it was never working. Replaced with a Supabase Cron job; `/health` now answers in **0.9 s** after 20 min idle |
-| A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer. **Sweep confirmed (2026-07-31):** the route *and* the client method `api.getRecommendation` both exist, so this is page-only work |
+| ~~A9~~ | FN | ~~**Recommendation permalink**~~ — **done 2026-07-31** | `app/recommendations/[rec_id]/page.tsx`, rendering through the same `RecommendationCard` as Ask and History so a linked answer cannot drift from the one that was given. Reached from the timestamp in the History list. Route and client already existed; this was the missing page the wiring sweep predicted |
 
 ## Privacy findings (P1–P8) — state as of 2026-07-31
 

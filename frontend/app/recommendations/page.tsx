@@ -102,7 +102,17 @@ export default function RecommendationsPage() {
                   <span className="text-neutral-500">You asked:</span> {rec.query}
                 </p>
                 <p className="text-xs text-neutral-600">
-                  <time dateTime={rec.created_at}>{formatWhen(rec.created_at)}</time>
+                  {/* The permalink (A9). On the timestamp rather than as a
+                      separate "open" button: the date is already the thing that
+                      identifies one answer among many, and a list of repeated
+                      buttons adds a column of noise to every row. */}
+                  <Link
+                    href={`/recommendations/${rec.rec_id}`}
+                    className="hover:text-accent-soft hover:underline"
+                    title="Open this answer on its own page"
+                  >
+                    <time dateTime={rec.created_at}>{formatWhen(rec.created_at)}</time>
+                  </Link>
                   <span className={`ml-2 ${STATUS_STYLE[rec.status] ?? "text-neutral-500"}`}>
                     {rec.status}
                   </span>
