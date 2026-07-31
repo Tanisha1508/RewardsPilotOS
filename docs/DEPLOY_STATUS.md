@@ -114,7 +114,30 @@ live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
   (IPv6; works from home networks) — never through the transaction pooler.
   Schema is current: 16 public tables, verified through the pooler.
 
-## ❌ PHASE 1 IS BLOCKED — measured on the preview 2026-07-30
+## ✅ COLD STARTS ARE GONE — 2026-07-31
+
+The keepalive now runs as a Supabase Cron job (`infra/monitoring/keepalive_pg_cron.sql`,
+created through Supabase → Integrations → Cron rather than by SQL, because the
+SQL editor's role has no rights on the `cron` schema).
+
+Measured, after 20 minutes of deliberately not touching the service:
+
+| | Before | After |
+|---|---|---|
+| `/health` | **36.0 s** | **0.9 s** |
+
+That is the "dashboard takes a minute" complaint closed, and it also removes the
+~85 s first-chat-after-restart case (the lazy Chroma re-ingest, KL 28) that was
+blocking the section below.
+
+Still true: the job window is 01:00–17:59 UTC (06:30–23:29 IST), so the first
+visit before ~6:30am still pays one wake-up. Deliberate — round-the-clock is
+~744 h against Render's 750 h/month free allowance.
+
+**Next:** re-run the preview test now that nothing is cold. If chat holds at
+~29 s the branch merges unchanged.
+
+## ⛔ PHASE 1 WAS BLOCKED — measured on the preview 2026-07-30 (blocker now cleared, retest pending)
 
 **Do not merge `privacy/p6-p7-same-origin` yet.** Everything about the rewrite
 works; the thing it exposed does not.
