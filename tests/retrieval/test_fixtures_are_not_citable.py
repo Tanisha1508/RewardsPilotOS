@@ -14,7 +14,6 @@ The fixtures stay on disk; the retrieval suite needs a corpus of known content.
 They just stop reaching the serving corpus.
 """
 
-
 import pytest
 
 from knowledge.parsers.frontmatter import parse_source_file
