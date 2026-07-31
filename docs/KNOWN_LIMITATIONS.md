@@ -801,3 +801,42 @@ roadmap — none is silently papered over.
 
     Also removed: "Am I close to any monthly cap?" was offered as a suggested
     question on Ask and in onboarding. The product cannot answer it.
+
+34. **The Groq fallback tier cannot satisfy the Recommender's output contract —
+    measured 2026-07-31.** ADR-018 added Groq as the cross-provider tier so a
+    Gemini-wide outage would not stop the product. Tested against the real
+    Recommender node, with the production retry, it does not work for that node.
+
+    Two queries, both failed after the retry:
+
+    - *"Which of my cards is best for a Rs 50,000 flight?"* — calculations not
+      verbatim from tool results. It reconstructs the objects with fields
+      dropped (`{'card_key': 'axis_atlas', 'amount': 50000.0, 'points': 1000.0,
+      'rate': {'value': 2.0}}` against an engine row carrying `status`,
+      `category`, `month`, `applied` and more). The contract is deep-equality,
+      so an abbreviated copy is a rejection.
+    - *"How many points would Rs 20,000 of hotel_stays earn?"* — **citation not
+      backed by retrieved sources**. It produced `hdfc.bank.in`, which was not
+      in the retrieved set. An invented citation is the specific failure this
+      product exists to prevent. Validation caught it, which is the system
+      working; a model that reaches for one is still the wrong model here.
+
+    Seven attempts across two harnesses, zero passes. `gemini-flash-latest`
+    passed both queries — one first time, one on the retry.
+
+    **What this corrects.** The capacity note written earlier the same day said
+    the chain degrades gracefully: Gemini's ~20/day per model, then Groq's
+    1,000/day. It does not. Once Gemini is exhausted the Recommender reaches
+    Groq and *fails validation*, so the user sees an error rather than a
+    lower-tier answer. **Effective capacity is Gemini-only** — roughly 20 chat
+    questions a day across both Gemini models, not 500.
+
+    Groq remains plausible for the Planner, whose output is a short tool plan
+    rather than a contract-bound recommendation. Untested.
+
+    Not fixed. Options, none chosen: prompt Groq differently for the
+    Recommender (it is one shared prompt today), try a larger Groq model, drop
+    the Groq tier for this node so failures are honest rather than delayed, or
+    accept the ceiling. Sample is small — two queries, one model each — but the
+    failure was consistent and the citation invention is disqualifying on its
+    own.
