@@ -38,7 +38,34 @@
 --
 -- To go 24/7, change `1-17` to `*` and watch the Render usage meter.
 --
--- ── Run this in the Supabase SQL editor ────────────────────────────────────
+-- ── Prerequisite: enable the extensions from the Dashboard, not from here ──
+--
+-- Supabase → Database → Extensions → enable `pg_cron` and `pg_net`.
+--
+-- Do that first. Creating them with raw `create extension` in the SQL editor
+-- appears to work and then fails on the next line with
+--
+--     ERROR: 42501: permission denied for schema cron
+--
+-- because pg_cron's `cron` schema is created owned by an admin role, and the
+-- role the SQL editor runs as is not granted USAGE on it. The Dashboard toggle
+-- performs those grants; the bare DDL does not.
+--
+-- If you already hit that error, the two `create extension` lines below are
+-- harmless no-ops — enable both from the Dashboard and re-run this file.
+--
+-- Should the Dashboard route be unavailable, the equivalent grant is:
+--
+--     grant usage on schema cron to postgres;
+--
+-- `postgres` only. It is the privileged role the SQL editor already runs as, so
+-- this grants it nothing it does not already have elsewhere. Do NOT grant on
+-- this schema to `anon` or `authenticated`: those are reachable with the anon
+-- key that ships in the browser bundle, and scheduled jobs run with database
+-- privileges. This is the same trap as the `GRANT SELECT ... TO anon` that
+-- Postgres itself suggests in its error hints (see docs/PRIVACY_AUDIT.md P1).
+--
+-- ── Then run the rest of this file in the Supabase SQL editor ──────────────
 
 create extension if not exists pg_cron;
 create extension if not exists pg_net;
