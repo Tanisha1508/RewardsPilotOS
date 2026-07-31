@@ -153,3 +153,59 @@ def test_another_users_recommendation_is_not_reachable(client, jwt_secret, synce
 def test_empty_query_is_rejected(client, jwt_secret, synced):
     r = client.post("/api/v1/chat", json={"query": ""}, headers=auth(synced, jwt_secret))
     assert r.status_code == 422
+
+
+# ── Per-user daily limit (A2) ────────────────────────────────────────────────
+#
+# The unit tests cover the decision — when the limit bites and what it says.
+# These cover the part that needs a real database: that the count is of *this
+# user's* answers *today*, which is the half that would silently limit the wrong
+# person or everyone at once.
+
+
+@pytest.fixture()
+def limit_of_two(monkeypatch):
+    from backend.config.settings import get_settings
+
+    monkeypatch.setenv("CHAT_DAILY_LIMIT_PER_USER", "2")
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
+
+
+def test_the_limit_fires_after_the_configured_number(client, jwt_secret, synced, limit_of_two):
+    for i in range(2):
+        r = client.post("/api/v1/chat", json={"query": f"q{i}"}, headers=auth(synced, jwt_secret))
+        assert r.status_code == 200, r.text
+
+    blocked = client.post("/api/v1/chat", json={"query": "q3"}, headers=auth(synced, jwt_secret))
+    assert blocked.status_code == 429
+    body = blocked.json()
+    assert body["error"]["code"] == "daily_limit_reached"
+    assert "reset" in body["error"]["message"].lower()
+
+
+def test_one_users_limit_does_not_touch_another(client, jwt_secret, synced, limit_of_two):
+    """The bug this would be if the count were global: the second person to use
+    the app is refused because of what the first person did."""
+    for i in range(2):
+        client.post("/api/v1/chat", json={"query": f"q{i}"}, headers=auth(synced, jwt_secret))
+    assert (
+        client.post("/api/v1/chat", json={"query": "x"}, headers=auth(synced, jwt_secret))
+    ).status_code == 429
+
+    other = uuid.uuid4()
+    client.post("/api/v1/auth/sync", json={}, headers=auth(other, jwt_secret))
+    fresh = client.post("/api/v1/chat", json={"query": "mine"}, headers=auth(other, jwt_secret))
+    assert fresh.status_code == 200, fresh.text
+
+
+def test_nothing_is_stored_when_the_limit_refuses(client, jwt_secret, synced, limit_of_two):
+    """A refused question must not appear in history — it was never answered."""
+    for i in range(2):
+        client.post("/api/v1/chat", json={"query": f"q{i}"}, headers=auth(synced, jwt_secret))
+    client.post("/api/v1/chat", json={"query": "refused"}, headers=auth(synced, jwt_secret))
+
+    history = client.get("/api/v1/recommendations", headers=auth(synced, jwt_secret)).json()["data"]
+    assert len(history) == 2
+    assert "refused" not in [row["query"] for row in history]

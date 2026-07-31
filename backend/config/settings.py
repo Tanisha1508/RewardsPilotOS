@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     groq_api_key: str | None = None
     groq_model: str = "llama-3.3-70b-versatile"
 
+    # Answers one user may be given per UTC day (A2). The free Gemini tier is
+    # 20 requests/day *per model* and a question spends two of them, so about
+    # ten questions a day exist for everyone put together — one enthusiastic
+    # user could take the whole day from everybody else.
+    #
+    # 5 leaves room for a couple of people to get a useful session each. Raise
+    # it as capacity grows; set it to 0 to switch the limit off entirely, which
+    # is what the test suite and local development do.
+    chat_daily_limit_per_user: int = 5
+
     redis_url: str | None = None
     chroma_persist_dir: str = "data/embeddings"
 
