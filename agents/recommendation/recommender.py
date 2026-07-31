@@ -8,7 +8,7 @@ the single retry, then a typed failure."""
 import json
 from pathlib import Path
 
-from agents.privacy import strip_identifiers
+from agents.privacy import scrub_free_text, strip_identifiers
 from agents.recommendation.calibration import confidence_basis
 from agents.recommendation.margin import margin_caveat
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
@@ -63,17 +63,24 @@ def _state_digest(state: AgentState, basis: dict, caveat: dict | None) -> str:
     # beside that user's cards, balances and question. Nothing here needs them:
     # the model reasons over `card_key` and `card_name`, and copies numbers from
     # engine results that are keyed the same way.
+    #
+    # `scrub_free_text` then removes contact and account identifiers from the
+    # three regions a person types into. It is applied to those and not to the
+    # whole digest on purpose: `rule_results` and `graph_results` hold the
+    # numbers a recommendation quotes verbatim, and a regex substitution over
+    # them could change a figure. Privacy work does not get to weaken the
+    # arithmetic guarantee.
     return json.dumps(
         strip_identifiers(
             {
-                "query": state["query"],
+                "query": scrub_free_text(state["query"]),
                 "intent": state["intent"],
                 "portfolio": state["portfolio"],
-                "preferences": state["preferences"],
+                "preferences": scrub_free_text(state["preferences"]),
                 "knowledge": [chunk_dump(c) for c in state["knowledge"]],
                 "rule_results": state["rule_results"],
                 "graph_results": state["graph_results"],
-                "memory": state["memory"],
+                "memory": scrub_free_text(state["memory"]),
                 "tool_errors": state["errors"],
                 # Deterministic calibration ceiling: reporting a HIGHER
                 # confidence than this is rejected; reporting lower is allowed.

@@ -28,7 +28,29 @@ import type {
 // 2. Send a request without a token to a protected route. The backend would
 //    reject it anyway; failing here gives a better message than a bare 401.
 
-const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
+// Relative, deliberately (2026-07-30). Every call now goes to this app's own
+// origin and is forwarded to the backend by the rewrite in `next.config.mjs`.
+//
+// This was an absolute cross-origin URL until the frontend and backend became
+// same-origin. Three things follow from the change, and the third is the reason
+// for it:
+//
+//   - CORS stops applying, and with it the preflight round-trip on every
+//     non-GET request. On a backend that sleeps after 15 minutes, one fewer
+//     round-trip on the waking request is worth having.
+//   - The backend's origin leaves the browser bundle, so `connect-src` can drop
+//     it and the client no longer advertises where the API lives.
+//   - It is the prerequisite for httpOnly cookie sessions (privacy audit P7).
+//     A cookie set by this origin is a *third-party* cookie for a backend on
+//     another registrable domain, and modern browsers block those by default.
+//     Cookie auth is not a drop-in replacement for the token in localStorage —
+//     it is impossible until the API is same-origin. This is that step.
+//
+// Note there is no `?? "http://localhost:8000"` fallback any more: in
+// development the rewrite handles the hop too, so a relative path is correct
+// everywhere and a default that silently bypasses the proxy would hide a
+// misconfigured rewrite until production.
+const BASE_URL = "";
 
 export class ApiRequestError extends Error {
   constructor(

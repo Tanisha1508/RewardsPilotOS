@@ -14,6 +14,7 @@ from agents.planner.empty_portfolio import (
     held_cards,
 )
 from agents.planner.month_args import strip_unrequested_month
+from agents.privacy import scrub_free_text
 from agents.planner.portfolio_args import resolve_portfolio_args
 from agents.registry import LLM, LLMUnavailableError, complete_with_retry
 from agents.state.schema import AgentState, ToolInvocation
@@ -66,10 +67,15 @@ def validate_plan(plan_entries: list, errors: list[str]) -> list[ToolInvocation]
 
 def plan(state: AgentState, llm: LLM) -> AgentState:
     system = PROMPT_PATH.read_text().replace("{TOOL_CATALOG}", tool_catalog())
-    # Only the query. The model is deliberately not told the user id: no tool
-    # accepts one any more (KNOWN_LIMITATIONS 24, Class C), and handing it an
-    # identity it cannot legitimately use invites it back into plan args.
-    user = json.dumps({"query": state["query"]})
+    # Only the query, and the query with contact details removed. The model is
+    # deliberately not told the user id: no tool accepts one any more
+    # (KNOWN_LIMITATIONS 24, Class C), and handing it an identity it cannot
+    # legitimately use invites it back into plan args.
+    #
+    # The scrub is applied here as well as in the Recommender because this is a
+    # second, separate request to the provider carrying the same typed text —
+    # a boundary defended in one place only is not defended.
+    user = json.dumps({"query": scrub_free_text(state["query"])})
     try:
         raw = complete_with_retry(llm, system, user)
         payload = _parse_payload(raw)

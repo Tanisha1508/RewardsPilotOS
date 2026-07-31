@@ -10,7 +10,7 @@ business logic in routers).
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from backend.application.chat import RecommendationUnavailableError
+from backend.application.chat import DailyLimitReachedError, RecommendationUnavailableError
 from backend.application.errors import (
     ApplicationError,
     ConflictError,
@@ -33,6 +33,10 @@ STATUS_BY_EXCEPTION: list[tuple[type[Exception], int]] = [
     # The workflow ran but could not produce a valid recommendation (LLM down,
     # or output failed the contract). An upstream failure, not the client's.
     (RecommendationUnavailableError, 502),
+    # This user has had their share of today's answers (A2). 429 and not 403:
+    # the request was legitimate and will succeed again tomorrow, which is
+    # exactly the distinction 429 exists to draw.
+    (DailyLimitReachedError, 429),
 ]
 
 

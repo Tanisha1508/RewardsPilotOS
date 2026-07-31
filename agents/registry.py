@@ -73,6 +73,24 @@ def is_transient(exc: Exception) -> bool:
     return any(marker in str(exc).lower() for marker in _TRANSIENT_MARKERS)
 
 
+# A 429 that means "this model is out of requests for the day", as opposed to
+# "you are going too fast this minute". Gemini's free tier is 20 requests per
+# day *per model*, and it says so explicitly in the quota id (measured
+# 2026-07-30: `GenerateRequestsPerDayPerProjectPerModel-FreeTier`, limit 20).
+#
+# The two need separating because the right response is opposite. A per-minute
+# limit clears in seconds and is worth retrying. A daily limit does not clear
+# today, so every subsequent request to that model is a guaranteed failure that
+# still costs a network round trip — measured at ~0.6 s, paid twice per chat
+# because the workflow makes two LLM calls.
+_DAILY_QUOTA_MARKERS = ("perday", "per day", "requests per day", "free_tier_requests")
+
+
+def is_daily_quota_exhausted(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "429" in text and any(marker in text for marker in _DAILY_QUOTA_MARKERS)
+
+
 class FallbackLLM:
     """Try each client in order; on a *transient* failure, fall through to the
     next (ADR-018). A non-transient failure (bad key, malformed request) breaks
@@ -82,21 +100,55 @@ class FallbackLLM:
     Implements the LLM Protocol, so the workflow is unchanged — it still sees a
     single `complete(system, user)`."""
 
+    #: How long a model is skipped after it reports a daily quota exhaustion.
+    #:
+    #: Not "until midnight": that needs the reset timezone (Pacific, for Google's
+    #: free tier), and being wrong about it either wastes calls all day or
+    #: benches a working model for hours. A short window is self-correcting —
+    #: the worst case is one wasted probe every 15 minutes instead of one on
+    #: every request, which is the ~100x that matters, and the model returns to
+    #: service on its own once the quota rolls over.
+    QUOTA_COOLDOWN_S = 15 * 60
+
     def __init__(self, clients: list[LLM], labels: list[str] | None = None) -> None:
         if not clients:
             raise ValueError("FallbackLLM needs at least one client")
         self._clients = clients
         self._labels = labels or [f"llm{i}" for i in range(len(clients))]
+        # label -> monotonic deadline before which this client is not tried.
+        self._benched: dict[str, float] = {}
+
+    def _available(self, label: str) -> bool:
+        until = self._benched.get(label)
+        if until is None:
+            return True
+        if time.monotonic() >= until:
+            del self._benched[label]  # cooldown served; probe it again
+            return True
+        return False
 
     def complete(self, system: str, user: str) -> str:
         errors: list[str] = []
+        skipped: list[str] = []
         for client, label in zip(self._clients, self._labels):
+            if not self._available(label):
+                skipped.append(label)
+                continue
             try:
                 return client.complete(system, user)
             except Exception as exc:
                 errors.append(f"{label}: {type(exc).__name__}: {exc}")
-                if not is_transient(exc):
+                if is_daily_quota_exhausted(exc):
+                    # Out of requests for the day. Retrying it on the next
+                    # call cannot succeed and costs a round trip each time.
+                    self._benched[label] = time.monotonic() + self.QUOTA_COOLDOWN_S
+                elif not is_transient(exc):
                     break  # permanent — the next model will fail the same way
+        if not errors and skipped:
+            # Everything was benched, so nothing was even attempted. Say that
+            # rather than "all models failed", which would be untrue and would
+            # send someone hunting for an error that was never raised.
+            raise LLMUnavailableError("every model is in quota cooldown — " + ", ".join(skipped))
         raise LLMUnavailableError("all models failed — " + " | ".join(errors))
 
 

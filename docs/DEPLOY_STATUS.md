@@ -114,6 +114,127 @@ live to bounce. Data was never exposed pre-guard (api.ts + backend 401s).
   (IPv6; works from home networks) — never through the transaction pooler.
   Schema is current: 16 public tables, verified through the pooler.
 
+## ✅ COLD STARTS ARE GONE — 2026-07-31
+
+The keepalive now runs as a Supabase Cron job (`infra/monitoring/keepalive_pg_cron.sql`,
+created through Supabase → Integrations → Cron rather than by SQL, because the
+SQL editor's role has no rights on the `cron` schema).
+
+Measured, after 20 minutes of deliberately not touching the service:
+
+| | Before | After |
+|---|---|---|
+| `/health` | **36.0 s** | **0.9 s** |
+
+That is the "dashboard takes a minute" complaint closed, and it also removes the
+~85 s first-chat-after-restart case (the lazy Chroma re-ingest, KL 28) that was
+blocking the section below.
+
+Still true: the job window is 01:00–17:59 UTC (06:30–23:29 IST), so the first
+visit before ~6:30am still pays one wake-up. Deliberate — round-the-clock is
+~744 h against Render's 750 h/month free allowance.
+
+**Next:** re-run the preview test now that nothing is cold. If chat holds at
+~29 s the branch merges unchanged.
+
+## ⛔ PHASE 1 WAS BLOCKED — measured on the preview 2026-07-30 (blocker now cleared, retest pending)
+
+**Do not merge `privacy/p6-p7-same-origin` yet.** Everything about the rewrite
+works; the thing it exposed does not.
+
+Tested side by side, same backend, same query, same minutes:
+
+| Path | Result |
+|---|---|
+| Preview → Vercel rewrite → Render | **502 after ~90 s** |
+| Production → Render directly | **Succeeded at ~85 s**, correct answer |
+
+So the proxy imposes a ceiling that chat currently sits right underneath, and
+occasionally above. `experimental.proxyTimeout` did not save it — whatever cuts
+the request on Vercel is not the setting measured locally.
+
+**But the proxy is not the real problem. Chat takes ~85 seconds.** That is the
+finding that matters, and it is independent of any of this work: the core
+feature of the product takes a minute and a half against a warm backend. The
+rewrite did not cause it, it just removed the slack that was hiding it.
+
+So the order of work is now:
+
+1. **Find out why chat takes 85 s warm** and fix it. Suspects, cheapest first:
+   the Planner and Recommender are two sequential Gemini calls, each with a
+   retry; retrieval runs against Chroma on a free Render instance with very
+   little CPU; and `complete_with_retry` may be backing off against a Gemini
+   free-tier rate limit (20 requests/day shared) rather than failing fast.
+2. **Then** re-run this preview test. With chat at a sane latency the proxy
+   ceiling stops being reachable and phase 1 merges unchanged.
+3. **Then** phase 2, which needs the latency answer anyway because a route
+   handler inherits a stricter execution limit than a rewrite.
+
+Everything else on the branch is verified and safe — see below.
+
+## ✅ VERIFIED ON THE PREVIEW (2026-07-30)
+
+Confirmed live, signed in, on `rewards-pilot-melvcn1a2-…vercel.app`:
+
+- **Same-origin routing.** Every API call goes to the preview origin;
+  **zero requests to `onrender.com`**. `POST /api/v1/auth/sync`,
+  `GET /api/v1/portfolio/cards`, `GET /api/v1/recommendations` all 200.
+- **CORS preflight is gone.** Production still shows `OPTIONS /api/v1/chat`
+  before every POST; the preview does not.
+- **Google OAuth works on a preview URL**, once the owner added the wildcard to
+  Supabase's Redirect URLs. `redirectTo` already sent `window.location.origin`,
+  so no code change was needed — only the allow-list entry.
+- **CSP is clean.** No violations in the console on any page.
+- **The reworded privacy notice is live**, and the app's own error handling
+  degraded honestly on the 502: "The server returned a non-JSON response
+  (HTTP 502)" rather than a blank screen.
+- **ADR-019 is working in production.** The successful answer carried the
+  channel note verbatim — "because no booking channel was provided, these
+  figures reflect base earn only" — with HDFC Infinia at 1665.0 points against
+  1000.0 for the other two, medium confidence, and dated citations.
+
+## ⚠️ BEFORE PROMOTING THE NEXT DEPLOY (added 2026-07-30)
+
+Unpushed commits change how the browser reaches the backend. **Verify on a
+Vercel preview URL before promoting to production** — one question cannot be
+answered locally.
+
+**What changed.** API calls are now relative (`/api/v1/...`) and forwarded to
+Render by a rewrite in `frontend/next.config.mjs`, instead of the browser
+calling `rewardspilotos.onrender.com` directly. A Content Security Policy also
+ships, and it **fails closed** — a wrong origin blocks calls rather than
+weakening anything.
+
+**The open question: the proxy's timeout.** Measured locally, Next's rewrite
+proxy aborts at **exactly 30s** and returns a 500, where a direct call to the
+same slow backend succeeded at 45s. `experimental.proxyTimeout: 120_000` fixes
+it on a self-hosted `next start` — verified, 45s request returns 200.
+
+**Whether Vercel honours `proxyTimeout` for external rewrites is unverified.**
+Vercel proxies these through its own routing layer, which may impose its own
+gateway limit regardless of this setting. This matters because a cold Render
+dyno is ~15.6s *before* the model is called, and a restart that re-ingests the
+Chroma corpus is ~120s (KNOWN_LIMITATIONS 28) — so chat is exactly the request
+that would hit any such cap.
+
+**The test, on the preview URL:**
+
+1. Let Render idle >15 min so the next request pays a cold start.
+2. Ask a question on the preview deployment's Ask tab.
+3. A recommendation means the proxy tolerated the cold start. A 500 or a
+   gateway error near 30s means it did not.
+
+**If it fails**, the options in order of preference: keep the backend warm with
+a scheduled ping so cold starts stop happening (also fixes the long-standing
+"dashboard takes a minute" complaint); make chat asynchronous (POST returns a
+job id, the client polls) which removes long requests entirely and is the right
+shape for a slow model call on a free tier; or exclude `/api/v1/chat` from the
+rewrite and leave that one route cross-origin, which is the cheapest and the
+ugliest since it keeps CORS alive for the route that most needs phase 2.
+
+Also confirm on the preview: **Google sign-in**, which is the flow that crosses
+origins, and check the browser console for CSP violations.
+
 ## NEXT SESSION — pending items (recorded 2026-07-24, session end)
 
 All code is committed and pushed (this commit is the tip). Live URLs:

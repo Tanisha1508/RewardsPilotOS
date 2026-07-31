@@ -29,10 +29,20 @@ from backend.config.settings import get_settings
 from backend.middleware.auth import JWTAuthMiddleware
 from backend.middleware.request_context import DatabaseSessionMiddleware, RequestContextMiddleware
 from contracts.api.envelope import failure
+from infra.logging.access_log import install_access_log_scrubber
 
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    # Before anything can serve a request: uvicorn's access logger is on by
+    # default and writes the full URL, query string included, which is exactly
+    # what `docs/LOGGING_POLICY.md` forbids and what privacy audit P6 was about
+    # (`?q=` reaching Render's logs). Installed here rather than as a uvicorn
+    # flag because the start command lives in Render's dashboard, not in this
+    # repository.
+    install_access_log_scrubber()
+
     app = FastAPI(title="RewardsPilotOS API", version="0.1.0")
 
     app.add_middleware(JWTAuthMiddleware)

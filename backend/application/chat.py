@@ -30,7 +30,76 @@ class RecommendationUnavailableError(ApplicationError):
     code = "recommendation_unavailable"
 
 
+class DailyLimitReachedError(ApplicationError):
+    """This user has had their share of today's answers (A2). Mapped to 429.
+
+    Deliberately a *per-user* limit on a *shared* resource. The free Gemini tier
+    allows 20 requests per day per model and a question costs two of them, so
+    roughly ten questions a day exist for everybody put together (measured
+    2026-07-31). Without this, the first person to ask eleven questions takes
+    the day from every other user — and nobody else sees a rate limit, they see
+    a product that has stopped working.
+    """
+
+    code = "daily_limit_reached"
+
+
+def answers_used_today(user_id: uuid.UUID) -> int:
+    """How many answers this user has already been given today (UTC).
+
+    Counts stored recommendations rather than attempts, which is a deliberate
+    under-count: a question whose workflow failed consumed provider quota but
+    produced nothing, and is not charged to the user. Being lenient in the
+    user's favour is the right side to err on for a limit whose whole purpose is
+    fairness, and the alternative costs more than it is worth — recording an
+    attempt row would mean writing to `interaction_events`, which is also the
+    episodic memory the recommender reads back (`recent_events` takes the five
+    most recent rows *of any type*). Attempt rows would crowd real history out
+    of that window and change the answers themselves.
+
+    UTC midnight, not the provider's reset (Pacific): this limit shares out
+    capacity between users, it does not mirror Google's accounting. UTC also
+    lands at 5:30am IST, which is a reasonable time for a daily reset here.
+    """
+    from datetime import datetime, timezone
+
+    from sqlalchemy import func, select
+
+    midnight = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    with session_scope() as session:
+        return session.scalar(
+            select(func.count())
+            .select_from(Recommendation)
+            .where(Recommendation.user_id == user_id, Recommendation.created_at >= midnight)
+        )
+
+
+def check_daily_limit(user_id: uuid.UUID) -> None:
+    """Raise before any LLM call if this user is out of answers for today.
+
+    Checked here rather than in the router because the resource being protected
+    is the provider quota, and the router is not where that is spent. A limit
+    enforced after the workflow has run would have already paid the cost it
+    exists to prevent.
+    """
+    from backend.config.settings import get_settings
+
+    limit = get_settings().chat_daily_limit_per_user
+    if limit <= 0:  # 0 or negative disables the limit
+        return
+    used = answers_used_today(user_id)
+    if used >= limit:
+        raise DailyLimitReachedError(
+            f"You have used all {limit} of today's questions. "
+            "This app runs on a free AI allowance shared by everyone using it, "
+            "so each person gets a set number of questions per day. "
+            "Your questions reset at midnight UTC (5:30am IST). "
+            "Everything else — your cards, points and past answers — still works."
+        )
+
+
 def run_chat(user_id: uuid.UUID, query: str) -> Recommendation:
+    check_daily_limit(user_id)
     try:
         llm = default_llm()
     except LLMUnavailableError as exc:

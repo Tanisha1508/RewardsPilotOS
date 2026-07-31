@@ -23,13 +23,13 @@ Ordered by value. This is the working queue.
 | # | Type | Item | Why |
 |---|---|---|---|
 | A1 | SEC | **Privacy audit** | The agenda names privacy; it has had no deliberate attention. What is logged, what reaches the LLM provider, what a request id exposes, what `interaction_events` retains, whether deletion is possible. Audit first, then decide fixes |
-| A2 | OPS·FN | **Per-user rate limiting** | One shared 20/day pool: any user can exhaust it for everyone. Required for "broad user base", and it is what makes open signups (D-2) safe rather than a gamble. Adds 429 handling — a behaviour change, so worth a nod before merge |
+| ~~A2~~ | OPS·FN | ~~**Per-user rate limiting**~~ — **done 2026-07-31** (5/user/day, `CHAT_DAILY_LIMIT_PER_USER`, 429) | One shared 20/day pool: any user can exhaust it for everyone. Required for "broad user base", and it is what makes open signups (D-2) safe rather than a gamble. Adds 429 handling — a behaviour change, so worth a nod before merge |
 | A3 | FN | **Finish the "registered but never wired" sweep** | Three found so far (`GetPromotions`, `StorePreference`, `POST /portfolio`). This class — capability exists, nothing calls it, invisible until something makes you look — has produced several defects. Audit every endpoint, tool and model field once, and record the result |
 | A4 | UX | **The numbers table speaks engineer** | Shows `card_key`, `month`, raw tool args. Right instinct (show the deterministic inputs), wrong vocabulary for a cardholder |
 | A5 | UX | **Mobile** | Never checked. Safe to do now the restructure has settled |
 | A6 | TEST | **Free scenario sweep** | `LIVE_TESTING` §3 — auth, CRUD, guards, empty states. Zero LLM quota |
 | A7 | DATA | **Atlas transfer partner ratios** (V-2) | The features PDF defers to a separate Miles Transfer T&C document. Chase that document |
-| A8 | OPS | **Re-measure cold start** | Keep-alive has been live since 2026-07-29; the 15.6 s figure predates it |
+| ~~A8~~ | OPS | ~~**Re-measure cold start**~~ — **done 2026-07-31** | Measured 36.0 s cold. Also found the GitHub keep-alive was firing every ~90–120 min, not every 10, so it was never working. Replaced with a Supabase Cron job; `/health` now answers in **0.9 s** after 20 min idle |
 | A9 | FN | **Recommendation permalink** | `GET /recommendations/{id}` exists and nothing calls it — you cannot link to a single answer |
 
 ## Deferred by design — `cap_usage` / cap awareness
