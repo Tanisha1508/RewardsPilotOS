@@ -50,6 +50,10 @@ const NAV = [
 const SETTINGS_LINKS = [
   { href: "/preferences", label: "Reward preferences" },
   { href: "/account", label: "Account" },
+  // MVP decision, owner, 2026-07-31: a page people can find, not a form they
+  // must clear. No accept/reject gate — see docs/PRIVACY_AUDIT.md for the
+  // condition that should revisit it.
+  { href: "/privacy", label: "Privacy" },
 ];
 
 export function Shell({ children }: { children: React.ReactNode }) {

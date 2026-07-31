@@ -30,8 +30,11 @@ const UPDATED = "31 July 2026";
 export default function PrivacyPage() {
   return (
     <main className="mx-auto max-w-2xl px-5 py-10 sm:px-6 sm:py-14">
-      <Link href="/login" className="text-sm text-accent-soft hover:underline">
-        ← Back
+      {/* /chat rather than /login: reachable from the Settings menu now, and a
+          signed-out visitor following it is redirected back to /login by the
+          Shell guard anyway. One link that is correct from both directions. */}
+      <Link href="/chat" className="text-sm text-accent-soft hover:underline">
+        ← Back to the app
       </Link>
 
       <h1 className="mt-6 text-2xl font-semibold tracking-tight">Privacy</h1>

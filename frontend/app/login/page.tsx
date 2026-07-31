@@ -148,7 +148,7 @@ export default function LoginPage() {
           to their data without first handing it over. The page deliberately
           sits outside the auth guard for the same reason. */}
       <p className="mt-6 text-center text-xs text-neutral-600">
-        By signing in you accept how your data is handled — see{" "}
+        How your data is handled:{" "}
         <Link href="/privacy" className="underline hover:text-neutral-400">
           Privacy
         </Link>
