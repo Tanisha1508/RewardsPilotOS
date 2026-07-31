@@ -283,8 +283,21 @@ export function DataNotice() {
     <p className="mt-2 text-xs leading-relaxed text-neutral-600">
       Answers are written by the Gemini model, run by Google. Your question, the cards and balances
       you have recorded, and your preferences are sent to it; account identifiers are removed
-      first, along with any email, phone or card number found in what you typed. Answers are saved
-      to your History until you delete them.
+      first, along with any email, phone or card number found in what you typed.{" "}
+      {/* Added 2026-07-31 after actually reading the terms. The notice named the
+          recipient but not what the recipient may do, which made it accurate and
+          still misleading — the free tier's terms say Google uses submitted
+          content to improve its products and that humans may read it. A
+          disclosure that omits the part a reader would care most about is the
+          failure this product is organised against. */}
+      <span className="text-neutral-500">
+        This uses Gemini&apos;s free tier, where Google may use what is sent to improve its products
+        and human reviewers may read it.
+      </span>{" "}
+      Answers are saved to your History until you delete them.{" "}
+      <Link href="/privacy" className="underline hover:text-neutral-400">
+        Privacy
+      </Link>
     </p>
   );
 }

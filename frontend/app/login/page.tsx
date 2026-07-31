@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
@@ -140,6 +142,18 @@ export default function LoginPage() {
       >
         {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
       </button>
+
+      {/* Before the decision, not after it. DPDP requires notice *before*
+          processing, and someone signing up should be able to read what happens
+          to their data without first handing it over. The page deliberately
+          sits outside the auth guard for the same reason. */}
+      <p className="mt-6 text-center text-xs text-neutral-600">
+        By signing in you accept how your data is handled — see{" "}
+        <Link href="/privacy" className="underline hover:text-neutral-400">
+          Privacy
+        </Link>
+        .
+      </p>
     </div>
   );
 }

@@ -557,9 +557,46 @@ request's name.
 
 - Supabase's own retention and regional storage (where the Postgres instance
   physically lives, and what Supabase logs).
-- Google's retention for Gemini free-tier API traffic. **Worth checking
-  specifically:** free tiers of LLM APIs sometimes permit training on submitted
-  content, which would be a materially different privacy posture from the paid
-  tier.
+- ~~Google's retention for Gemini free-tier API traffic.~~ **Checked
+  2026-07-31, and it is worse than the "worth checking" note assumed.**
+
+  Google's Gemini API terms, for the unpaid tier:
+
+  > "Google uses the content you submit to the Services and any generated
+  > responses to provide, improve, and develop Google products and services"
+
+  > "human reviewers may read, annotate, and process your API input and output"
+
+  > "Do not submit sensitive, confidential, or personal information to the
+  > Unpaid Services"
+
+  The paid tier is explicitly different — "Google doesn't use your prompts...or
+  responses to improve our products", with logging only for abuse detection.
+
+  **This app runs on the unpaid tier and sends card holdings and balances**,
+  which are personal information by any reading. So the third quote is not a
+  formality we happen to brush against; it describes what the product does.
+
+  Two things follow, and only the first is done:
+
+  1. **Disclosure fixed.** The in-app notice and the new `/privacy` page both
+     say plainly that Google may use what is sent to improve its products and
+     that humans may read it. The old notice named the recipient but not what
+     the recipient may do — accurate, and still misleading.
+  2. **The posture is not fixed, and disclosure does not fix it.** Telling
+     someone their financial data may be read by strangers is better than not
+     telling them; it is not the same as not sending it.
+
+  **The option this surfaces.** Groq — already wired as the ADR-018 fallback —
+  publishes the opposite default: it is not permitted to use inputs or outputs
+  for training, does not retain inference data by default, and offers Zero Data
+  Retention. That is not split by tier. Combined with the 2026-07-31 capacity
+  measurements (Groq 1,000 requests/day against Gemini's 20 per model, and ~5x
+  faster), the case for the Gemini-primary decision now rests on model quality
+  alone, which has never been measured. **Owner decision, reopened by new
+  information, not relitigated for its own sake.**
+
+  Sources: [Gemini API terms](https://ai.google.dev/gemini-api/terms),
+  [Groq data policy](https://console.groq.com/docs/your-data).
 - Render and Vercel log retention windows.
 - Whether `interaction_events` payloads contain anything beyond ids and status.
