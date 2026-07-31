@@ -834,9 +834,38 @@ roadmap — none is silently papered over.
     Groq remains plausible for the Planner, whose output is a short tool plan
     rather than a contract-bound recommendation. Untested.
 
-    Not fixed. Options, none chosen: prompt Groq differently for the
-    Recommender (it is one shared prompt today), try a larger Groq model, drop
-    the Groq tier for this node so failures are honest rather than delayed, or
-    accept the ceiling. Sample is small — two queries, one model each — but the
-    failure was consistent and the citation invention is disqualifying on its
-    own.
+    **FIXED the same day, by prompt and digest changes — and the fix was not
+    "try harder at the model".** The prompt already said "byte-for-byte" and
+    "never cite a source you were not given"; saying it louder was never going
+    to work. Both failures were *derivation* failures — the model had to work
+    out the allowed answer from raw material — so the fix was to stop making it
+    derive:
+
+    - `allowed_citations` in the digest: the finished list of citation objects
+      that will validate, from the same function the validator uses. Copying
+      replaced deriving-from-chunk-metadata.
+    - `must_repeat_verbatim` in the digest: the finished list of sentences that
+      must appear word-for-word, instead of the model hunting `expiry_note` /
+      `channel_note` / `category_note` across individual rule_results.
+    - A worked wrong/right example for `calculations`, naming the actual failure
+      (rebuilding an entry with only the fields you mentioned).
+    - **A missing rule.** The prompt covered `expiry_note` and `channel_note`
+      but never mentioned `category_note`, added hours earlier by B2 — so
+      validation demanded a sentence the model had never been told about. That
+      was our bug, not the model's.
+
+    Result, two samples of two queries each:
+
+    | | before | after |
+    |---|---|---|
+    | groq-llama-3.3-70b | 0 passes in 7 attempts | **4/4 first-try**, ~3 s |
+    | gemini-flash-latest | passed, one needing the retry | **4/4 first-try**, 17–25 s (was 47 s and 90 s) |
+
+    Gemini improved too, which is the tell that the problem was the prompt
+    rather than the weaker model: removing a derivation step helped the model
+    that was already coping.
+
+    **Capacity therefore is not Gemini-only after all.** The correction above
+    was itself corrected: the Groq tier does work for the Recommender now, so
+    the chain degrades as ADR-018 intended. Still worth keeping the sample size
+    in view — four passes is evidence, not proof.

@@ -78,6 +78,17 @@ def _state_digest(state: AgentState, basis: dict, caveat: dict | None) -> str:
                 "portfolio": state["portfolio"],
                 "preferences": scrub_free_text(state["preferences"]),
                 "knowledge": [chunk_dump(c) for c in state["knowledge"]],
+                # The exact citation objects that will pass validation, computed
+                # by the same function the validator uses (2026-07-31).
+                #
+                # The prompt already said "never cite a source you were not
+                # given", and a model still invented `hdfc.bank.in` — it had to
+                # *derive* the allowed set by digging metadata out of each
+                # knowledge chunk, and derivation is where it went wrong. Handing
+                # over the finished list replaces a reasoning step with a copying
+                # step. Costs a few dozen tokens; removes a whole class of error,
+                # for every model rather than the one that failed.
+                "allowed_citations": [c.model_dump() for c in _retrieved_citations(state)],
                 "rule_results": state["rule_results"],
                 "graph_results": state["graph_results"],
                 "memory": scrub_free_text(state["memory"]),
@@ -88,6 +99,15 @@ def _state_digest(state: AgentState, basis: dict, caveat: dict | None) -> str:
                 # When present, `statement` MUST be reproduced verbatim in the
                 # decision or reasoning — validation rejects output without it.
                 "margin_caveat": caveat,
+                # The finished list of sentences that MUST appear word-for-word,
+                # from the same function the validator checks against
+                # (2026-07-31). Same reasoning as `allowed_citations`: the model
+                # was previously required to find these itself, scattered across
+                # `expiry_note` / `channel_note` / `category_note` fields on
+                # individual rule_results plus the margin caveat, and then
+                # reproduce each exactly. Hunting is where paraphrasing crept in.
+                # Handing over the list turns it into copying.
+                "must_repeat_verbatim": _required_statements(caveat, state["rule_results"]),
             }
         ),
         default=str,
