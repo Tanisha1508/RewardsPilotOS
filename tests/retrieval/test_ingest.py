@@ -32,7 +32,7 @@ def test_chunks_keyed_on_doc_id_and_index(chroma_client):
 
 
 def test_reingest_unchanged_docs_skipped(chroma_client, docs_store, ingest_report):
-    second = ingest_sources(chroma_client, docs_store=docs_store)
+    second = ingest_sources(chroma_client, docs_store=docs_store, include_fixtures=True)
     assert second.docs_ingested == 0
     assert second.docs_unchanged == 24
 

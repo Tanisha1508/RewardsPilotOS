@@ -18,7 +18,11 @@ def chroma_client(tmp_path_factory, docs_store):
 
 @pytest.fixture(scope="session")
 def ingest_report(chroma_client, docs_store) -> IngestReport:
-    return ingest_sources(chroma_client, docs_store=docs_store)
+    # The fixture issuers ARE this suite's corpus: ranking, filtering and
+    # freshness need documents with known content. They are excluded from the
+    # serving corpus by default (2026-07-31) so they cannot be cited in a real
+    # answer, so this suite asks for them by name.
+    return ingest_sources(chroma_client, docs_store=docs_store, include_fixtures=True)
 
 
 @pytest.fixture(scope="session")

@@ -21,7 +21,7 @@ def seeded_persist_dir(tmp_path_factory):
     from knowledge.storage.collections import get_client
 
     persist = tmp_path_factory.mktemp("knowledge_api_chroma")
-    ingest_sources(get_client(persist))
+    ingest_sources(get_client(persist), include_fixtures=True)
     return str(persist)
 
 

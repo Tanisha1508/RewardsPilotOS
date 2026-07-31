@@ -869,3 +869,39 @@ roadmap — none is silently papered over.
     was itself corrected: the Groq tier does work for the Recommender now, so
     the chain degrades as ADR-018 intended. Still worth keeping the sample size
     in view — four passes is evidence, not proof.
+
+35. **Invented issuers were citable in real answers — FIXED 2026-07-31.** Found
+    while checking a challenge to the `allowed_citations` change ("are we not
+    using RAG, but now hardcoding the list?"). The list is not hardcoded — it is
+    computed per request from the retrieval result — but demonstrating that
+    surfaced something worse.
+
+    `knowledge/sources/` holds ten fixture documents for two issuers that do not
+    exist, `demo_bank` and `sample_bank`, sitting beside the real ones and
+    ingested into the same collections. Six were retrievable by ordinary
+    questions:
+
+    - "lounge access" → `https://example.test/demo-bank/voyager/benefits`
+    - "hotels" → `https://example.test/sample-bank/trailblazer/reward-rules`
+    - "flights" → `https://example.test/demo-bank/voyager/promotions`
+
+    Retrieved chunks are the citation pool, so an answer about a real card could
+    carry a source from a bank that does not exist. **None of the model-side
+    guards would have caught it** — the citation validator only checks that a
+    citation came from the retrieved set, and it had. The fabrication was in the
+    corpus, upstream of every check.
+
+    Fixed in `ingest_sources`: documents whose host is under `.test` (reserved
+    by RFC 2606, so no real issuer can be caught by accident) are excluded
+    unless `include_fixtures=True`. The retrieval suite opts in by name — the
+    fixtures are its corpus. Skips are counted in `IngestReport`, not silently
+    dropped.
+
+    Verified on a rebuilt corpus: six ordinary queries, five sources each, no
+    `.test` host among them. Cover in
+    `tests/retrieval/test_fixtures_are_not_citable.py`.
+
+    **The general lesson.** Every guard in this system checks the model. This
+    one needed checking the *inputs* — a corpus containing something untrue
+    makes every downstream check agree on a false answer. Worth remembering when
+    the crawler starts adding sources automatically.

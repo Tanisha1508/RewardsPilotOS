@@ -34,6 +34,10 @@ class IngestReport:
     docs_ingested: int = 0
     docs_unchanged: int = 0
     docs_skipped_empty: int = 0
+    # Fixture-issuer docs left out of the serving corpus (2026-07-31). Counted
+    # rather than silently dropped: a corpus that quietly shrinks is how you
+    # end up debugging 'why does retrieval find nothing' months later.
+    docs_skipped_fixture: int = 0
     chunks_ingested: int = 0
     excluded_facts: list[ExcludedFact] = field(default_factory=list)
 
@@ -108,15 +112,51 @@ def _delete_orphan_chunks(collection, doc_id: str, chunk_count: int) -> None:
     )
 
 
+# `.test` is reserved by RFC 2606 precisely so it can never resolve to a real
+# site, which makes it an unambiguous marker for the fixture corpus — no real
+# issuer can ever be excluded by accident.
+#
+# Why this matters (found 2026-07-31): ten fixture documents for two invented
+# issuers (`demo_bank`, `sample_bank`) sit in `knowledge/sources/` beside the
+# real ones and were being ingested into the same collections. Six of them came
+# back from ordinary queries — "lounge access" retrieved
+# `https://example.test/demo-bank/voyager/benefits`. Retrieved chunks are the
+# citation pool, so an answer about a real card could be sourced to a bank that
+# does not exist. That is the exact failure this product is built to prevent,
+# and it had been sitting in the corpus the whole time.
+#
+# The fixtures stay on disk: the retrieval and ranking tests need a corpus with
+# known content, and deleting them would be trading one kind of coverage for
+# another. They simply stop reaching a real user's answer.
+FIXTURE_HOST_SUFFIX = ".test"
+
+
+def is_fixture(doc) -> bool:
+    from urllib.parse import urlparse
+
+    host = (urlparse(doc.source_url).hostname or "").lower()
+    return host == "example.test" or host.endswith(FIXTURE_HOST_SUFFIX)
+
+
 def ingest_sources(
     client: chromadb.ClientAPI,
     sources_dir: Path | None = None,
     docs_store: KnowledgeDocsStore | None = None,
+    include_fixtures: bool = False,
 ) -> IngestReport:
+    """`include_fixtures` defaults to False so the serving corpus contains only
+    real, verifiable sources. Tests that need the fixture issuers pass True.
+
+    Defaulting the other way would be the wrong risk: forgetting the flag in a
+    test costs a failing test, while forgetting it in production costs a user an
+    answer citing an issuer that does not exist."""
     store = docs_store or InMemoryKnowledgeDocsStore()
     report = IngestReport()
     for path in sorted((sources_dir or SOURCES_DIR).glob("*.md")):
         doc = parse_source_file(path)
+        if not include_fixtures and is_fixture(doc):
+            report.docs_skipped_fixture += 1
+            continue
         content_hash = _fingerprint(doc)
         if store.get_hash(doc.doc_id) == content_hash:
             report.docs_unchanged += 1
