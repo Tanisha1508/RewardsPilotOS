@@ -54,6 +54,7 @@ const FIELD_LABELS: Record<string, string> = {
   from_currency: "From",
   to_currency: "To",
   ratio: "Ratio",
+  multiplier: "Multiplier",
 };
 
 // Order the reader cares about, not declaration order. Anything unlisted keeps
@@ -97,7 +98,9 @@ function formatValue(key: string, value: unknown, cardNames?: Record<string, str
   if (key === "cap_applied") return value === true ? "yes" : null; // only worth saying when true
   if (typeof value === "boolean") return value ? "yes" : "no";
   if (typeof value === "string") {
-    return ["category", "channel", "applied", "status"].includes(key) ? prettyKey(value) : value;
+    return ["category", "channel", "applied", "status", "cap_scope"].includes(key)
+      ? prettyKey(value)
+      : value;
   }
   // A verified value: {value, status, source, confidence}. Previously dropped
   // entirely by a `typeof v !== "object"` filter, which is how the rate behind
@@ -113,9 +116,37 @@ function formatValue(key: string, value: unknown, cardNames?: Record<string, str
   return String(value);
 }
 
+/** Internal bookkeeping a cardholder cannot act on. `rule_version` identifies a
+ *  file in this repo, not anything checkable — the Sources footer is what makes
+ *  an answer traceable for a reader. */
+const NEVER_SHOWN = new Set(["tool", "rule_version", "rule_version_id", "sources"]);
+
+/** Fields worth showing only when they carry information.
+ *
+ *  Shown always, they are noise that buries the four numbers that matter. The
+ *  test each one has to pass: does this value change what the reader should do,
+ *  or warn them about something? `status: computed` says "nothing went wrong",
+ *  which is the default and not worth a slot; `status: unknown` very much is. */
+function carriesInformation(key: string, calc: Record<string, unknown>): boolean {
+  const capped = calc.cap_applied === true;
+  switch (key) {
+    case "status":
+      return calc.status !== "computed";
+    case "points_before_cap":
+      // Identical to `points` unless a cap actually bit.
+      return capped && calc.points_before_cap !== calc.points;
+    case "cap_scope":
+    case "cap_applied":
+      return capped;
+    default:
+      return true;
+  }
+}
+
 function orderedFields(calc: Record<string, unknown>): string[] {
-  const known = FIELD_ORDER.filter((k) => k in calc);
-  const rest = Object.keys(calc).filter((k) => !FIELD_ORDER.includes(k) && k !== "tool");
+  const usable = (k: string) => !NEVER_SHOWN.has(k) && carriesInformation(k, calc);
+  const known = FIELD_ORDER.filter((k) => k in calc && usable(k));
+  const rest = Object.keys(calc).filter((k) => !FIELD_ORDER.includes(k) && usable(k));
   return [...known, ...rest];
 }
 
