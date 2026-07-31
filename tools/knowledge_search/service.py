@@ -23,6 +23,14 @@ def get_retriever(persist_dir: str | None = None) -> HybridRetriever:
     return _override if _override is not None else _default_retriever(persist_dir)
 
 
+# The cache moved onto `_default_retriever` when the override was added, which
+# silently removed `get_retriever.cache_clear()` — an attribute callers already
+# relied on to force a re-ingest against a fresh persist dir. Re-exported rather
+# than fixing up the call sites: it is part of this module's surface, and a
+# refactor should not have changed it.
+get_retriever.cache_clear = _default_retriever.cache_clear  # type: ignore[attr-defined]
+
+
 # Test/eval override, mirroring `set_source` for the portfolio and memory
 # sources — which the e2e eval already injects. Retrieval was the one dependency
 # it could not swap, so it ran against whatever the serving corpus happened to
