@@ -31,6 +31,14 @@ const STATUS_STYLE: Record<string, string> = {
 
 export default function RecommendationsPage() {
   const recommendations = useApi(() => api.listRecommendations());
+// card_key -> the card name the user gave it, so the numbers block reads
+// "Axis Bank Atlas" rather than "axis_atlas" (A4). Deliberately tolerant: a
+// stored answer can reference a card since deleted, and the calculation must
+// still render, so the component falls back to a title-cased key.
+  const cards = useApi(() => api.listCards());
+  const cardNames = Object.fromEntries(
+    (cards.data ?? []).filter((c) => c.card_key).map((c) => [c.card_key as string, c.card_name])
+  );
   const [error, setError] = useState<{ message: string; requestId?: string } | null>(null);
 
   async function sendFeedback(recId: string, status: FeedbackStatus) {
@@ -102,6 +110,7 @@ export default function RecommendationsPage() {
               </header>
               <RecommendationCard
                 rec={rec}
+                cardNames={cardNames}
                 onFeedback={(status) => sendFeedback(rec.rec_id, status)}
               />
             </article>
