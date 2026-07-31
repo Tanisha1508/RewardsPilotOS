@@ -134,12 +134,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen">
+      {/* Two rows on a phone, one on a desktop (A5, 2026-07-31).
+       *
+       *  Logo + Settings + four tabs on a single line needs ~510px; a phone has
+       *  390. Rather than hiding the tabs behind a hamburger — which buries the
+       *  whole app one tap deep for the majority of visits — the nav drops to
+       *  its own full-width row below the logo, and rejoins the line at `sm`.
+       *  `order` does the rearranging so the markup stays in reading order for
+       *  screen readers and keyboard tabbing. */}
       <header className="border-b border-neutral-800">
-        <div className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link href="/chat" className="font-semibold tracking-tight">
             RewardsPilot<span className="text-accent">OS</span>
           </Link>
-          <nav className="flex gap-5 text-sm">
+          <div className="order-2 ml-auto sm:order-3">
+            <SettingsMenu onSignOut={signOut} />
+          </div>
+          <nav className="order-3 flex w-full gap-5 text-sm sm:order-2 sm:w-auto">
             {NAV.map((item) => (
               <Link
                 key={item.href}
@@ -154,12 +165,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto">
-            <SettingsMenu onSignOut={signOut} />
-          </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
     </div>
   );
 }

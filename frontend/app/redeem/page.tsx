@@ -249,7 +249,8 @@ export default function RedeemPage() {
           ) : !goals.data?.length ? (
             <Empty message="No goals yet. Add one and Ask will factor it in." />
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[32rem] text-sm">
               <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
                   <th className="py-2">Goal</th>
@@ -293,7 +294,8 @@ export default function RedeemPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           )}
         </div>
 

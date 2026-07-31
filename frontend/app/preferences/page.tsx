@@ -131,7 +131,8 @@ export default function PreferencesPage() {
         ) : !Object.keys(stored).length ? (
           <Empty message="Nothing set yet. Add one below — or leave it, and Ask will tell you when a preference would change its answer." />
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
               <tr>
                 <th className="py-2">Preference</th>
@@ -166,7 +167,8 @@ export default function PreferencesPage() {
                   </tr>
                 ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
 
         {dirty ? (

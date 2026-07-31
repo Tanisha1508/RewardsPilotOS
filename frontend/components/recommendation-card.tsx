@@ -118,8 +118,30 @@ function formatValue(key: string, value: unknown, cardNames?: Record<string, str
 
 /** Internal bookkeeping a cardholder cannot act on. `rule_version` identifies a
  *  file in this repo, not anything checkable — the Sources footer is what makes
- *  an answer traceable for a reader. */
-const NEVER_SHOWN = new Set(["tool", "rule_version", "rule_version_id", "sources"]);
+ *  an answer traceable for a reader.
+ *
+ *  The `_note` fields are excluded for a different reason: they are *prose*, and
+ *  they are already guaranteed to be in the answer. `_required_statements` in
+ *  the recommender forces the channel note, the expiry note and the margin
+ *  caveat into the decision or reasoning, and `validate_recommendation` rejects
+ *  output that omits them. Repeating a sentence here as though it were a data
+ *  field said the same thing twice — and, being a sentence in a field slot,
+ *  it is what pushed the page into horizontal scrolling (found 2026-07-31 at
+ *  1254px wide inside a 1470px window). */
+const NEVER_SHOWN = new Set([
+  "tool",
+  "rule_version",
+  "rule_version_id",
+  "sources",
+  "channel_note",
+  "expiry_note",
+  "unknown_reasons",
+  "no_transfer_data",
+]);
+
+/** Long values must be allowed to wrap. `whitespace-nowrap` is right for
+ *  "Earns 1,250" and catastrophic for a sentence. */
+const WRAP_THRESHOLD = 24;
 
 /** Fields worth showing only when they carry information.
  *
@@ -189,7 +211,10 @@ export function RecommendationCard({
             {body.calculations.map((calc, i) => {
               const fields = orderedFields(calc)
                 .map((key) => [key, formatValue(key, calc[key], cardNames)] as const)
-                .filter(([, shown]) => shown !== null);
+                // Typed predicate, not a plain filter: `formatValue` returns
+                // null for "nothing worth showing", and TypeScript cannot see
+                // that through the tuple without this.
+                .filter((pair): pair is readonly [string, string] => pair[1] !== null);
               if (fields.length === 0) return null;
               return (
                 <div
@@ -197,7 +222,10 @@ export function RecommendationCard({
                   className="flex flex-wrap gap-x-5 gap-y-1 rounded border border-neutral-800/70 bg-neutral-900/40 px-3 py-2 text-xs"
                 >
                   {fields.map(([key, shown]) => (
-                    <span key={key} className="whitespace-nowrap">
+                    <span
+                      key={key}
+                      className={shown.length > WRAP_THRESHOLD ? "break-words" : "whitespace-nowrap"}
+                    >
                       <span className="text-neutral-500">{FIELD_LABELS[key] ?? prettyKey(key)}</span>{" "}
                       <span
                         className={

@@ -140,7 +140,7 @@ export default function PortfolioPage() {
         ))}
       </div>
 
-      <form onSubmit={addCard} className="mt-3 grid gap-3 sm:grid-cols-7">
+      <form onSubmit={addCard} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
         <Field
           label="Issuer"
           value={form.issuer}
@@ -212,7 +212,8 @@ export default function PortfolioPage() {
         ) : !cards.data?.length ? (
           <Empty message="No cards yet. Add one above." />
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
             <thead className="text-left text-xs uppercase tracking-wide text-neutral-500">
               <tr>
                 <th className="py-2">Card</th>
@@ -284,7 +285,8 @@ export default function PortfolioPage() {
                 </tr>
               ))}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </section>
 

@@ -35,14 +35,16 @@ export default function AccountPage() {
             <p className="text-sm text-neutral-500">Loading…</p>
           )
         ) : (
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
             <tbody className="divide-y divide-neutral-900">
               <Row label="Email" value={me.data?.email ?? "—"} />
               {/* Unknown reads as unknown. A blank name is not "no name". */}
               <Row label="Name" value={me.data?.name || "not set"} />
               <Row label="Time zone" value={me.data?.timezone || "not set"} />
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
 
         <p className="mt-6 text-xs text-neutral-500">
