@@ -41,6 +41,12 @@ class Preference(Base):
     )
     key: Mapped[str] = mapped_column(String(100), nullable=False)
     value: Mapped[str] = mapped_column(String, nullable=False)
+    # Who set this: "user" (typed into Reward preferences) or "assistant"
+    # (inferred from a conversation and written by the StorePreference tool).
+    # A preference changes what the product recommends, so the two must be
+    # distinguishable — otherwise the assistant's writes are indistinguishable
+    # from the user's own choices (B3 decision, 2026-07-31).
+    source: Mapped[str] = mapped_column(String(20), nullable=False, default="user")
     updated_at: Mapped[datetime] = updated_at_column()
 
 

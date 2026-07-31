@@ -100,7 +100,7 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 |---|---|---|
 | ~~B1~~ | ~~**Validate `reward_currency` server-side**~~ — **done 2026-07-31** | Rejects a value naming a node of the *wrong type* (`amex_membership_rewards` is a card, not a currency) with a 422 that says what it actually is. A currency the graph has never heard of is still **allowed** — the first version rejected those too and broke three integration tests that add cards for unsupported issuers, which is deliberately supported. Only the wrong-type case can produce silence that looks like an answer |
 | ~~B2~~ | ~~**`unrecognised_category` note**~~ — **done 2026-07-31** | `category_note` on `EarnResult`, forced into the answer verbatim like the channel and expiry notes. Fires when the queried word is in no rule file *and* the card has bonus categories that were therefore not matched, naming them. Verified live on `hdfc_infinia`: `hotels` silent, `hotel_stays` warns. `groceries` also warns — the noise cost KL 30 predicted, accepted because the sentence is still true and says what the card is good for |
-| B3 | **Remove `StorePreference`** (D-7) | **BLOCKED on a spec change, found 2026-07-31.** Not the one-line nod this entry assumed: **BUILD_SPEC §8 names `StorePreference` in the required tool list** (line 429) and §4 describes the `preferences` table as "updated via StorePreference" (line 433). CLAUDE.md rule 6 puts removing it behind a spec update. Three ways out, your call: (a) amend BUILD_SPEC and delete it, (b) keep it and give `preferences` a provenance column so the UI can say "the assistant recorded this" — which is what D-3 multi-turn would need anyway, (c) leave it registered-but-unguided, which is the one state that is not a decision |
+| ~~B3~~ | ~~**Remove `StorePreference`**~~ → **kept, with provenance — done 2026-07-31** | Owner chose option (b) after the spec conflict surfaced: BUILD_SPEC names the tool, so deleting it needed a spec amendment. `preferences.source` records `user` or `assistant`; the tool hard-codes `assistant` so model output cannot claim a write was the user's own; editing an inferred value makes it yours; the screen labels only the assistant's rows. Migration `preferences_source`, **not yet applied to production** |
 
 ## C. Yours — I cannot do these
 
@@ -127,7 +127,7 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 | D-4 | Pay ~$5/mo for persistent Chroma? | Removes the re-embed after every restart (KL 28). **Much less pressing since 2026-07-31:** the Supabase Cron keepalive stops the idle spin-down, so the process survives and the corpus is not re-embedded. Measured cost when it does happen (a deploy, or the first visit outside the 06:30–23:29 IST window) is ~55 s on the first question. Also note CLAUDE.md rule 3 — free tier only — so this is a rule change, not just a spend |
 | D-5 | Add the missing API routes? | Deleting a preference, editing/removing a goal. Both UIs currently state the limit |
 | D-6 | Atlas above-cap earning | Above ₹2L/month the T&C says base continues; the evaluator clips. Under-reports, so safe |
-| D-7 | `StorePreference` — see B3 | |
+| ~~D-7~~ | ~~`StorePreference`~~ — **decided 2026-07-31: keep it, with provenance** | Resolved by B3. It stays registered and now writes an attributable row, which is also the column D-3 (multi-turn Ask) would need |
 
 ## F. Large, needs direction before starting
 

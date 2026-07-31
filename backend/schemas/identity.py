@@ -30,6 +30,9 @@ class PreferencesIn(BaseModel):
 
 class PreferencesOut(BaseModel):
     values: dict[str, str]
+    # key -> "user" | "assistant" (B3). Additive and defaulted, so a client that
+    # predates it is unaffected; `values` keeps the shape it always had.
+    sources: dict[str, str] = Field(default_factory=dict)
 
 
 class GoalIn(BaseModel):

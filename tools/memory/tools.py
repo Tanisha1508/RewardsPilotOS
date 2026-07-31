@@ -25,5 +25,11 @@ def recall_memory(args: RecallMemoryInput) -> RecallMemoryOutput:
 
 
 def store_preference(args: StorePreferenceInput) -> StorePreferenceOutput:
-    get_source().store_preference(current_user(), args.key, args.value)
+    # Written as "assistant" (B3, 2026-07-31). This tool exists so the model can
+    # record a durable preference it inferred from a conversation, and the whole
+    # reason the column exists is that such a value must not be presentable as
+    # something the user chose. The source is hard-coded rather than taken from
+    # `args`: it describes which code path wrote the row, and letting model
+    # output name it would let a write claim to be the user's own.
+    get_source().store_preference(current_user(), args.key, args.value, source="assistant")
     return StorePreferenceOutput(stored=True, key=args.key, value=args.value)

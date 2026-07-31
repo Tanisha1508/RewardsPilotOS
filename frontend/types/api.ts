@@ -110,6 +110,10 @@ export type GoalPatch = Partial<GoalInput>;
 
 export interface Preferences {
   values: Record<string, string>;
+  /** key -> "user" | "assistant". Which of these settings the person chose, and
+   *  which the assistant inferred and recorded (B3). Optional so a response
+   *  that predates the column still parses. */
+  sources?: Record<string, string>;
 }
 
 export interface HealthReport {

@@ -9,11 +9,25 @@ rows, which is how they drift.
 import uuid
 
 from backend.application.errors import NotFoundError
-from memory.semantic.store import delete_preference, get_preferences, set_preference
+from memory.semantic.store import (
+    delete_preference,
+    get_preferences,
+    get_preferences_with_source,
+    set_preference,
+)
 
 
 def read_preferences(user_id: uuid.UUID) -> dict[str, str]:
     return get_preferences(user_id)
+
+
+def read_preference_sources(user_id: uuid.UUID) -> dict[str, str]:
+    """`{key: "user" | "assistant"}` (B3, 2026-07-31).
+
+    Returned beside the values rather than folded into them: `values` is the
+    shape every existing caller expects, and a preference's *value* is what the
+    engines act on. Who set it is information for the person, not the product."""
+    return {key: entry["source"] for key, entry in get_preferences_with_source(user_id).items()}
 
 
 def write_preferences(user_id: uuid.UUID, values: dict[str, str]) -> dict[str, str]:
@@ -21,7 +35,10 @@ def write_preferences(user_id: uuid.UUID, values: dict[str, str]) -> dict[str, s
     leaves the rest — a client sending one field should not silently erase a
     preference it never knew about."""
     for key, value in values.items():
-        set_preference(user_id, key, value)
+        # Explicit rather than relying on the default: this endpoint is the
+        # Reward preferences screen, so a write here is the user's own choice,
+        # and editing a value the assistant inferred makes it theirs.
+        set_preference(user_id, key, value, source="user")
     return get_preferences(user_id)
 
 

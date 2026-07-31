@@ -42,6 +42,7 @@ export default function PreferencesPage() {
   }, [preferences.data]);
 
   const stored = preferences.data?.values ?? {};
+  const sources = preferences.data?.sources ?? {};
   const dirty = Object.keys(draft).some((key) => draft[key] !== stored[key]);
 
   async function save(values: Record<string, string>) {
@@ -147,6 +148,17 @@ export default function PreferencesPage() {
                   <tr key={key}>
                     <td className="py-2 pr-4 align-middle font-mono text-xs text-neutral-400">
                       {key}
+                      {/* Only the assistant's writes are labelled. Tagging the
+                          user's own settings "you" would be noise on every row;
+                          the exception is what carries information (B3). */}
+                      {sources[key] === "assistant" ? (
+                        <span
+                          className="ml-2 rounded bg-neutral-800 px-1.5 py-0.5 font-sans text-[10px] uppercase tracking-wide text-neutral-400"
+                          title="Recorded by the assistant from something you said. Edit it and it becomes yours."
+                        >
+                          assistant
+                        </span>
+                      ) : null}
                     </td>
                     <td className="py-2">
                       <input

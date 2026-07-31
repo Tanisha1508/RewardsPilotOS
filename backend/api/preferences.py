@@ -15,14 +15,26 @@ router = APIRouter(prefix="/api/v1", tags=["preferences", "goals"])
 
 @router.get("/preferences")
 def read_preferences(request: Request, user_id: uuid.UUID = Depends(current_user_id)):
-    return ok(request, PreferencesOut(values=prefs_service.read_preferences(user_id)))
+    return ok(
+        request,
+        PreferencesOut(
+            values=prefs_service.read_preferences(user_id),
+            sources=prefs_service.read_preference_sources(user_id),
+        ),
+    )
 
 
 @router.put("/preferences")
 def write_preferences(
     request: Request, body: PreferencesIn, user_id: uuid.UUID = Depends(current_user_id)
 ):
-    return ok(request, PreferencesOut(values=prefs_service.write_preferences(user_id, body.values)))
+    return ok(
+        request,
+        PreferencesOut(
+            values=prefs_service.write_preferences(user_id, body.values),
+            sources=prefs_service.read_preference_sources(user_id),
+        ),
+    )
 
 
 @router.delete("/preferences/{key}")

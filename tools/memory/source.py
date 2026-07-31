@@ -27,7 +27,9 @@ class MemorySource(Protocol):
 
     def episodic(self, user_id: str, limit: int) -> list[EpisodicEvent]: ...
 
-    def store_preference(self, user_id: str, key: str, value: str) -> None: ...
+    def store_preference(
+        self, user_id: str, key: str, value: str, source: str = "user"
+    ) -> None: ...
 
 
 def _uuid(user_id: str) -> uuid.UUID:
@@ -52,8 +54,8 @@ class PostgresMemorySource:
             for event in recent_events(_uuid(user_id), limit)
         ]
 
-    def store_preference(self, user_id: str, key: str, value: str) -> None:
-        set_preference(_uuid(user_id), key, value)
+    def store_preference(self, user_id: str, key: str, value: str, source: str = "user") -> None:
+        set_preference(_uuid(user_id), key, value, source=source)
 
     def record(self, user_id: str, event_type: str, payload: dict) -> None:
         record_event(_uuid(user_id), event_type, payload)
@@ -73,7 +75,11 @@ class InMemoryMemorySource:
         events = self._episodic.get(user_id, [])
         return sorted(events, key=lambda e: e.created_at, reverse=True)[:limit]
 
-    def store_preference(self, user_id: str, key: str, value: str) -> None:
+    def store_preference(self, user_id: str, key: str, value: str, source: str = "user") -> None:
+        # Accepts `source` to stay interface-compatible with the Postgres
+        # implementation, and drops it: this fake backs the tool tests and the
+        # eval harness, both of which read values only. A test asserting
+        # provenance must use the real store, where the column exists.
         self._preferences.setdefault(user_id, {})[key] = value
 
 
