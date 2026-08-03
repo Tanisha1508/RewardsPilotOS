@@ -5,7 +5,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell } from "@/components/shell";
 import { currencyLabel, formatDate, formatDateTime } from "@/lib/display";
-import { KNOWN_CARDS } from "@/lib/known-cards";
+import { KNOWN_CARDS, PENDING_CARDS } from "@/lib/known-cards";
 import type { Card, CardPatch, RewardBalance } from "@/types/api";
 
 // Cards CRUD (BUILD_SPEC §10). Annual fee is optional and stays empty rather
@@ -115,11 +115,16 @@ export default function PortfolioPage() {
 
       <h2 className="mt-8 text-sm font-medium text-neutral-300">Your cards</h2>
 
-      {/* Pick a supported card and the four identity fields fill themselves.
-          Typing them by hand still works — the catalogue is deliberately small,
-          and refusing unknown cards would be worse than tracking them. */}
+      {/* Was: three quick-add buttons beside a free-text form, on the reasoning
+          that refusing an unknown card was worse than tracking it. That held
+          while the only person adding cards knew which seven refuse to compute.
+          It stopped holding when the product opened up (2026-08-03): a stranger
+          who adds Axis Magnus gets a card that tracks perfectly and answers
+          nothing, and reads that as broken rather than as honest.
+          So the choice is now the whole input, and the rest are shown locked
+          rather than hidden — naming them says more than an empty list does. */}
       <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-        <span className="text-xs text-neutral-500">Quick add:</span>
+        <span className="text-xs text-neutral-500">Supported:</span>
         {KNOWN_CARDS.map((card) => (
           <button
             key={card.label}
@@ -133,42 +138,42 @@ export default function PortfolioPage() {
                 reward_currency: card.reward_currency,
               })
             }
-            className="rounded border border-neutral-800 px-2.5 py-1 text-xs text-neutral-300 hover:border-accent hover:text-accent"
+            className={`rounded border px-2.5 py-1 text-xs ${
+              form.card_name === card.card_name
+                ? "border-accent bg-accent/15 text-accent"
+                : "border-neutral-800 text-neutral-300 hover:border-accent hover:text-accent"
+            }`}
           >
             {card.label}
           </button>
         ))}
       </div>
 
-      <form onSubmit={addCard} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-7">
-        <Field
-          label="Issuer"
-          value={form.issuer}
-          onChange={(v) => setForm({ ...form, issuer: v })}
-          placeholder="hdfc"
-          required
-        />
-        <Field
-          label="Card name"
-          value={form.card_name}
-          onChange={(v) => setForm({ ...form, card_name: v })}
-          placeholder="HDFC Infinia"
-          required
-        />
-        <Field
-          label="Network"
-          value={form.network}
-          onChange={(v) => setForm({ ...form, network: v })}
-          placeholder="visa"
-          required
-        />
-        <Field
-          label="Reward currency"
-          value={form.reward_currency}
-          onChange={(v) => setForm({ ...form, reward_currency: v })}
-          placeholder="hdfc_reward_points"
-          required
-        />
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-xs text-neutral-500">Verification underway:</span>
+        {PENDING_CARDS.map((card) => (
+          <span
+            key={card.card_key}
+            title="We have not finished checking this card's earn rates against the issuer's own documents. Until we have, it would only ever answer “unknown”."
+            className="cursor-not-allowed rounded border border-dashed border-neutral-800 px-2.5 py-1 text-xs text-neutral-600"
+          >
+            {card.label}
+          </span>
+        ))}
+      </div>
+
+      {/* Issuer, network and reward currency are no longer typed. They were four
+          free-text boxes, and `reward_currency` in particular had to be spelled
+          `hdfc_reward_points` exactly or the card tracked fine and computed
+          nothing (KNOWN_LIMITATIONS 31). Selecting the card above fills all
+          four from the catalogue, so the only way to get them wrong is gone. */}
+      <form onSubmit={addCard} className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-2">
+          <p className="text-xs text-neutral-500">Card</p>
+          <p className="mt-1 rounded border border-neutral-800 bg-neutral-900/40 px-3 py-2 text-sm text-neutral-200">
+            {form.card_name || <span className="text-neutral-600">Choose one above</span>}
+          </p>
+        </div>
         <Field
           label="Annual fee"
           value={form.annual_fee}
@@ -190,7 +195,7 @@ export default function PortfolioPage() {
         <div className="flex items-end">
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || !form.card_name}
             className="w-full rounded bg-accent px-3 py-2 text-sm font-medium disabled:opacity-50"
           >
             {busy ? "Adding…" : "Add card"}

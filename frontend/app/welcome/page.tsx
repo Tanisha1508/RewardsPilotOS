@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiRequestError } from "@/lib/api";
-import { KNOWN_CARDS } from "@/lib/known-cards";
+import { KNOWN_CARDS, PENDING_CARDS } from "@/lib/known-cards";
 import { ErrorNotice } from "@/components/shell";
 
 // Guided setup for a new account.
@@ -184,9 +184,32 @@ export default function WelcomePage() {
                 );
               })}
             </div>
+            {/* Naming what is coming, rather than only what is here. Three
+                cards on their own read as a thin product; three ready and seven
+                named, in the order they are being worked through, reads as the
+                verification queue it actually is.
+                The old copy said the rest could still be tracked from Portfolio.
+                That stopped being true on 2026-08-03, when adding them was
+                locked — a card that tracks and computes nothing helped nobody. */}
+            <div className="mt-6 text-left">
+              <p className="text-[11px] uppercase tracking-widest text-neutral-600">
+                Verification underway
+              </p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {PENDING_CARDS.map((card) => (
+                  <span
+                    key={card.card_key}
+                    className="rounded border border-dashed border-neutral-800 px-2 py-1 text-[11px] text-neutral-600"
+                  >
+                    {card.label}
+                  </span>
+                ))}
+              </div>
+            </div>
             <p className="mx-auto mt-5 max-w-sm text-xs leading-relaxed text-neutral-600">
-              Only these three have verified reward rules today. Others can be tracked from
-              Portfolio, but rewards can’t be calculated for them yet.
+              We only offer a card once its earn rates have been checked against the issuer’s own
+              documents. The rest are being worked through in that order — we would rather offer
+              three cards that answer than ten that shrug.
             </p>
           </Step>
         ) : null}
