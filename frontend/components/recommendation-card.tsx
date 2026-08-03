@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { currencyLabel } from "@/lib/display";
+import { currencyLabel, nameCurrencies } from "@/lib/display";
 import type { FeedbackStatus, Recommendation } from "@/types/api";
 
 // The hero component (BUILD_SPEC §10): decision on top, deterministic numbers
@@ -110,10 +110,13 @@ function formatNumber(value: number) {
 const ENGINE_FLOAT = /\d[\d,]*\.0+(?![\d])/g;
 
 export function formatProse(text: string): string {
-  return text.replace(ENGINE_FLOAT, (token) => {
+  const grouped = text.replace(ENGINE_FLOAT, (token) => {
     const whole = Number(token.replace(/,/g, ""));
     return Number.isFinite(whole) ? whole.toLocaleString("en-IN") : token;
   });
+  // The other half of the same problem: engine vocabulary reaching a sentence.
+  // "1,665 hdfc_reward_points" becomes "1,665 HDFC Reward Points".
+  return nameCurrencies(grouped);
 }
 
 function formatValue(

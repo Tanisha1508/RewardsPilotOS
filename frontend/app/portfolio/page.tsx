@@ -150,7 +150,7 @@ export default function PortfolioPage() {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-neutral-500">Verification underway:</span>
+        <span className="text-xs text-neutral-500">Coming soon:</span>
         {PENDING_CARDS.map((card) => (
           <span
             key={card.card_key}

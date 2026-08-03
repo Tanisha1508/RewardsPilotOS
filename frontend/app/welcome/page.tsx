@@ -192,8 +192,12 @@ export default function WelcomePage() {
                 That stopped being true on 2026-08-03, when adding them was
                 locked — a card that tracks and computes nothing helped nobody. */}
             <div className="mt-6 text-left">
+              {/* "Verification underway" described our work; this describes
+                  theirs. To someone arriving for the first time the old wording
+                  read as a caveat about what is missing, when the point is that
+                  more is coming. */}
               <p className="text-[11px] uppercase tracking-widest text-neutral-600">
-                Verification underway
+                More cards coming soon
               </p>
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {PENDING_CARDS.map((card) => (
@@ -207,9 +211,9 @@ export default function WelcomePage() {
               </div>
             </div>
             <p className="mx-auto mt-5 max-w-sm text-xs leading-relaxed text-neutral-600">
-              We only offer a card once its earn rates have been checked against the issuer’s own
-              documents. The rest are being worked through in that order — we would rather offer
-              three cards that answer than ten that shrug.
+              These are on the way. We add a card once its earn rates have been checked against the
+              issuer’s own documents — we would rather offer three cards that answer than ten that
+              shrug.
             </p>
           </Step>
         ) : null}

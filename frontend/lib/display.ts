@@ -33,6 +33,28 @@ export function currencyLabel(currency: string): string {
   return CURRENCY_LABELS[currency] ?? currency;
 }
 
+/** The same names, applied to a sentence rather than a field.
+ *
+ *  A recommendation's prose is written around the engine's own vocabulary, so
+ *  an answer reads "earning 1,665 hdfc_reward_points" — the identifier leaking
+ *  into a sentence a person is meant to read. Seen live on 2026-08-03.
+ *
+ *  The model is not told to translate it. Naming a currency is a lookup, and
+ *  asking a model to perform a lookup it can get subtly wrong ("HDFC Rewards
+ *  Points") is how the citation bug happened: derivation is where things drift.
+ *  The table beside the prose already resolves ids this way; this gives the
+ *  sentence the same treatment.
+ *
+ *  Unknown ids are deliberately left raw, exactly as `currencyLabel` leaves
+ *  them — an id nobody has named is usually a mis-linked card, and it should
+ *  look wrong rather than be smoothed over. */
+export function nameCurrencies(text: string): string {
+  return Object.entries(CURRENCY_LABELS).reduce(
+    (out, [id, label]) => out.split(id).join(label),
+    text
+  );
+}
+
 /** A timestamp a person can read, in their own locale.
  *
  *  Balances are user-entered and go stale, so how old the number is forms part

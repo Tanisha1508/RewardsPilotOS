@@ -16,6 +16,36 @@ interface Turn {
   query: string;
   rec?: Recommendation;
   error?: { message: string; requestId?: string; code?: string };
+  /** The connection died but the server is still writing. See `recover`. */
+  recovering?: boolean;
+}
+
+// A question takes around 29 seconds warm, and the same-origin rewrite ends any
+// request at 30. The first question after a restart, which also pays for the
+// knowledge index, ran to 100 s on 2026-08-03 and was cut off — while the
+// backend finished the work and saved the answer. The user was shown an error
+// for an answer that existed.
+//
+// So a cut-off request is not a failed question, and the honest response is not
+// to ask again: asking again would spend a second question against the daily
+// limit and a second pair of model calls, to produce an answer already sitting
+// in the database. We collect the one that finished instead.
+//
+// Identified by id rather than by timestamp. Client and server clocks disagree
+// by unknown amounts, and "newer than when I asked" is exactly the kind of
+// almost-right rule that would occasionally show somebody the wrong answer;
+// "an id that did not exist when I asked" cannot.
+const RECOVER_ATTEMPTS = 12;
+const RECOVER_EVERY_MS = 5000;
+
+async function recover(query: string, before: Set<string>): Promise<Recommendation | null> {
+  for (let attempt = 0; attempt < RECOVER_ATTEMPTS; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, RECOVER_EVERY_MS));
+    const saved = await api.listRecommendations().catch(() => null);
+    const match = saved?.find((rec) => !before.has(rec.rec_id) && rec.query === query);
+    if (match) return match;
+  }
+  return null;
 }
 
 export default function ChatPage() {
@@ -39,15 +69,41 @@ export default function ChatPage() {
     setBusy(true);
     const index = turns.length;
     setTurns((t) => [...t, { query: q }]);
+
+    // Taken before the question, not after: once the answer is saved it is
+    // indistinguishable from an identical question asked earlier. A failure
+    // here costs nothing — an empty set just means every answer looks new, and
+    // the query still has to match.
+    const before = new Set(
+      ((await api.listRecommendations().catch(() => [])) ?? []).map((rec) => rec.rec_id)
+    );
+
+    const update = (patch: Partial<Turn>) =>
+      setTurns((t) => t.map((turn, i) => (i === index ? { ...turn, ...patch } : turn)));
+
     try {
       const rec = await api.chat(q);
-      setTurns((t) => t.map((turn, i) => (i === index ? { ...turn, rec } : turn)));
+      update({ rec });
     } catch (caught) {
       const error =
         caught instanceof ApiRequestError
           ? { message: caught.message, requestId: caught.requestId, code: caught.code }
           : { message: caught instanceof Error ? caught.message : "Request failed." };
-      setTurns((t) => t.map((turn, i) => (i === index ? { ...turn, error } : turn)));
+
+      if (error.code === "malformed_response") {
+        update({ recovering: true });
+        const rescued = await recover(q, before);
+        if (rescued) {
+          update({ rec: rescued, recovering: false });
+          return;
+        }
+        // Nothing arrived. The original message is right after all — the work
+        // may still be running, and History is where it will appear.
+        update({ recovering: false, error });
+        return;
+      }
+
+      update({ error });
     } finally {
       setBusy(false);
     }
@@ -103,6 +159,13 @@ export default function ChatPage() {
                   cardNames={cardNames}
                   onFeedback={(status) => feedback(index, turn.rec!, status)}
                 />
+              ) : turn.recovering ? (
+                // Not a retry, and worth not implying one: the question was
+                // asked once and is still being answered on the server.
+                <p className="text-sm text-neutral-500">
+                  Still working. This one is taking longer than the connection stays open, so we are
+                  waiting for the answer to land rather than asking again.
+                </p>
               ) : (
                 <p className="text-sm text-neutral-500">Working through your cards…</p>
               )}
