@@ -108,7 +108,7 @@ Small, clearly right, but each changes behaviour rather than adding to it.
 
 | # | Item | Why |
 |---|---|---|
-| C1 | **Security cleanup** | Delete the two `deploygate.*` accounts, rotate the HF token, remove the Google OAuth secret from `.env`. Credentials |
+| C1 | **Credential and account cleanup** | Tracked in the local deploy notes, not here — a public list of which credentials are not yet rotated is a map for someone else |
 | C2 | **HDFC Infinia verification** (V-1) | `hdfc.bank.in` is robots-disallowed. Paste the SmartBuy rates, caps and exclusions and I will diff them |
 | C3 | **Close signups** | If D-2 is "closed" |
 

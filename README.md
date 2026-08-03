@@ -29,6 +29,59 @@ when it lifts), and a first visit before roughly 06:30 IST pays a one-off
 wake-up — a scheduled ping keeps the backend warm for the rest of the day, which
 took `/health` from 36 s to under a second.
 
+The app itself is behind a login, because it holds people's card portfolios. To
+see the engine work without an account, the snippet below runs offline — no API
+key, no network — once [Quickstart](#quickstart-local) is done.
+
+## See it work
+
+*"Which card should I use for a ₹50,000 flight?"* — ask the rule engine directly,
+no API key and no network:
+
+```python
+from rules.parser.loader import load_rule
+from rules.evaluator.evaluator import evaluate_earn
+
+for key in ("axis_atlas", "hdfc_infinia", "amex_plat_travel", "axis_magnus"):
+    result = evaluate_earn(load_rule(key), 50000, "flights", "direct", "2026-08")
+    print(key, result.status, result.points, result.unknown_reasons)
+```
+
+```
+axis_atlas        computed  2500.0  []      # accelerated rate, edge_miles
+hdfc_infinia      computed  1665.0  []      # base rate, hdfc_reward_points
+amex_plat_travel  computed  1000.0  []      # base rate, membership_rewards
+axis_magnus       unknown   None    ['reward rules for axis_magnus are not yet
+                                     verified: base earn rate is unverified
+                                     (value=None); cannot compute']
+```
+
+The first three cards are verified against official issuer documents, and those
+are the same numbers production returns for this query. The fourth is the point
+of the project.
+
+That second block is the point of the project. The rate for that card is easy to
+find on a blog, and a language model would happily produce one. The engine
+refuses, the answer says it doesn't know, and the card goes into the
+[verification queue](docs/VERIFICATION_QUEUE.md) until someone confirms the
+number against the issuer. **A wrong rewards number costs the user real money;
+"I don't know" costs them nothing.**
+
+## Reading this repo in five minutes
+
+If you want to check that the guarantee above is actually enforced rather than
+described, these four files are where it lives:
+
+| | |
+|---|---|
+| [`rules/evaluator/evaluator.py`](rules/evaluator/evaluator.py) | The refusal itself — an unverified value returns *unknown* instead of a number |
+| [`agents/recommendation/recommender.py`](agents/recommendation/recommender.py) | The validator that rejects an answer whose prose contains a number no tool produced |
+| [`contracts/tools/`](contracts/tools/) | The typed boundary the planner's tool calls are validated against |
+| [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md) | What it still gets wrong, written down rather than discovered by you |
+
+Design decisions are in [`docs/adr/`](docs/adr/) — 19 of them, each recording the
+option that was rejected and why.
+
 ---
 
 ## Why this is built the way it is

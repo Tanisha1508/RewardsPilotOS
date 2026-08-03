@@ -3,12 +3,12 @@
 **As of 2026-07-21.** Written for whoever picks this up next, assuming no
 memory of the sprint.
 
-> **2026-07-24 update — this doc is now historical for deploy state.** D5's
-> deploy-first half is DONE and live (frontend on Vercel, backend on Render,
-> full-stack gate verified end to end; 551+ tests). For current state, pending
-> work, and resume notes read **`docs/DEPLOY_STATUS.md`** — its NEXT SESSION
-> section supersedes §3 below wherever they disagree. The opportunity engine
-> remains the deferred half of D5.
+> **This doc is now historical for deploy state.** D5's deploy-first half is
+> DONE and live (frontend on Vercel, backend on Render, full-stack gate verified
+> end to end; 668 tests as of 2026-07-31). For what is deployed read
+> **`docs/DEPLOY_STATUS.md`**, and for what to do next **`docs/BACKLOG.md`**;
+> both supersede §3 below wherever they disagree. The opportunity engine remains
+> the deferred half of D5.
 
 Read `BUILD_SPEC.md` (engineering source of truth) and `MASTER_SPEC.md`
 (product source of truth) first; `CLAUDE.md` carries the hard rules that
