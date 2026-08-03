@@ -15,6 +15,20 @@ deterministic engines — never from the language model.**
 > never does arithmetic; it copies engine outputs verbatim and states unknowns
 > plainly.
 
+## Live
+
+| | |
+|---|---|
+| **App** | **https://rewards-pilot-os.vercel.app** |
+| **API health** | https://rewardspilotos.onrender.com/api/v1/health |
+| **Privacy policy** | https://rewards-pilot-os.vercel.app/privacy |
+
+It runs entirely on free tiers, and the limits that come with that are stated
+rather than hidden: **five questions per user per day** (the app says so, and
+when it lifts), and a first visit before roughly 06:30 IST pays a one-off
+wake-up — a scheduled ping keeps the backend warm for the rest of the day, which
+took `/health` from 36 s to under a second.
+
 ---
 
 ## Why this is built the way it is
@@ -68,7 +82,15 @@ This is enforced, not aspirational:
   portfolio/cards/balances/goals/preferences, and a `/chat` endpoint that runs
   the full LangGraph flow with persistence and feedback.
 - **Frontend** (`frontend/`) — Next.js 14 (App Router, TypeScript strict): a
-  recommendation chat UI, a transfer explorer, and a portfolio dashboard.
+  recommendation chat UI, a transfer explorer, a portfolio dashboard, and a
+  shareable page per answer.
+- **Privacy and limits** — personal details are scrubbed before anything reaches
+  the model, query strings are kept out of access logs, the browser talks to the
+  API same-origin under a strict Content Security Policy, row-level security sits
+  under the database as a second layer, and a user can delete everything the
+  service holds about them. The audit is in
+  [`docs/PRIVACY_AUDIT.md`](docs/PRIVACY_AUDIT.md), the rules for what may be
+  logged in [`docs/LOGGING_POLICY.md`](docs/LOGGING_POLICY.md).
 - **Evaluation** (`evaluation/`) — golden sets for retrieval, rules, graph, and
   end-to-end recommendations, plus a **live-LLM smoke suite** that catches
   model-behaviour regressions the scripted golden suite cannot
@@ -137,13 +159,25 @@ and `NEXT_PUBLIC_BACKEND_URL` (see `frontend/.env.local.example`).
 
 ## Verification & quality
 
+Measured on 2026-07-31, not aspirational — the numbers below are copied from
+[`evaluation/reports/REPORT.md`](evaluation/reports/REPORT.md), which records its
+own run date. Product metrics in `MASTER_SPEC.md` are labelled as targets.
+
+```
+Retrieval (real corpus)   recall@5 0.987   MRR 0.926   top-1 0.885
+Rules                     100%  (25/25)
+Graph                     100%  (10/10)
+End to end                100%  (10/10)
+668 tests passing
+```
+
 - **Deterministic test suite** covering the rule engine (branch-complete),
-  graph, retrieval, agents, auth, and Postgres integration. Run counts and eval
-  metrics — precision/recall/MRR for retrieval, exact-match for the deterministic
-  engines — are written with their run date to
-  [`evaluation/reports/REPORT.md`](evaluation/reports/REPORT.md); they are
-  *measured* results, not targets. Product metrics in `MASTER_SPEC.md` are
-  labelled as targets.
+  graph, retrieval, agents, auth, and Postgres integration.
+- **Two retrieval benchmarks, and the newer one is the one that matters.** The
+  original fixture benchmark mostly asks about invented banks, so a good score
+  there says the ranking works and nothing about real users; the real-corpus set
+  asks the questions a user would actually ask. Keeping both is deliberate —
+  a benchmark that cannot see a defect is not evidence the defect is absent.
 - **Live-LLM smoke suite** (`evaluation/smoke/`) runs the real model against a
   handful of queries and asserts structural properties, catching planner-
   behaviour regressions the scripted golden suite is blind to by construction.
@@ -155,23 +189,41 @@ and `NEXT_PUBLIC_BACKEND_URL` (see `frontend/.env.local.example`).
 
 ## Status & roadmap
 
-**Shipped:** the deterministic intelligence core (rule engine, graph engine,
-hybrid retrieval), the multi-agent orchestration, the FastAPI backend with auth
-+ CRUD + `/chat`, and the Next.js frontend (chat, transfer explorer, dashboard)
-— built and tested against real Postgres/Supabase and real Gemini.
+**Deployed and working in production.** The whole thing is live: the
+deterministic intelligence core (rule engine, graph engine, hybrid retrieval),
+the multi-agent orchestration, the FastAPI backend with auth + CRUD + `/chat`,
+and the Next.js frontend — running against real Postgres/Supabase and real
+Gemini, verified end to end through the browser rather than only in tests.
 
-**Data coverage:** three MVP cards are fully verified end to end (HDFC Infinia,
-Axis Atlas, Amex Platinum Travel). Seven further cards are portfolio-trackable
-but ship as honest "not yet verified" skeletons that refuse to compute until
-their data is verified — coverage grows per the verification queue.
+Since the first deploy, the work has been about making it honest and usable
+rather than adding features: a privacy pass (PII scrubbed before the model, a
+published policy, working account deletion), a per-user daily limit, a layout
+that works on a phone, per-answer permalinks, and the cold-start fix above. Four
+data-integrity bugs were found and fixed in one sweep, all the same shape —
+something untrue reaching the answer path through a route the safeguards did not
+check, because every safeguard was built to check the model and none of them
+checked the tools or the corpus feeding it.
 
-**Planned (not yet shipped):**
+**Data coverage — the real ceiling, and it is not code.** Three MVP cards are
+fully verified end to end (HDFC Infinia, Axis Atlas, Amex Platinum Travel).
+Seven further cards are portfolio-trackable but ship as honest "not yet
+verified" skeletons that refuse to compute — correct behaviour, and still not
+useful to someone holding one of them. Promotions and issuer policies are empty
+for real issuers, which is why "any transfer bonuses right now?" and "when do my
+points expire?" go unanswered. That is data to gather, not a bug to fix, and it
+is tracked in [`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md).
+
+**Next, in the order it matters:**
+- **More verified card data** — the one change that widens what the product can
+  say, per the verification queue.
 - **Opportunity engine** — a monitor that turns detected source changes and
   expiring benefits into a user notification feed. Designed, deferred to a
   fast-follow after deployment.
-- **Live MCP integrations** (email, calendar, flight/hotel search), an admin
-  panel for card management and rule verification (ADR-017), and additional
-  issuers per the verification queue.
+- **An admin panel** for card management and rule verification (ADR-017), and
+  **live MCP integrations** (email, calendar, flight/hotel search).
+
+The working backlog is [`docs/BACKLOG.md`](docs/BACKLOG.md); current deployment
+state is [`docs/DEPLOY_STATUS.md`](docs/DEPLOY_STATUS.md).
 
 ## License
 
