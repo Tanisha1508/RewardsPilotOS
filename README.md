@@ -272,14 +272,18 @@ something untrue reaching the answer path through a route the safeguards did not
 check, because every safeguard was built to check the model and none of them
 checked the tools or the corpus feeding it.
 
-**Data coverage — the real ceiling, and it is not code.** Three MVP cards are
-fully verified end to end (HDFC Infinia, Axis Atlas, Amex Platinum Travel).
-Seven further cards are portfolio-trackable but ship as honest "not yet
-verified" skeletons that refuse to compute — correct behaviour, and still not
-useful to someone holding one of them. Promotions and issuer policies are empty
-for real issuers, which is why "any transfer bonuses right now?" and "when do my
-points expire?" go unanswered. That is data to gather, not a bug to fix, and it
-is tracked in [`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md).
+**Data coverage — the real ceiling, and it is not code.** Three cards are
+verified end to end and are the three the app offers: HDFC Infinia, Axis Atlas,
+Amex Platinum Travel. Seven more have rule files whose rates are still
+unverified, so the app shows them by name and does not let you add them — a card
+that tracks perfectly and answers "unknown" to every question helps nobody. They
+are worked through in the order set out in
+[`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md), and tests fail if a
+card is verified and still locked, or offered and still unverified.
+
+Promotions and issuer policies are empty for real issuers, which is why "any
+transfer bonuses right now?" and "when do my points expire?" go unanswered. That
+is data to gather, not a bug to fix.
 
 **Next, in the order it matters:**
 - **More verified card data** — the one change that widens what the product can
