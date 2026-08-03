@@ -5,7 +5,11 @@ import { ApiRequestError } from "@/lib/api";
 
 export interface LoadState<T> {
   data: T | null;
-  error: { message: string; requestId?: string } | null;
+  /** `code` and `status` are carried alongside the message so a caller can tell
+   *  failures apart without string-matching the text a user reads. The redeem
+   *  page needs exactly this: a gateway timeout while the knowledge index is
+   *  still being built is a wait, not a fault, and should not be shown as one. */
+  error: { message: string; requestId?: string; code?: string; status?: number } | null;
   loading: boolean;
   /** Still loading after SLOW_AFTER_MS. Almost always the Render free tier
    *  waking up (measured 15.6 s cold vs ~1.2 s warm, 2026-07-29), so the UI can
@@ -50,7 +54,12 @@ export function useApi<T>(fetcher: () => Promise<T>, deps: unknown[] = []): Load
         setData(null);
         setError(
           caught instanceof ApiRequestError
-            ? { message: caught.message, requestId: caught.requestId }
+            ? {
+                message: caught.message,
+                requestId: caught.requestId,
+                code: caught.code,
+                status: caught.status,
+              }
             : { message: caught instanceof Error ? caught.message : "Request failed." }
         );
       })

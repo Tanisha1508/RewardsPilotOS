@@ -439,7 +439,7 @@ function BalanceCell({
 
 function toNotice(caught: unknown) {
   return caught instanceof ApiRequestError
-    ? { message: caught.message, requestId: caught.requestId }
+    ? { message: caught.message, requestId: caught.requestId, code: caught.code }
     : { message: caught instanceof Error ? caught.message : "Request failed." };
 }
 

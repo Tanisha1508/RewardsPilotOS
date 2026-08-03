@@ -89,6 +89,33 @@ function formatNumber(value: number) {
   return value.toLocaleString("en-IN", { maximumFractionDigits: 20 });
 }
 
+// Engine figures are floats, so a recommendation's prose quotes them the way it
+// received them: "this flight booking of 25000.0 ... earning 1250.0 points",
+// beside a numbers table that correctly reads ₹25,000 and 1,250. The model is
+// not at fault and must not be "fixed" in the prompt — it is obeying the rule
+// that matters most here, which is to copy engine numbers rather than restate
+// them. So the repair belongs at the last possible moment, on the way to the
+// screen.
+//
+// The rule is deliberately narrow: only a run of digits ending in a decimal
+// point followed by nothing but zeros. That token is always an engine float and
+// never anything else — a year is written 2026, never 2026.0, and a rate of 2.5
+// or a confidence of 0.9 has a non-zero decimal and is left exactly as it is.
+// Regrouping every bare integer would have turned 2026 into 2,026.
+//
+// This changes how a number reads, never which number it is: 25000.0 and 25,000
+// are the same value, and `validate_recommendation` already accepts either form
+// (it strips commas before checking a prose number against the tool results).
+// Nothing here rounds, and nothing here computes.
+const ENGINE_FLOAT = /\d[\d,]*\.0+(?![\d])/g;
+
+export function formatProse(text: string): string {
+  return text.replace(ENGINE_FLOAT, (token) => {
+    const whole = Number(token.replace(/,/g, ""));
+    return Number.isFinite(whole) ? whole.toLocaleString("en-IN") : token;
+  });
+}
+
 function formatValue(
   key: string,
   value: unknown,
@@ -230,10 +257,12 @@ export function RecommendationCard({
     <div className="rounded-lg border border-neutral-800 bg-neutral-900/50">
       <div className="border-b border-neutral-800 px-5 py-4">
         <div className="flex items-start justify-between gap-4">
-          <p className="text-sm font-medium leading-relaxed text-neutral-100">{body.decision}</p>
+          <p className="text-sm font-medium leading-relaxed text-neutral-100">
+            {formatProse(body.decision)}
+          </p>
           <span
             className={`shrink-0 rounded-full border px-2 py-0.5 text-xs ${CONFIDENCE_STYLE[level]}`}
-            title={body.confidence?.reason}
+            title={body.confidence?.reason ? formatProse(body.confidence.reason) : undefined}
           >
             {level} confidence
           </span>
@@ -294,7 +323,7 @@ export function RecommendationCard({
           {showReasoning ? (
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-neutral-300">
               {body.reasoning.map((step, i) => (
-                <li key={i}>{step}</li>
+                <li key={i}>{formatProse(step)}</li>
               ))}
             </ol>
           ) : null}

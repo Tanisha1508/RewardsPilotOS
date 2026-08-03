@@ -15,7 +15,7 @@ import type { FeedbackStatus, Recommendation } from "@/types/api";
 interface Turn {
   query: string;
   rec?: Recommendation;
-  error?: { message: string; requestId?: string };
+  error?: { message: string; requestId?: string; code?: string };
 }
 
 export default function ChatPage() {
@@ -45,7 +45,7 @@ export default function ChatPage() {
     } catch (caught) {
       const error =
         caught instanceof ApiRequestError
-          ? { message: caught.message, requestId: caught.requestId }
+          ? { message: caught.message, requestId: caught.requestId, code: caught.code }
           : { message: caught instanceof Error ? caught.message : "Request failed." };
       setTurns((t) => t.map((turn, i) => (i === index ? { ...turn, error } : turn)));
     } finally {

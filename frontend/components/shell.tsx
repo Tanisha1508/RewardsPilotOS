@@ -244,10 +244,32 @@ function SettingsMenu({ onSignOut }: { onSignOut: () => void }) {
 /** Renders an API failure without pretending it did not happen.
  *  The request id is shown because it is what makes a user-reported problem
  *  findable in the logs. */
-export function ErrorNotice({ error }: { error: { message: string; requestId?: string } }) {
+/** A request that never came back as an envelope died between the browser and
+ *  the backend — almost always the same-origin rewrite ending it at its
+ *  30-second ceiling, while the backend was still working.
+ *
+ *  `The server returned a non-JSON response (HTTP 500)` is the accurate
+ *  description of that and a useless thing to read: it names the symptom in the
+ *  vocabulary of whoever wrote the fetch wrapper, tells the reader nothing about
+ *  what happened to their question, and looks like the product broke. It is
+ *  replaced here, once, rather than on each page — the wrapper should keep
+ *  saying exactly what it saw.
+ *
+ *  It deliberately does not promise the work was lost or saved, because from the
+ *  browser's side that is genuinely unknown. It says where to look. */
+const GATEWAY_TIMEOUT_MESSAGE =
+  "That request took longer than the connection allows, so it was cut off in transit. " +
+  "The work may have finished on the server — check History before asking again.";
+
+export function ErrorNotice({
+  error,
+}: {
+  error: { message: string; requestId?: string; code?: string };
+}) {
+  const message = error.code === "malformed_response" ? GATEWAY_TIMEOUT_MESSAGE : error.message;
   return (
     <div className="rounded border border-red-900 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-      <p>{error.message}</p>
+      <p>{message}</p>
       {error.requestId ? (
         <p className="mt-1 text-xs text-red-300/70">Request id: {error.requestId}</p>
       ) : null}

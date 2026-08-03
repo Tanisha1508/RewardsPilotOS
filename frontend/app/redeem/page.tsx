@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, ApiRequestError } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import { Empty, ErrorNotice, Shell, WakingNotice } from "@/components/shell";
@@ -320,6 +320,18 @@ export default function RedeemPage() {
  *  When the issuer is not yet known (cards still loading, or a balance whose
  *  card was removed) we do not search at all rather than search unscoped — a
  *  wrong-issuer answer is worse than a missing one. */
+/** One sentence for both waits — a slow first request and a request the proxy
+ *  ended — because to the reader they are the same event, and wording them
+ *  differently would suggest two different problems. */
+const INGEST_NOTICE =
+  "Building the knowledge index — this takes up to two minutes once after a restart, then seconds.";
+
+/** Two more attempts, ~20 s apart: enough to cover the two-minute ingest
+ *  alongside the request that is already in flight, without retrying a backend
+ *  that is genuinely down until the user gives up on us first. */
+const INGEST_RETRIES = 2;
+const INGEST_RETRY_DELAY_MS = 20_000;
+
 function CurrencyTransfers({
   balance,
   issuer,
@@ -340,6 +352,37 @@ function CurrencyTransfers({
     [balance.reward_currency, issuer]
   );
 
+  // The first request after the instance restarts has to wait for the corpus to
+  // be re-embedded (KNOWN_LIMITATIONS 28, ephemeral disk). That takes longer
+  // than the 30-second ceiling the same-origin rewrite gives a request, so the
+  // proxy — not the backend — ends it, and what comes back is an HTML error
+  // page rather than the app's envelope.
+  //
+  // Found live on 2026-08-03: the page showed "The server returned a non-JSON
+  // response (HTTP 500)" on first load, and the calm "Building the knowledge
+  // index" line on reload. Same cause, two faces, and the frightening one is the
+  // one a first-time visitor meets. `retrying` gives that case the honest
+  // rendering the loading path already had.
+  //
+  // Only this shape is retried, and only twice. A gateway that never returned an
+  // envelope tells us the request died in transit; a backend that answers with
+  // an error envelope has said something specific and is reported as-is.
+  const warming = chunks.error?.code === "malformed_response";
+  const [retries, setRetries] = useState(0);
+  const retrying = warming && retries < INGEST_RETRIES;
+  const reload = useRef(chunks.reload);
+  reload.current = chunks.reload;
+
+  useEffect(() => {
+    if (!retrying) return;
+    const timer = setTimeout(() => {
+      setRetries((n) => n + 1);
+      reload.current();
+    }, INGEST_RETRY_DELAY_MS);
+    return () => clearTimeout(timer);
+    // `retries` is in the deps so each failed attempt schedules the next one.
+  }, [retrying, retries]);
+
   return (
     <div className="rounded-lg border border-neutral-800 bg-neutral-900/40 px-5 py-4">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -353,14 +396,13 @@ function CurrencyTransfers({
       </div>
 
       <div className="mt-3">
-        {chunks.error ? (
+        {retrying ? (
+          <p className="text-xs text-neutral-500">{INGEST_NOTICE}</p>
+        ) : chunks.error ? (
           <ErrorNotice error={chunks.error} />
         ) : chunks.loading ? (
           chunks.slow ? (
-            <p className="text-xs text-neutral-500">
-              Building the knowledge index — this takes up to two minutes once after a restart, then
-              seconds.
-            </p>
+            <p className="text-xs text-neutral-500">{INGEST_NOTICE}</p>
           ) : (
             <p className="text-xs text-neutral-500">Looking up transfer partners…</p>
           )
