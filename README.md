@@ -29,14 +29,29 @@ when it lifts), and a first visit before roughly 06:30 IST pays a one-off
 wake-up — a scheduled ping keeps the backend warm for the rest of the day, which
 took `/health` from 36 s to under a second.
 
-The app itself is behind a login, because it holds people's card portfolios. To
-see the engine work without an account, the snippet below runs offline — no API
-key, no network — once [Quickstart](#quickstart-local) is done.
+The app itself is behind a login, because it holds people's card portfolios —
+so here is what is behind it.
 
 ## See it work
 
-*"Which card should I use for a ₹50,000 flight?"* — ask the rule engine directly,
-no API key and no network:
+An answer, as the product gives it. Every number in the prose also appears in
+the table below it, and every source carries the date it was checked:
+
+![A recommendation for a ₹25,000 flight: Axis Bank Atlas earning 1,250 at a
+2.5× bonus rate, ahead of HDFC Infinia at 830 and Amex Platinum Travel at 500,
+marked high confidence, with two dated official sources](docs/assets/answer-with-sources.png)
+
+The transfer explorer, where the verification discipline is easiest to see —
+note the last line, which keeps a source conflict on the record instead of
+picking a winner:
+
+![Axis EDGE Miles transfer partners with per-group caps, 1:2 and inverted 2:1
+ratios, partners removed on a specific date, and a recorded conflict between two
+sources](docs/assets/transfer-explorer.png)
+
+And the engine underneath, which you can run yourself — no account, no API key,
+no network — once [Quickstart](#quickstart-local) is done. *"Which card should I
+use for a ₹50,000 flight?"*, asked of the rule engine directly:
 
 ```python
 from rules.parser.loader import load_rule
