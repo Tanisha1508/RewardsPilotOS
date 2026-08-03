@@ -982,3 +982,35 @@ roadmap — none is silently papered over.
     **Generalises to:** every tool's output is trusted evidence downstream, so a
     tool that invents is more dangerous than a model that invents — the model is
     checked and the tool is believed.
+
+38. **A question can outlive the connection that asked it — MITIGATED
+    2026-08-03.** Measured in production: a warm question takes around 29
+    seconds, the same-origin rewrite ends any request at roughly 30, and the
+    first question after a restart — which pays for the knowledge index as well
+    as the answer — ran to 100 s and came back `502`.
+
+    The backend was never the problem. It finished the work and saved the
+    answer; the connection carrying it died. The user was shown an error for an
+    answer that already existed in the database, which is the same failure this
+    project keeps finding in other clothes: something true existed and the thing
+    in front of the user said otherwise.
+
+    Ask now treats a cut-off request as an answer in flight rather than a
+    failure. It polls stored answers for one that did not exist when the
+    question was asked and renders it in place. Matched on id, not timestamp —
+    client and server clocks disagree, and "newer than when I asked" is the kind
+    of nearly-right rule that eventually shows somebody another answer.
+
+    Deliberately not a retry. Re-asking would spend a second question against
+    the daily limit and a second pair of model calls to reproduce an answer we
+    already hold.
+
+    **Still a limitation, not a fix.** The answer arrives late (measured ~140 s
+    on a cold index) and the ceiling is unchanged — the request is still cut
+    off, we simply stop pretending that means it failed. The real fix is for
+    `/chat` to return immediately with a job id and let the client poll for
+    completion, which is a contract change and belongs in a spec update.
+
+    **Generalises to:** a timeout at the edge says the connection ended, not
+    that the work did — and the two are worth distinguishing wherever the work
+    has a side effect the user can still be shown.
