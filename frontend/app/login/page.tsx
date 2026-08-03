@@ -19,16 +19,44 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("sign-in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // Sign-up only. A password you cannot see, typed once, with no way to check it
+  // — the two ways out of a typo are a reset email or losing the account, and
+  // this page offered neither. One toggle covers both fields: hiding the
+  // confirmation while revealing the password would defeat the point of each.
+  const [confirm, setConfirm] = useState("");
+  const [reveal, setReveal] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const configured = isSupabaseConfigured();
+  const signingUp = mode === "sign-up";
+
+  /** Everything typed is cleared when the mode changes. A confirmation left
+   *  behind from an abandoned sign-up is invisible on the sign-in form and would
+   *  come back on the next switch. */
+  function switchMode() {
+    setMode(signingUp ? "sign-in" : "sign-up");
+    setPassword("");
+    setConfirm("");
+    setReveal(false);
+    setError(null);
+    setNotice(null);
+  }
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     setNotice(null);
+
+    // Checked here rather than by the server: Supabase never sees the
+    // confirmation, and a mismatch is not a failed sign-up — it is a typo, and
+    // saying so without a round-trip keeps what was typed on screen.
+    if (signingUp && password !== confirm) {
+      setError("Those two passwords are not the same.");
+      return;
+    }
+
     setBusy(true);
     try {
       const supabase = getSupabase();
@@ -101,21 +129,52 @@ export default function LoginPage() {
           placeholder="you@example.com"
           className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-accent"
         />
-        <input
-          type="password"
-          required
-          minLength={8}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
-          className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-accent"
-        />
+        <div className="relative">
+          <input
+            type={reveal ? "text" : "password"}
+            required
+            minLength={8}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            autoComplete={signingUp ? "new-password" : "current-password"}
+            className="w-full rounded border border-neutral-800 bg-neutral-900 py-2 pl-3 pr-16 text-sm outline-none focus:border-accent"
+          />
+          {/* `type="button"` matters: a bare button inside a form submits it, so
+              revealing the password would have attempted a sign-in. */}
+          <button
+            type="button"
+            onClick={() => setReveal((on) => !on)}
+            aria-pressed={reveal}
+            aria-label={reveal ? "Hide password" : "Show password"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-1 text-xs text-neutral-500 hover:text-neutral-200"
+          >
+            {reveal ? "Hide" : "Show"}
+          </button>
+        </div>
+
+        {signingUp ? (
+          <>
+            <input
+              type={reveal ? "text" : "password"}
+              required
+              minLength={8}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="Confirm password"
+              autoComplete="new-password"
+              className="w-full rounded border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm outline-none focus:border-accent"
+            />
+            <p className="text-xs text-neutral-600">At least 8 characters.</p>
+          </>
+        ) : null}
+
         <button
           type="submit"
           disabled={busy || !configured}
           className="w-full rounded bg-accent px-3 py-2 text-sm font-medium disabled:opacity-50"
         >
-          {busy ? "Working…" : mode === "sign-in" ? "Sign in" : "Sign up"}
+          {busy ? "Working…" : signingUp ? "Create account" : "Sign in"}
         </button>
       </form>
 
@@ -136,11 +195,8 @@ export default function LoginPage() {
       {error ? <p className="mt-3 text-sm text-red-300">{error}</p> : null}
       {notice ? <p className="mt-3 text-sm text-neutral-300">{notice}</p> : null}
 
-      <button
-        onClick={() => setMode(mode === "sign-in" ? "sign-up" : "sign-in")}
-        className="mt-4 text-xs text-neutral-500 hover:text-neutral-300"
-      >
-        {mode === "sign-in" ? "Need an account? Sign up" : "Already have an account? Sign in"}
+      <button onClick={switchMode} className="mt-4 text-xs text-neutral-500 hover:text-neutral-300">
+        {signingUp ? "Already have an account? Sign in" : "Need an account? Sign up"}
       </button>
 
       {/* Before the decision, not after it. DPDP requires notice *before*
