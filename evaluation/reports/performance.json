@@ -1,0 +1,62 @@
+{
+  "note": "Latency figures exclude LLM time and are measured on one local machine. They characterise this codebase, not the deployed service.",
+  "repeats": 20,
+  "latency": [
+    {
+      "stage": "hybrid_retrieval",
+      "workload": "26 production golden queries, k=5, cycled",
+      "cold_first_call_ms": 477.33,
+      "n": 20,
+      "min_ms": 9.31,
+      "p50_ms": 10.79,
+      "p95_ms": 12.87,
+      "max_ms": 13.03,
+      "mean_ms": 10.96
+    },
+    {
+      "stage": "rule_engine_evaluate_earn",
+      "workload": "3 verified cards cycled, INR 50,000 flights/direct",
+      "n": 20,
+      "min_ms": 0.15,
+      "p50_ms": 0.17,
+      "p95_ms": 0.56,
+      "max_ms": 0.86,
+      "mean_ms": 0.24
+    },
+    {
+      "stage": "graph_engine_best_paths",
+      "workload": "20 runs over the graph golden set",
+      "n": 20,
+      "min_ms": 0.04,
+      "p50_ms": 0.09,
+      "p95_ms": 0.19,
+      "max_ms": 1.63,
+      "mean_ms": 0.16
+    },
+    {
+      "stage": "langgraph_orchestration_excluding_model",
+      "workload": "10 end-to-end golden queries, scripted deterministic LLM",
+      "total_ms": 812.62,
+      "per_query_mean_ms": 81.26,
+      "excludes": "Planner and Recommender model calls (~29 s warm in production)"
+    }
+  ],
+  "reliability": {
+    "rule_engine_scenarios": {
+      "total": 25,
+      "passed": 25,
+      "success_rate": 1.0
+    },
+    "graph_queries": {
+      "total": 10,
+      "passed": 10,
+      "success_rate": 1.0
+    },
+    "end_to_end_workflow": {
+      "total": 10,
+      "passed": 10,
+      "success_rate": 1.0,
+      "checks_per_query": "contract-valid recommendation, citations present, calculations verbatim from tool results, prose numbers traceable, confidence reported"
+    }
+  }
+}

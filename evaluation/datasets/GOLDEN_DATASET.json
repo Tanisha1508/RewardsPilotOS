@@ -1,0 +1,61 @@
+{
+  "generated_by": "evaluation/datasets/build_manifest.py",
+  "note": "An index of the golden sets, not a copy of them. The sets themselves are the files listed under `path` and remain the single source of truth; duplicating their contents here would create two versions that disagree the first time either changes.",
+  "sets": [
+    {
+      "path": "evaluation/datasets/graph.json",
+      "size": 10,
+      "item_key": "queries",
+      "description": "10 path queries against the seed graph with hand-computed expected ranked paths. Metric: exact match, target 100%.",
+      "example_ids": [
+        "g01",
+        "g02",
+        "g03"
+      ]
+    },
+    {
+      "path": "evaluation/datasets/recommendations.json",
+      "size": 10,
+      "item_key": "queries",
+      "description": "10 end-to-end queries run through the LangGraph workflow (deterministic eval LLM executes the golden plan; every plan includes a knowledge search so citations are always expected). Checks: recommendation produced, citations present, numbers traceable to tool results (string match), calculations verbatim (no invented values), confidence reported.",
+      "example_ids": [
+        "e01",
+        "e02",
+        "e03"
+      ]
+    },
+    {
+      "path": "evaluation/datasets/retrieval.json",
+      "size": 24,
+      "item_key": "queries",
+      "description": "24 retrieval queries over the corpus (fixtures + verified P1 production docs). expected_doc_ids are the relevant documents (doc level). r21-r24 (D3) exercise the P1 transfer_rules docs split out from reward_rules. Metrics: precision@3, recall@5, MRR.",
+      "example_ids": [
+        "r01",
+        "r02",
+        "r03"
+      ]
+    },
+    {
+      "path": "evaluation/datasets/retrieval_production.json",
+      "size": 26,
+      "item_key": "queries",
+      "description": "Retrieval golden set over the SERVING corpus only \u2014 the 14 verified documents a real user's question can actually reach. No fixture issuers. Written 2026-07-31 after the owner asked how a benchmark over invented banks could say anything about real queries; it cannot, and the existing 24-query set is 17/24 about demo_bank and sample_bank.\n\nLabelling discipline: expected_doc_ids were assigned by reading each document's own section headings, BEFORE running retrieval. Labelling from what the retriever returns would make the benchmark agree with itself by construction and measure nothing.\n\nQueries are phrased the way a cardholder would ask, not as keyword bags \u2014 testing semantic search on natural language is the whole point.\n\nSplit into two tiers (2026-07-31). The first 20 name the card, which is how people usually ask \u2014 and scored a flattering 1.000 because naming a card makes the issuer obvious. The h-tier deliberately does not name one, which is where retrieval has to work from meaning alone. A benchmark that always passes teaches nothing.",
+      "example_ids": [
+        "p01",
+        "p02",
+        "p03"
+      ]
+    },
+    {
+      "path": "evaluation/datasets/rules.json",
+      "size": 25,
+      "item_key": "scenarios",
+      "description": "25 earn/cap scenarios with hand-computed expected values. Metric: exact match, target 100%. seed 'eval' uses the synthetic verified eval_voyager fixture; seed 'shipped' uses the real seed files (all three P1 cards are verified and compute as of 2026-07-20). 'accrued' pre-seeds the cap store.",
+      "example_ids": [
+        "s01",
+        "s02",
+        "s03"
+      ]
+    }
+  ]
+}
