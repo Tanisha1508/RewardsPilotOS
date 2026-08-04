@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { api } from "@/lib/api";
+import { api, ApiRequestError } from "@/lib/api";
 import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
 // The password flow awaits `/auth/sync` before redirecting, but an OAuth
@@ -80,29 +80,50 @@ export function Shell({ children }: { children: React.ReactNode }) {
     supabase.auth.getSession().then(({ data }) => {
       if (cancelled) return;
       if (data.session) {
-        if (!sessionStorage.getItem(SYNCED_FLAG)) {
-          // Fire-and-forget: a failed sync must not brick the page — the
-          // per-widget errors already say what went wrong in that case.
-          api
-            .syncUser()
-            .then(() => sessionStorage.setItem(SYNCED_FLAG, "1"))
-            .catch(() => {});
-        }
-        setReady(true);
+        // Sync, *then* look at the cards. These used to run side by side, and
+        // for a brand-new account the cards call usually won: with no user row
+        // yet, `GET /portfolio/cards` answers 404 ("no portfolio for this user
+        // — call POST /api/v1/auth/sync first"), which the catch below
+        // swallowed, so first-run setup never opened. Whether someone landed on
+        // Ask or on setup came down to which request finished first, and both
+        // were seen on 2026-08-03/04.
+        const synced = sessionStorage.getItem(SYNCED_FLAG)
+          ? Promise.resolve()
+          : api.syncUser().then(() => {
+              sessionStorage.setItem(SYNCED_FLAG, "1");
+            });
 
-        // A brand-new account has nothing to show on any tab, so send it to
-        // setup. Deliberately only when the list is *known* to be empty: a
-        // failed or slow call must never look like "you have no cards" and
-        // bounce someone out of the app they were using.
-        if (!sessionStorage.getItem(FIRSTRUN_FLAG)) {
-          api
-            .listCards()
-            .then((cards) => {
-              sessionStorage.setItem(FIRSTRUN_FLAG, "1");
-              if (!cancelled && cards.length === 0) router.replace("/welcome");
-            })
-            .catch(() => {});
-        }
+        const firstRunDecided = sessionStorage.getItem(FIRSTRUN_FLAG)
+          ? Promise.resolve()
+          : synced
+              // A failed sync should not strand anyone: ask for the cards
+              // anyway, and let the answer decide.
+              .catch(() => {})
+              .then(() => api.listCards())
+              .then((cards) => {
+                sessionStorage.setItem(FIRSTRUN_FLAG, "1");
+                // Deliberately only when the list is *known* to be empty: a
+                // failed or slow call must never look like "you have no cards"
+                // and bounce someone out of the app they were using.
+                if (!cancelled && cards.length === 0) router.replace("/welcome");
+              })
+              .catch((caught) => {
+                // 404 is not a failed call. It is the server saying this user
+                // has no portfolio at all, which is the emptiest a new account
+                // gets — the one error that answers the question being asked.
+                if (caught instanceof ApiRequestError && caught.status === 404) {
+                  sessionStorage.setItem(FIRSTRUN_FLAG, "1");
+                  if (!cancelled) router.replace("/welcome");
+                }
+              });
+
+        // Held back until the first-run decision is made, but only on the first
+        // page of a session — afterwards the flag is set and this resolves at
+        // once. Rendering Ask first and bouncing to setup a second later is
+        // what a new user actually saw, and it read as a glitch.
+        firstRunDecided.finally(() => {
+          if (!cancelled) setReady(true);
+        });
       } else {
         router.replace("/login");
       }
