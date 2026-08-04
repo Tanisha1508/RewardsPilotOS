@@ -10,10 +10,8 @@ deterministic engines — never from the language model.**
 > incorrect.** Every numeric fact (earn rates, caps, transfer ratios, point
 > values) carries a `{value, status: verified|unverified, source, confidence}`
 > structure. Unverified values are *refused* by the engines and surfaced as
-> **unknown** in the answer, with a `[NEED: verify from issuer docs]` flag
-> tracked in [`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md). The LLM
-> never does arithmetic; it copies engine outputs verbatim and states unknowns
-> plainly.
+> **unknown** in the answer. The LLM never does arithmetic; it copies engine
+> outputs verbatim and states unknowns plainly.
 
 ## Live
 
@@ -71,16 +69,13 @@ axis_magnus       unknown   None    ['reward rules for axis_magnus are not yet
                                      (value=None); cannot compute']
 ```
 
-The first three cards are verified against official issuer documents, and those
-are the same numbers production returns for this query. The fourth is the point
-of the project.
+The first three are verified against official issuer documents, and those are the
+same numbers production returns for this query.
 
-That second block is the point of the project. The rate for that card is easy to
-find on a blog, and a language model would happily produce one. The engine
-refuses, the answer says it doesn't know, and the card goes into the
-[verification queue](docs/VERIFICATION_QUEUE.md) until someone confirms the
-number against the issuer. **A wrong rewards number costs the user real money;
-"I don't know" costs them nothing.**
+The fourth is the point of the project. That card's rate is easy to find on a
+blog, and a language model would produce one without hesitating. The engine
+refuses, and the answer says so. **A wrong rewards number costs the user real
+money; "I don't know" costs them nothing.**
 
 ## Reading this repo in five minutes
 
@@ -156,9 +151,7 @@ This is enforced, not aspirational:
   the model, query strings are kept out of access logs, the browser talks to the
   API same-origin under a strict Content Security Policy, row-level security sits
   under the database as a second layer, and a user can delete everything the
-  service holds about them. The audit is in
-  [`docs/PRIVACY_AUDIT.md`](docs/PRIVACY_AUDIT.md), the rules for what may be
-  logged in [`docs/LOGGING_POLICY.md`](docs/LOGGING_POLICY.md).
+  service holds about them.
 - **Evaluation** (`evaluation/`) — golden sets for retrieval, rules, graph, and
   end-to-end recommendations, plus a **live-LLM smoke suite** that catches
   model-behaviour regressions the scripted golden suite cannot
@@ -249,11 +242,9 @@ End to end                100%  (10/10)
 - **Live-LLM smoke suite** (`evaluation/smoke/`) runs the real model against a
   handful of queries and asserts structural properties, catching planner-
   behaviour regressions the scripted golden suite is blind to by construction.
-- **Verification pipeline** — every card's data is verified field-by-field
-  against official issuer sources before it can ship; the audit trail and open
-  items live in [`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md), and
-  known limitations are tracked candidly in
-  [`docs/KNOWN_LIMITATIONS.md`](docs/KNOWN_LIMITATIONS.md).
+- **Verification pipeline** — every card's data is checked field by field against
+  official issuer sources before it can ship, and a card that has not been
+  through it cannot be added at all.
 
 ## Status & roadmap
 
@@ -274,28 +265,23 @@ checked the tools or the corpus feeding it.
 
 **Data coverage — the real ceiling, and it is not code.** Three cards are
 verified end to end and are the three the app offers: HDFC Infinia, Axis Atlas,
-Amex Platinum Travel. Seven more have rule files whose rates are still
-unverified, so the app shows them by name and does not let you add them — a card
-that tracks perfectly and answers "unknown" to every question helps nobody. They
-are worked through in the order set out in
-[`docs/VERIFICATION_QUEUE.md`](docs/VERIFICATION_QUEUE.md), and tests fail if a
-card is verified and still locked, or offered and still unverified.
+Amex Platinum Travel. Seven more are named in the app as coming, but cannot be
+added, because their rates have not been checked — a card that tracks perfectly
+and answers "unknown" to every question helps nobody. Tests enforce the line in
+both directions: a card that gets verified and stays locked fails, and so does a
+card offered while still unverified.
 
-Promotions and issuer policies are empty for real issuers, which is why "any
-transfer bonuses right now?" and "when do my points expire?" go unanswered. That
-is data to gather, not a bug to fix.
+Expiry dates and current transfer bonuses are not held for real issuers yet,
+which is why "any transfer bonuses right now?" goes unanswered rather than
+guessed at. That is data to gather, not a bug to fix.
 
 **Next, in the order it matters:**
-- **More verified card data** — the one change that widens what the product can
-  say, per the verification queue.
-- **Opportunity engine** — a monitor that turns detected source changes and
-  expiring benefits into a user notification feed. Designed, deferred to a
-  fast-follow after deployment.
-- **An admin panel** for card management and rule verification (ADR-017), and
-  **live MCP integrations** (email, calendar, flight/hotel search).
-
-The working backlog is [`docs/BACKLOG.md`](docs/BACKLOG.md); current deployment
-state is [`docs/DEPLOY_STATUS.md`](docs/DEPLOY_STATUS.md).
+- **More verified cards** — the single change that widens what the product can
+  say.
+- **An opportunity engine** — turning detected source changes and expiring
+  benefits into a notification feed.
+- **An admin panel** for card management and rule verification, and **live MCP
+  integrations** (email, calendar, flight and hotel search).
 
 ## License
 
