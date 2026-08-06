@@ -16,39 +16,39 @@
       {
         "stage": "hybrid_retrieval",
         "workload": "26 production golden queries, k=5, cycled",
-        "cold_first_call_ms": 262.47,
+        "cold_first_call_ms": 424.82,
         "n": 20,
-        "min_ms": 9.66,
-        "p50_ms": 11.73,
-        "p95_ms": 15.5,
-        "max_ms": 17.21,
-        "mean_ms": 12.35
+        "min_ms": 9.46,
+        "p50_ms": 12.1,
+        "p95_ms": 13.57,
+        "max_ms": 13.68,
+        "mean_ms": 11.61
       },
       {
         "stage": "rule_engine_evaluate_earn",
         "workload": "3 verified cards cycled, INR 50,000 flights/direct",
         "n": 20,
-        "min_ms": 0.19,
-        "p50_ms": 0.22,
-        "p95_ms": 0.28,
-        "max_ms": 0.53,
-        "mean_ms": 0.23
+        "min_ms": 0.15,
+        "p50_ms": 0.17,
+        "p95_ms": 1.85,
+        "max_ms": 2.62,
+        "mean_ms": 0.4
       },
       {
         "stage": "graph_engine_best_paths",
         "workload": "20 runs over the graph golden set",
         "n": 20,
-        "min_ms": 0.06,
-        "p50_ms": 0.12,
-        "p95_ms": 0.27,
-        "max_ms": 1.65,
-        "mean_ms": 0.2
+        "min_ms": 0.05,
+        "p50_ms": 0.1,
+        "p95_ms": 0.22,
+        "max_ms": 1.77,
+        "mean_ms": 0.18
       },
       {
         "stage": "langgraph_orchestration_excluding_model",
         "workload": "10 end-to-end golden queries, scripted deterministic LLM",
-        "total_ms": 1024.59,
-        "per_query_mean_ms": 102.46,
+        "total_ms": 1003.84,
+        "per_query_mean_ms": 100.38,
         "excludes": "Planner and Recommender model calls (~29 s warm in production)"
       }
     ],
@@ -70,5 +70,59 @@
         "checks_per_query": "contract-valid recommendation, citations present, calculations verbatim from tool results, prose numbers traceable, confidence reported"
       }
     }
+  },
+  "concurrency": {
+    "note": "Threads against one shared retriever, mirroring how FastAPI serves sync handlers. Local machine; describes this code, not the deployed instance.",
+    "queries_in_workload": 26,
+    "rounds_per_level": 3,
+    "baseline_source": "single-threaded, same retriever, same queries",
+    "levels": [
+      {
+        "workers": 1,
+        "requests": 78,
+        "wall_s": 1.063,
+        "throughput_qps": 73.4,
+        "p50_ms": 13.3,
+        "p95_ms": 14.88,
+        "max_ms": 19.26,
+        "results_match_baseline": true,
+        "divergent_queries": []
+      },
+      {
+        "workers": 2,
+        "requests": 78,
+        "wall_s": 0.774,
+        "throughput_qps": 100.7,
+        "p50_ms": 19.89,
+        "p95_ms": 21.57,
+        "max_ms": 23.33,
+        "results_match_baseline": true,
+        "divergent_queries": []
+      },
+      {
+        "workers": 4,
+        "requests": 78,
+        "wall_s": 0.605,
+        "throughput_qps": 128.8,
+        "p50_ms": 31.22,
+        "p95_ms": 36.98,
+        "max_ms": 46.62,
+        "results_match_baseline": true,
+        "divergent_queries": []
+      },
+      {
+        "workers": 8,
+        "requests": 78,
+        "wall_s": 0.616,
+        "throughput_qps": 126.7,
+        "p50_ms": 59.86,
+        "p95_ms": 89.02,
+        "max_ms": 109.75,
+        "results_match_baseline": true,
+        "divergent_queries": []
+      }
+    ],
+    "all_levels_consistent": true,
+    "peak_rss_mb_whole_run": 441.9
   }
 }

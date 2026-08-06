@@ -32,7 +32,7 @@ import json
 import sys
 from pathlib import Path
 
-from evaluation.benchmarks import performance
+from evaluation.benchmarks import concurrency, performance
 from evaluation.metrics import report as quality_report
 
 REPORTS = Path(__file__).resolve().parent / "reports"
@@ -65,10 +65,16 @@ def main() -> int:
     # "cold first call" figure measures nothing — it read 15.91 ms that way,
     # against 477 ms genuinely cold.
     perf = performance.run()
+    load = concurrency.run()
     quality_markdown, quality_summary = quality_report.build_report()
 
     REPORTS.mkdir(parents=True, exist_ok=True)
-    RAW.write_text(json.dumps({"quality": quality_summary, "performance": perf}, indent=2) + "\n")
+    RAW.write_text(
+        json.dumps(
+            {"quality": quality_summary, "performance": perf, "concurrency": load}, indent=2
+        )
+        + "\n"
+    )
 
     lines = [
         "# Evaluation report — generated",
@@ -136,6 +142,34 @@ def main() -> int:
         "A tool that refuses to compute on unverified data counts as a success:",
         "refusing is the specified behaviour, and scoring it as a failure would",
         "reward a system that guesses.",
+        "",
+        "## Retrieval under concurrency (local, threads)",
+        "",
+        f"{load['note']} {load['queries_in_workload']} queries × "
+        f"{load['rounds_per_level']} rounds per level, against one shared retriever.",
+        "",
+        "| Workers | Requests | Throughput (q/s) | p50 (ms) | p95 (ms) | Results match baseline |",
+        "|---|---|---|---|---|---|",
+    ]
+    for lvl in load["levels"]:
+        lines.append(
+            f"| {lvl['workers']} | {lvl['requests']} | {lvl['throughput_qps']} | "
+            f"{lvl['p50_ms']} | {lvl['p95_ms']} | "
+            f"{'yes' if lvl['results_match_baseline'] else '**NO**'} |"
+        )
+    lines += [
+        "",
+        f"Peak resident memory: **{load['peak_rss_mb_whole_run']} MB**. Read this "
+        "narrowly. It is a high-water mark for the whole evaluation process, so "
+        "inside `run_all` it includes the quality suites that ran first — "
+        "`python -m evaluation.benchmarks.concurrency` on its own measured "
+        "335.1 MB. Neither figure is retrieval's own footprint, and neither is a "
+        "measurement of the deployed instance.",
+        "",
+        "The correctness column is the one that matters. Every concurrent result "
+        "is compared against a single-threaded baseline query by query, because a "
+        "retriever that returns different documents under load is returning wrong "
+        "ones, and that outranks any latency figure in this table.",
         "",
     ]
 

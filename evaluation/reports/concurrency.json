@@ -1,0 +1,57 @@
+{
+  "note": "Threads against one shared retriever, mirroring how FastAPI serves sync handlers. Local machine; describes this code, not the deployed instance.",
+  "queries_in_workload": 26,
+  "rounds_per_level": 3,
+  "baseline_source": "single-threaded, same retriever, same queries",
+  "levels": [
+    {
+      "workers": 1,
+      "requests": 78,
+      "wall_s": 1.268,
+      "throughput_qps": 61.5,
+      "p50_ms": 15.02,
+      "p95_ms": 19.31,
+      "max_ms": 45.4,
+      "results_match_baseline": true,
+      "divergent_queries": [],
+      "peak_rss_mb": 335.1
+    },
+    {
+      "workers": 2,
+      "requests": 78,
+      "wall_s": 0.833,
+      "throughput_qps": 93.6,
+      "p50_ms": 20.7,
+      "p95_ms": 26.5,
+      "max_ms": 32.33,
+      "results_match_baseline": true,
+      "divergent_queries": [],
+      "peak_rss_mb": 335.1
+    },
+    {
+      "workers": 4,
+      "requests": 78,
+      "wall_s": 0.77,
+      "throughput_qps": 101.4,
+      "p50_ms": 36.44,
+      "p95_ms": 69.02,
+      "max_ms": 93.69,
+      "results_match_baseline": true,
+      "divergent_queries": [],
+      "peak_rss_mb": 335.1
+    },
+    {
+      "workers": 8,
+      "requests": 78,
+      "wall_s": 0.724,
+      "throughput_qps": 107.7,
+      "p50_ms": 69.63,
+      "p95_ms": 113.44,
+      "max_ms": 117.67,
+      "results_match_baseline": true,
+      "divergent_queries": [],
+      "peak_rss_mb": 335.1
+    }
+  ],
+  "all_levels_consistent": true
+}

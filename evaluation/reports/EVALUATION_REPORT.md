@@ -7,7 +7,7 @@ guessed at.
 
 # Evaluation report
 
-Measured eval results, run on 2026-08-04 against the sprint fixture corpus and seed data (synthetic fixtures clearly labeled; real-issuer numbers ship unverified and are expected to be refused). Product metrics in MASTER_SPEC are targets, not measurements.
+Measured eval results, run on 2026-08-06 against the sprint fixture corpus and seed data (synthetic fixtures clearly labeled; real-issuer numbers ship unverified and are expected to be refused). Product metrics in MASTER_SPEC are targets, not measurements.
 
 | Suite | Size | Metric | Result | Target |
 |---|---|---|---|---|
@@ -39,20 +39,20 @@ Repeats per stage: 20. Latency figures exclude LLM time and are measured on one 
 
 | Stage | Workload | p50 (ms) | p95 (ms) | mean (ms) | max (ms) |
 |---|---|---|---|---|---|
-| `hybrid_retrieval` | 26 production golden queries, k=5, cycled | 11.73 | 15.5 | 12.35 | 17.21 |
-| `rule_engine_evaluate_earn` | 3 verified cards cycled, INR 50,000 flights/direct | 0.22 | 0.28 | 0.23 | 0.53 |
-| `graph_engine_best_paths` | 20 runs over the graph golden set | 0.12 | 0.27 | 0.2 | 1.65 |
+| `hybrid_retrieval` | 26 production golden queries, k=5, cycled | 12.1 | 13.57 | 11.61 | 13.68 |
+| `rule_engine_evaluate_earn` | 3 verified cards cycled, INR 50,000 flights/direct | 0.17 | 1.85 | 0.4 | 2.62 |
+| `graph_engine_best_paths` | 20 runs over the graph golden set | 0.1 | 0.22 | 0.18 | 1.77 |
 
-First retrieval call after process start: **262.47 ms**, reported separately because the corpus loads lazily and the first call is a different event from the rest (KNOWN_LIMITATIONS 28).
+First retrieval call after process start: **424.82 ms**, reported separately because the corpus loads lazily and the first call is a different event from the rest (KNOWN_LIMITATIONS 28).
 
-LangGraph orchestration over 10 end-to-end golden queries, scripted deterministic LLM: **102.46 ms per query**, excluding Planner and Recommender model calls (~29 s warm in production). This is the cost of our own code — state handling, tool dispatch, contract validation — and is not what a user waits for.
+LangGraph orchestration over 10 end-to-end golden queries, scripted deterministic LLM: **100.38 ms per query**, excluding Planner and Recommender model calls (~29 s warm in production). This is the cost of our own code — state handling, tool dispatch, contract validation — and is not what a user waits for.
 
 ```
 Median latency by stage (ms, log-scale would flatten this — read the numbers)
 
-hybrid_retrieval                      11.73  ████████████████████████████████
-rule_engine_evaluate_earn              0.22  █
-graph_engine_best_paths                0.12  █
+hybrid_retrieval                      12.10  ████████████████████████████████
+rule_engine_evaluate_earn              0.17  █
+graph_engine_best_paths                0.10  █
 ```
 
 ## Reliability (golden-set completion, deterministic paths)
@@ -66,3 +66,18 @@ graph_engine_best_paths                0.12  █
 A tool that refuses to compute on unverified data counts as a success:
 refusing is the specified behaviour, and scoring it as a failure would
 reward a system that guesses.
+
+## Retrieval under concurrency (local, threads)
+
+Threads against one shared retriever, mirroring how FastAPI serves sync handlers. Local machine; describes this code, not the deployed instance. 26 queries × 3 rounds per level, against one shared retriever.
+
+| Workers | Requests | Throughput (q/s) | p50 (ms) | p95 (ms) | Results match baseline |
+|---|---|---|---|---|---|
+| 1 | 78 | 73.4 | 13.3 | 14.88 | yes |
+| 2 | 78 | 100.7 | 19.89 | 21.57 | yes |
+| 4 | 78 | 128.8 | 31.22 | 36.98 | yes |
+| 8 | 78 | 126.7 | 59.86 | 89.02 | yes |
+
+Peak resident memory: **441.9 MB**. Read this narrowly. It is a high-water mark for the whole evaluation process, so inside `run_all` it includes the quality suites that ran first — `python -m evaluation.benchmarks.concurrency` on its own measured 335.1 MB. Neither figure is retrieval's own footprint, and neither is a measurement of the deployed instance.
+
+The correctness column is the one that matters. Every concurrent result is compared against a single-threaded baseline query by query, because a retriever that returns different documents under load is returning wrong ones, and that outranks any latency figure in this table.

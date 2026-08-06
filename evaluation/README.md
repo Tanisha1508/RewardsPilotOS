@@ -20,6 +20,7 @@ Run a single suite:
 ```bash
 python -m evaluation.metrics.report          # quality suites only
 python -m evaluation.benchmarks.performance  # latency and reliability only
+python -m evaluation.benchmarks.concurrency  # retrieval under concurrent load
 pytest evaluation/regression                 # the same assertions, as tests
 ```
 
@@ -38,6 +39,7 @@ measurement into a 16 ms one that means nothing.
 | `metrics/graph_eval.py` | `datasets/graph.json` | 10 queries | exact match | Transfer-path search matches hand computation. |
 | `metrics/e2e_eval.py` | `datasets/recommendations.json` | 10 queries | 5 checks per query | The whole workflow, including that every number in the prose traces to a tool result. |
 | `benchmarks/performance.py` | reuses the above | 20 samples/stage | p50, p95, success rate | Latency of deterministic stages and golden-set completion. |
+| `benchmarks/concurrency.py` | `datasets/retrieval_production.json` | 78 requests/level | throughput, p50, p95, baseline match | Whether one shared retriever stays correct and usable under concurrent threads. |
 | `smoke/run.py` | see `smoke/README.md` | small | structural assertions | **Calls the real model.** Run by hand, not in `run_all`. |
 
 ## Labelling discipline
@@ -67,15 +69,28 @@ addition and is not built, because every sample costs a call against a shared
 free-tier quota the deployed app depends on. If it is built, it belongs behind
 an explicit flag and its own budget, not in `run_all`.
 
-## Why there is no load test
+## Why the load test is local
 
 The deployed backend is a 512 MB free instance with a measured 432 MB peak on
 the chat-plus-ingest path, behind a per-user daily question limit, sharing one
 free-tier model quota with the live demo. Generating load against it would
 breach the limit, spend the quota, and could take the service down.
 
-A local concurrency harness against the retrieval stage would answer the same
-question about our own code at no cost, and is the first thing to add here.
+So `benchmarks/concurrency.py` stresses the retrieval stage locally instead,
+which answers the same question about our own code at no cost. It runs threads
+rather than processes on purpose: FastAPI serves sync handlers from a threadpool,
+so production really does reach one shared `HybridRetriever` — a single cached
+instance holding one Chroma client and one BM25 index — from several threads at
+once.
+
+Correctness is checked before speed. Every concurrent result is compared against
+a single-threaded baseline, query by query, and a divergence fails the run. A
+retriever that returns different documents under load is returning wrong ones,
+which outranks any latency figure it produces.
+
+What it does not cover: the model calls, the database, and the deployed
+instance's own limits. It characterises one stage of this codebase on one
+machine.
 
 ## Why there is no time-to-first-token
 
