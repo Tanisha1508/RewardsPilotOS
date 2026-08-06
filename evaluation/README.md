@@ -77,6 +77,14 @@ breach the limit, spend the quota, and could take the service down.
 A local concurrency harness against the retrieval stage would answer the same
 question about our own code at no cost, and is the first thing to add here.
 
+## Why there is no time-to-first-token
+
+Because there is no first token. `/api/v1/chat` returns one JSON envelope when
+the whole recommendation is finished and validated — it does not stream, and it
+cannot stream while the traceability check has to see the complete answer before
+any of it is allowed out. Any TTFT figure quoted for this system would have been
+made up.
+
 ## Adding a suite
 
 Put the data in `datasets/`, the runner in `metrics/`, and register it in
@@ -84,3 +92,11 @@ Put the data in `datasets/`, the runner in `metrics/`, and register it in
 number fails a test rather than quietly changing a report. Record what the suite
 cannot see — every dataset in this directory carries a `description` saying what
 it does not measure, and that is the field that keeps a benchmark honest.
+
+## Read the sizes before the scores
+
+Three verified cards, fourteen serving documents, ninety-five golden cases. The
+scores on this page are real and the corpus they run over is small, and both
+facts belong in the same sentence. The corpus is small because a card is only
+added once its rates have been checked against the issuer's own documents —
+so the number to ask about is not recall@5, it is how many cards are covered.
